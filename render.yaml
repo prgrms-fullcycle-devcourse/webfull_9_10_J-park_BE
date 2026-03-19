@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: lampfire-backend
+    env: docker # dockerfile 사용
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: lampfire-db
+          property: connectionString
+
+databases:
+  - name: lampfire-db
+    plan: free
+    postgresMajorVersion: 15
