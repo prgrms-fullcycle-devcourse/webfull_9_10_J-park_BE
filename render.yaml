@@ -3,6 +3,7 @@ services:
     name: lampfire-backend
     env: docker # dockerfile 사용
     plan: free
+    port: 3000
     envVars:
       - key: DATABASE_URL
         fromDatabase:
