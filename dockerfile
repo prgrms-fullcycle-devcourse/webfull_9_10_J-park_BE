@@ -34,4 +34,4 @@ EXPOSE 3000
 
 # 실행 시 마이그레이션 적용 후 서버 시작
 # migrate deploy는 기존 데이터를 보존하며 스키마만 업데이트합니다.
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main.js"]
