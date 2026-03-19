@@ -26,10 +26,12 @@ WORKDIR /app
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package*.json ./
+
 COPY --from=builder /app/prisma.config.ts ./
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/src ./src
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+
+COPY --from=builder /app/src/generated ./dist/src/generated
 
 # 포트 개방
 EXPOSE 3000
