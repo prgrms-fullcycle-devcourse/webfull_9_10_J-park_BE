@@ -8,6 +8,9 @@ import { StatusCodes } from 'http-status-codes';
 import prisma from './config/prisma';
 import { ApiResponse } from './types/response';
 
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger';
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -16,6 +19,7 @@ app.use(helmet());
 app.use(cors());
 app.use(cookieParser());
 app.use(express.json());
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.get('/', (req: Request, res: Response<ApiResponse>) => {
   return res.status(StatusCodes.OK).json({
