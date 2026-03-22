@@ -10,10 +10,13 @@
     "lint": "eslint 'src/**/*.ts'",
     "lint:fix": "eslint 'src/**/*.ts' --fix",
     "format": "prettier --write 'src/**/*.ts'",
+    "check": "eslint . && prettier . --check",
+    "fix": "eslint . --fix && prettier . --write",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "db:reset": "prisma migrate reset"
+    "db:reset": "prisma migrate reset",
+    "prepare": "husky"
   },
   "keywords": [],
   "author": "",
@@ -32,6 +35,9 @@
     "pg": "^8.20.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
+    "@eslint/js": "^10.0.1",
     "@prisma/config": "^7.5.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
@@ -41,14 +47,18 @@
     "@types/pg": "^8.18.0",
     "@typescript-eslint/eslint-plugin": "^8.57.1",
     "@typescript-eslint/parser": "^8.57.1",
+    "commitlint": "^20.5.0",
     "dotenv": "^17.3.1",
     "eslint": "^10.0.3",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-unicorn": "^63.0.0",
+    "husky": "^9.1.7",
     "nodemon": "^3.1.14",
     "prettier": "^3.8.1",
     "prisma": "^7.5.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.57.1"
   }
 }

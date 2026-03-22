@@ -6,7 +6,7 @@ export const errorHandler = (
   err: any,
   req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ) => {
   console.error(' [Error Log]:', err.stack); // 에러 로그 확인용
 
