@@ -4,8 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/main.ts",
-    "dev:local": "nodemon --watch src --ext ts --exec ts-node src/main.ts",
+    "dev": "nodemon --watch src --ext ts,d.ts --exec npx ts-node --files src/main.ts",
     "build": "tsc && cp -r src/generated dist/src/",
     "start": "node dist/src/main.js",
     "lint": "eslint 'src/**/*.ts'",
