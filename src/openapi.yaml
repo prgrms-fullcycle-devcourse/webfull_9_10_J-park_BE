@@ -11,7 +11,6 @@ servers:
   - url: http://localhost:3000
 
 paths:
-
   /goals:
     post:
       tags:
@@ -1116,11 +1115,11 @@ paths:
                 startTime:
                   type: string
                   description: 시작 시간
-                  example: "2026/03/17 22:00:00"
+                  example: '2026/03/17 22:00:00'
                 endTime:
                   type: string
                   description: 종료 시간
-                  example: "2026/03/17 23:13:54"
+                  example: '2026/03/17 23:13:54'
                 currentCompleted:
                   type: integer
                   description: 현재 진행한 목표 분량
@@ -1134,8 +1133,8 @@ paths:
             example:
               goalId: 1
               goalName: 목표 1
-              startTime: "2026/03/17 22:00:00"
-              endTime: "2026/03/17 23:13:54"
+              startTime: '2026/03/17 22:00:00'
+              endTime: '2026/03/17 23:13:54'
               currentCompleted: 2
 
       responses:
@@ -1166,24 +1165,24 @@ paths:
                       goalTime:
                         type: string
                         description: 해당 목표의 총 공부 시간
-                        example: "03:10:32"
+                        example: '03:10:32'
                       totalTime:
                         type: string
                         description: 전체 공부 시간
-                        example: "04:23:53"
+                        example: '04:23:53'
                       updatedAt:
                         type: string
                         description: 업데이트 시간
-                        example: "2026/03/17 23:13:54"
+                        example: '2026/03/17 23:13:54'
                 example:
                   success: true
                   message: 사용자 공부 기록 추가 완료
                   data:
                     goalId: 1
                     goalName: 목표 1
-                    goalTime: "03:10:32"
-                    totalTime: "04:23:53"
-                    updatedAt: "2026/03/17 23:13:54"
+                    goalTime: '03:10:32'
+                    totalTime: '04:23:53'
+                    updatedAt: '2026/03/17 23:13:54'
 
         '401':
           description: 인증 실패
@@ -1352,7 +1351,7 @@ paths:
                       todayStudyDuration:
                         type: string
                         description: 목표에 대한 오늘 공부 시간
-                        example: "01:20:15"
+                        example: '01:20:15'
                       todayProgressRate:
                         type: integer
                         description: 오늘 진행률
@@ -1376,20 +1375,20 @@ paths:
                             type: string
                             format: date-time
                             description: 타이머 시작 시각
-                            example: "2026-03-17T23:13:54Z"
+                            example: '2026-03-17T23:13:54Z'
                 example:
                   success: true
                   message: 실행 중인 타이머 정보
                   data:
                     goalId: 1
                     goalTitle: 자료구조 공부
-                    todayStudyDuration: "01:20:15"
+                    todayStudyDuration: '01:20:15'
                     todayProgressRate: 65
                     todayCompletedAmount: 0
                     todayTargetAmount: 1
                     timer:
                       isRunning: true
-                      startedAt: "2026-03-17T23:13:54Z"
+                      startedAt: '2026-03-17T23:13:54Z'
 
         '401':
           description: 인증 실패
@@ -1720,112 +1719,54 @@ paths:
                     type: string
                     example: 전체 랭킹
                   data:
-                    type: object
-                    properties:
-                      myRanking:
-                        type: integer
-                        description: 내 랭킹
-                        example: 491
-
-                      topRankings:
-                        type: array
-                        description: 상위 3명 랭킹
-                        items:
-                          type: object
-                          properties:
-                            rank:
-                              type: integer
-                              description: 순위
-                              example: 1
-                            userId:
-                              type: integer
-                              description: 사용자 ID
-                              example: 31
-                            nickname:
-                              type: string
-                              description: 사용자 닉네임
-                              example: 닉네임 23
-                            profileImage:
-                              type: string
-                              nullable: true
-                              description: 프로필 이미지 URL (null 가능)
-                              example: /profiles/user23.png
-                            totalTime:
-                              type: string
-                              description: 총 공부 시간 (HH:mm:ss)
-                              example: "04:43:30"
-
-                      ranks:
-                        type: array
-                        description: 전체 랭킹 목록 (페이지네이션 적용)
-                        items:
-                          type: object
-                          properties:
-                            rank:
-                              type: integer
-                              description: 순위
-                              example: 1
-                            userId:
-                              type: integer
-                              description: 사용자 ID
-                              example: 31
-                            nickname:
-                              type: string
-                              description: 사용자 닉네임
-                              example: 닉네임 23
-                            profileImage:
-                              type: string
-                              nullable: true
-                              description: 프로필 이미지 URL (null 가능)
-                              example: /profiles/user23.png
-                            totalTime:
-                              type: string
-                              description: 총 공부 시간 (HH:mm:ss)
-                              example: "04:43:30"
-
-              example:
-                success: true
-                message: 전체 랭킹
-                data:
-                  myRanking: 491
-                  topRankings:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        rank:
+                          type: integer
+                          description: 순위
+                          example: 1
+                        userId:
+                          type: integer
+                          description: 사용자의 ID 혹은 UUID
+                          example: 31
+                        nickname:
+                          type: string
+                          description: 사용자 이름
+                          example: 닉네임 23
+                        profileImage:
+                          type: string
+                          description: 프로필 이미지 경로
+                          example: /profiles/user23.png
+                        totalTime:
+                          type: string
+                          description: 총 공부 시간
+                          example: '04:43:30'
+                example:
+                  success: true
+                  message: 전체 랭킹
+                  data:
                     - rank: 1
                       userId: 31
                       nickname: 닉네임 23
                       profileImage: /profiles/user23.png
-                      totalTime: "04:43:30"
+                      totalTime: '04:43:30'
                     - rank: 2
                       userId: 16
                       nickname: 닉네임 01
                       profileImage: /profiles/user01.png
-                      totalTime: "03:43:30"
+                      totalTime: '03:43:30'
                     - rank: 3
                       userId: 17
                       nickname: 닉네임 27
                       profileImage: /profiles/user27.png
-                      totalTime: "02:43:30"
-                  ranks:
-                    - rank: 1
-                      userId: 31
-                      nickname: 닉네임 23
-                      profileImage: /profiles/user23.png
-                      totalTime: "04:43:30"
-                    - rank: 2
-                      userId: 16
-                      nickname: 닉네임 01
-                      profileImage: /profiles/user01.png
-                      totalTime: "03:43:30"
-                    - rank: 3
-                      userId: 17
-                      nickname: 닉네임 27
-                      profileImage: /profiles/user27.png
-                      totalTime: "02:43:30"
+                      totalTime: '02:43:30'
                     - rank: 4
                       userId: 65
                       nickname: 닉네임 30
                       profileImage: /profiles/user30.png
-                      totalTime: "02:13:30"
-
+                      totalTime: '02:13:30'
         '401':
           description: 인증 실패
           content:
@@ -1916,7 +1857,7 @@ paths:
                       totalTime:
                         type: string
                         description: 오늘 총 목표를 위해 투자한 시간
-                        example: "04:43:00"
+                        example: '04:43:00'
                       goals:
                         type: array
                         description: 오늘 목표 목록
@@ -1939,7 +1880,7 @@ paths:
                         type: string
                         format: date
                         description: 계정 생성일
-                        example: "2025-05-23"
+                        example: '2025-05-23'
                 example:
                   success: true
                   message: 내 정보 보기
@@ -1947,7 +1888,7 @@ paths:
                     userId: 1
                     username: 닉네임 23
                     profileImage: /profiles/user23.png
-                    totalTime: "04:43:00"
+                    totalTime: '04:43:00'
                     goals:
                       - id: 1
                         title: 목표 1
@@ -1958,7 +1899,7 @@ paths:
                       - id: 3
                         title: 목표 3
                         todayQuota: 5
-                    createdAt: "2025-05-23"
+                    createdAt: '2025-05-23'
 
         '401':
           description: 인증 실패
@@ -2130,7 +2071,7 @@ paths:
                       totalTime:
                         type: string
                         description: 오늘 총 목표를 위해 투자한 시간
-                        example: "04:43:00"
+                        example: '04:43:00'
                       goals:
                         type: array
                         description: 오늘 목표 목록
@@ -2153,7 +2094,7 @@ paths:
                         type: string
                         format: date
                         description: 계정 생성일
-                        example: "2025-05-23"
+                        example: '2025-05-23'
                 example:
                   success: true
                   message: 사용자 정보 수정 완료
@@ -2161,7 +2102,7 @@ paths:
                     userId: 1
                     username: 변경된 사용자 이름
                     profileImage: /profiles/user23.png
-                    totalTime: "04:43:00"
+                    totalTime: '04:43:00'
                     goals:
                       - id: 1
                         title: 목표 1
@@ -2172,7 +2113,7 @@ paths:
                       - id: 3
                         title: 목표 3
                         todayQuota: 5
-                    createdAt: "2025-05-23"
+                    createdAt: '2025-05-23'
 
         '401':
           description: 인증 실패
@@ -2223,7 +2164,7 @@ paths:
                 error:
                   code: INTERNAL_SERVER_ERROR
                   message: 서버 오류가 발생했습니다.
-  
+
   /risks:
     get:
       tags:

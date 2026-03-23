@@ -4,12 +4,23 @@ import {
   CreateGoalResponseDto,
 } from '../types/goal.type';
 
+/**
+ * 목표 생성 서비스
+ * @param userId - 인증된 사용자 ID (JWT에서 추출)
+ * @param payload - 목표 생성 요청 데이터
+ */
+
 export const createGoalService = async (
   userId: number,
   payload: CreateGoalRequestDto
 ): Promise<CreateGoalResponseDto> => {
+  // 요청 body에서 필요한 값 추출
   const { title, categoryId, description, targetValue, startDate, endDate, quota } = payload;
-
+  
+  /**
+  * 1. 사용자 존재 여부 확인
+  * - JWT는 유효하지만 DB에 사용자가 없을 수도 있기 때문에 검증
+  */
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
@@ -21,11 +32,15 @@ export const createGoalService = async (
   if (!user) {
     throw new Error('USER_NOT_FOUND');
   }
-
+  /**
+   * 2. 카테고리 검증
+   * - 해당 사용자의 카테고리인지 확인 (보안 중요)
+   * - 다른 유저의 categoryId를 사용하지 못하게 막는 로직
+   */
   const category = await prisma.category.findFirst({
     where: {
       id: categoryId,
-      userId,
+      userId, // 반드시 본인 소유 카테고리여야 함
     },
   });
 
