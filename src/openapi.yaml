@@ -265,25 +265,45 @@ paths:
                   code: INTERNAL_SERVER_ERROR
                   message: 서버 오류가 발생했습니다.
 
-  /goals/{goalId}/detail:
+  /goals/{goalId}/detail: #/goals/:goalId/detail?startDate=?&endDate=?
     get:
       tags:
         - 목표
       summary: 개별 목표 상세 조회
-      description: 특정 goalId에 해당하는 목표의 상세 정보를 조회합니다.
+      description: "특정 목표의 상세 정보와 기간별 일자 진행 현황을 조회합니다."
       security:
         - bearerAuth: []
+
       parameters:
         - name: goalId
           in: path
           required: true
-          description: 목표의 id
+          description: 목표의 ID
           schema:
             type: integer
             example: 1
+
+        - name: startDate
+          in: query
+          required: false
+          description: "조회 시작 날짜 (YYYY-MM-DD, 기본값: today-7)"
+          schema:
+            type: string
+            format: date
+            example: 2026-03-14
+
+        - name: endDate
+          in: query
+          required: false
+          description: "조회 종료 날짜 (YYYY-MM-DD, 기본값: today+14)"
+          schema:
+            type: string
+            format: date
+            example: 2026-04-04
+
       responses:
         '200':
-          description: 개별 목표 상세 정보 조회 성공
+          description: 개별 목표 상세 조회 성공
           content:
             application/json:
               schema:
@@ -300,7 +320,7 @@ paths:
                     properties:
                       id:
                         type: integer
-                        description: 목표 id
+                        description: 목표 ID
                         example: 1
                       title:
                         type: string
@@ -314,26 +334,32 @@ paths:
                         type: string
                         description: 목표 카테고리
                         example: 책
+
                       progress:
                         type: object
-                        description: 진행도 관련 정보
+                        description: 목표 진행도 정보
                         properties:
                           rate:
                             type: integer
-                            description: 진행률
+                            description: 진행률 (%)
                             example: 78
                           currentAmount:
                             type: integer
-                            description: 현재 진행도
+                            description: 현재 진행량
                             example: 78
                           targetAmount:
                             type: integer
-                            description: 목표량
+                            description: 전체 목표량
                             example: 100
+                          totalStudyTime:
+                            type: integer
+                            description: 해당 목표의 총 공부 시간
+                            example: 876489473
                           unit:
                             type: string
                             description: 단위
                             example: 페이지
+
                       period:
                         type: object
                         description: 목표 기간 정보
@@ -341,72 +367,123 @@ paths:
                           startDate:
                             type: string
                             format: date
+                            description: 목표 시작일
                             example: 2026-02-01
                           endDate:
                             type: string
                             format: date
+                            description: 목표 종료일
                             example: 2026-03-30
                           daysRemaining:
                             type: integer
-                            description: 남은 일수
+                            description: 목표 종료까지 남은 일수
                             example: 13
+
                       dailyProgress:
                         type: array
-                        description: 일별 진행 현황
+                        description: 날짜별 목표 진행 현황
                         items:
                           type: object
                           properties:
                             date:
                               type: string
                               format: date
+                              description: 날짜
                               example: 2026-03-14
-                            quota:
+                            targetAmount:
                               type: integer
-                              description: 그날 실제로 진행된 양
+                              description: 해당 일자의 목표 할당량
+                              example: 3
+                            completedAmount:
+                              type: integer
+                              description: 해당 일자의 실제 완료량
                               example: 3
                             isCompleted:
                               type: boolean
-                              description: 해당 일자 목표 달성 여부
+                              description: 해당 일자 목표 완료 여부
                               example: true
-                example:
-                  success: true
-                  message: 개별 목표 상세 정보
-                  data:
-                    id: 1
-                    title: 목표 1
-                    description: 목표의 설명입니다.
-                    category: 책
-                    progress:
-                      rate: 78
-                      currentAmount: 78
-                      targetAmount: 100
-                      unit: 페이지
-                    period:
-                      startDate: 2026-02-01
-                      endDate: 2026-03-30
-                      daysRemaining: 13
-                    dailyProgress:
-                      - date: 2026-03-14
-                        quota: 3
-                        isCompleted: true
-                      - date: 2026-03-15
-                        quota: 2
-                        isCompleted: true
-                      - date: 2026-03-16
-                        quota: 3
-                        isCompleted: true
-                      - date: 2026-03-17
-                        quota: 2
-                        isCompleted: true
-                      - date: 2026-03-18
-                        quota: 1
-                        isCompleted: false
-                      - date: 2026-03-19
-                        quota: 0
-                        isCompleted: false
-                      - date: 2026-03-20
-                        quota: 2
-                        isCompleted: false
+                            studyTime:
+                              type: integer
+                              description: 해당 일자의 해당 목표 공부 시간
+                              example: 39334748
+                            isToday:
+                              type: boolean
+                              description: 오늘 여부
+                              example: false
+
+              example:
+                success: true
+                message: 개별 목표 상세 정보
+                data:
+                  id: 1
+                  title: 목표 1
+                  description: 목표의 설명입니다.
+                  category: 책
+                  progress:
+                    rate: 78
+                    currentAmount: 78
+                    targetAmount: 100
+                    totalStudyTime: 876489473
+                    unit: 페이지
+                  period:
+                    startDate: 2026-02-01
+                    endDate: 2026-03-30
+                    daysRemaining: 13
+                  dailyProgress:
+                    - date: 2026-03-14
+                      targetAmount: 3
+                      completedAmount: 3
+                      isCompleted: true
+                      studyTime: 39334748
+                      isToday: false
+                    - date: 2026-03-15
+                      targetAmount: 4
+                      completedAmount: 4
+                      isCompleted: true
+                      studyTime: 2733902
+                      isToday: false
+                    - date: 2026-03-16
+                      targetAmount: 3
+                      completedAmount: 3
+                      isCompleted: true
+                      studyTime: 2733902
+                      isToday: false
+                    - date: 2026-03-17
+                      targetAmount: 5
+                      completedAmount: 7
+                      isCompleted: true
+                      studyTime: 2836238
+                      isToday: false
+                    - date: 2026-03-18
+                      targetAmount: 5
+                      completedAmount: 3
+                      isCompleted: false
+                      studyTime: 2836238
+                      isToday: false
+                    - date: 2026-03-19
+                      targetAmount: 3
+                      completedAmount: 2
+                      isCompleted: false
+                      studyTime: 2836238
+                      isToday: false
+                    - date: 2026-03-20
+                      targetAmount: 3
+                      completedAmount: 3
+                      isCompleted: true
+                      studyTime: 2836238
+                      isToday: false
+                    - date: 2026-03-21
+                      targetAmount: 3
+                      completedAmount: 2
+                      isCompleted: false
+                      studyTime: 2836238
+                      isToday: true
+                    - date: 2026-03-22
+                      targetAmount: 3
+                      completedAmount: 0
+                      isCompleted: false
+                      studyTime: 2836238
+                      isToday: false
 
         '401':
           description: 인증 실패
@@ -792,6 +869,10 @@ paths:
                   data:
                     type: object
                     properties:
+                      totalStudyTime:
+                        type: integer
+                        description: 오늘의 전체 공부 시간 (밀리초)
+                        example: 9374836
                       todayGoals:
                         type: array
                         description: 오늘 목표 목록
@@ -818,6 +899,10 @@ paths:
                               type: string
                               description: 단위 (페이지, 강 등)
                               example: 페이지
+                            studyTime:
+                              type: integer
+                              description: 해당 목표의 공부 시간 (밀리초)
+                              example: 937
                             completed:
                               type: boolean
                               description: 완료 여부
@@ -830,27 +915,30 @@ paths:
                               type: integer
                               description: 진행률 (%)
                               example: 100
-                example:
-                  success: true
-                  message: 오늘 목표 리스트
-                  data:
-                    todayGoals:
-                      - id: 1
-                        title: 목표 1
-                        targetAmount: 10
-                        currentAmount: 10
-                        unit: 페이지
-                        completed: true
-                        isTimerRunning: false
-                        progressRate: 100
-                      - id: 2
-                        title: 목표 2
-                        targetAmount: 10
-                        currentAmount: 10
-                        unit: 페이지
-                        completed: true
-                        isTimerRunning: false
-                        progressRate: 100
+              example:
+                success: true
+                message: 오늘 목표 리스트
+                data:
+                  totalStudyTime: 9374836
+                  todayGoals:
+                    - id: 1
+                      title: 목표 1
+                      targetAmount: 10
+                      currentAmount: 10
+                      unit: 페이지
+                      studyTime: 937
+                      completed: true
+                      isTimerRunning: false
+                      progressRate: 100
+                    - id: 2
+                      title: 목표 2
+                      targetAmount: 10
+                      currentAmount: 10
+                      unit: 페이지
+                      studyTime: 543
+                      completed: true
+                      isTimerRunning: false
+                      progressRate: 100
 
         '401':
           description: 인증 실패
@@ -907,7 +995,7 @@ paths:
       tags:
         - 목표
       summary: 오늘 목표 달성률 조회
-      description: 오늘 기준 전체 공부 시간, 전체 목표 수, 현재 완료된 목표 수를 조회합니다.
+      description: 오늘 기준 전체 공부 시간, 전체 목표 수, 현재 완료된 목표 수와 목표 진행도를 조회합니다.
       security:
         - bearerAuth: []
       responses:
@@ -931,21 +1019,26 @@ paths:
                         type: integer
                         description: 오늘자 전체 공부 시간(밀리초)
                         example: 93847
-                      totalCount:
+                      totalGoals:
                         type: integer
                         description: 오늘자 전체 목표 수
                         example: 3
-                      currentCompleted:
+                      completedGoals:
                         type: integer
                         description: 오늘자 현재 완료 목표 수
                         example: 2
-                example:
-                  success: true
-                  message: 오늘 목표 달성률
-                  data:
-                    totalTime: 93847
-                    totalCount: 3
-                    currentCompleted: 2
+                      ratio:
+                        type: integer
+                        description: 목표 진행도(%)
+                        example: 66
+              example:
+                success: true
+                message: 오늘 목표 달성률
+                data:
+                  totalTime: 93847
+                  totalGoals: 3
+                  completedGoals: 2
+                  ratio: 66
 
         '401':
           description: 인증 실패
@@ -1353,24 +1446,26 @@ paths:
       tags:
         - 타이머
       summary: 타이머 시작
-      description: 특정 목표에 대한 타이머 측정을 시작합니다.
+      description: 특정 목표에 대한 타이머를 시작합니다.
       security:
         - bearerAuth: []
+
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - goalId
               properties:
                 goalId:
                   type: integer
                   description: 목표 ID
                   example: 1
-              required:
-                - goalId
             example:
               goalId: 1
+
       responses:
         '200':
           description: 타이머 시작 성공
@@ -1394,14 +1489,14 @@ paths:
                         example: 1
                       timerRunning:
                         type: boolean
-                        description: 타이머 실행 상태
+                        description: "타이머 실행 상태 (true: 실행 중)"
                         example: true
-                example:
-                  success: true
-                  message: 타이머 시작
-                  data:
-                    goalId: 1
-                    timerRunning: true
+              example:
+                success: true
+                message: 타이머 시작
+                data:
+                  goalId: 1
+                  timerRunning: true
 
         '401':
           description: 인증 실패
@@ -1458,15 +1553,19 @@ paths:
       tags:
         - 타이머
       summary: 타이머 종료
-      description: 특정 목표에 대한 타이머 측정을 종료하고 현재 진행 분량을 반영합니다.
+      description: 특정 목표의 타이머를 종료하고 현재 진행 정보를 반영합니다.
       security:
         - bearerAuth: []
+
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - goalId
+                - currentCompletedAmount
               properties:
                 goalId:
                   type: integer
@@ -1476,12 +1575,16 @@ paths:
                   type: integer
                   description: 현재 목표 진행 분량
                   example: 3
-              required:
-                - goalId
-                - currentCompletedAmount
+                isPaused:
+                  type: boolean
+                  description: 목표 중단 여부
+                  default: false
+                  example: false
             example:
               goalId: 1
               currentCompletedAmount: 3
+              isPaused: false
+
       responses:
         '201':
           description: 타이머 종료 성공
@@ -1501,28 +1604,28 @@ paths:
                     properties:
                       goalId:
                         type: integer
-                        description: 목표 아이디
+                        description: 목표 ID
                         example: 1
                       isTimerRunning:
                         type: boolean
-                        description: 타이머 실행 상태
+                        description: "타이머 실행 상태 (false: 종료됨)"
                         example: false
                       goalDuration:
                         type: integer
-                        description: 오늘 누적 공부 시간(밀리초)
+                        description: 오늘 누적 공부 시간 (밀리초)
                         example: 946834
                       goalProgressRate:
                         type: integer
-                        description: 오늘 목표 대비 진행률
+                        description: 오늘 목표 대비 진행률 (%)
                         example: 85
-                example:
-                  success: true
-                  message: 타이머 종료
-                  data:
-                    goalId: 1
-                    isTimerRunning: false
-                    goalDuration: 946834
-                    goalProgressRate: 85
+              example:
+                success: true
+                message: 타이머 종료
+                data:
+                  goalId: 1
+                  isTimerRunning: false
+                  goalDuration: 946834
+                  goalProgressRate: 85
 
         '401':
           description: 인증 실패
@@ -1574,30 +1677,34 @@ paths:
                   code: INTERNAL_SERVER_ERROR
                   message: 서버 오류가 발생했습니다.
 
-  /rankings:
+  /rankings: #/rankings?page=?&limit=?
     get:
       tags:
         - 랭킹
       summary: 전체 랭킹 조회
-      description: 전체 사용자 랭킹 목록을 페이지 단위로 조회합니다.
+      description: 전체 사용자 랭킹과 내 랭킹, 상위 3명의 랭킹 정보를 조회합니다.
       security:
         - bearerAuth: []
+
       parameters:
         - name: page
           in: query
           required: false
-          description: 페이지 번호
+          description: "페이지 번호 (default: 1)"
           schema:
             type: integer
-            default: 1
             example: 1
+            default: 1
+
         - name: limit
           in: query
           required: false
-          description: 페이지당 데이터 수
+          description: "데이터 수 제한 (default: 30)"
           schema:
             type: integer
-            example: 10
+            example: 30
+            default: 30
+
       responses:
         '200':
           description: 전체 랭킹 조회 성공
@@ -1613,34 +1720,91 @@ paths:
                     type: string
                     example: 전체 랭킹
                   data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        rank:
-                          type: integer
-                          description: 순위
-                          example: 1
-                        userId:
-                          type: integer
-                          description: 사용자의 ID 혹은 UUID
-                          example: 31
-                        nickname:
-                          type: string
-                          description: 사용자 이름
-                          example: 닉네임 23
-                        profileImage:
-                          type: string
-                          description: 프로필 이미지 경로
-                          example: /profiles/user23.png
-                        totalTime:
-                          type: string
-                          description: 총 공부 시간
-                          example: "04:43:30"
-                example:
-                  success: true
-                  message: 전체 랭킹
-                  data:
+                    type: object
+                    properties:
+                      myRanking:
+                        type: integer
+                        description: 내 랭킹
+                        example: 491
+
+                      topRankings:
+                        type: array
+                        description: 상위 3명 랭킹
+                        items:
+                          type: object
+                          properties:
+                            rank:
+                              type: integer
+                              description: 순위
+                              example: 1
+                            userId:
+                              type: integer
+                              description: 사용자 ID
+                              example: 31
+                            nickname:
+                              type: string
+                              description: 사용자 닉네임
+                              example: 닉네임 23
+                            profileImage:
+                              type: string
+                              nullable: true
+                              description: 프로필 이미지 URL (null 가능)
+                              example: /profiles/user23.png
+                            totalTime:
+                              type: string
+                              description: 총 공부 시간 (HH:mm:ss)
+                              example: "04:43:30"
+
+                      ranks:
+                        type: array
+                        description: 전체 랭킹 목록 (페이지네이션 적용)
+                        items:
+                          type: object
+                          properties:
+                            rank:
+                              type: integer
+                              description: 순위
+                              example: 1
+                            userId:
+                              type: integer
+                              description: 사용자 ID
+                              example: 31
+                            nickname:
+                              type: string
+                              description: 사용자 닉네임
+                              example: 닉네임 23
+                            profileImage:
+                              type: string
+                              nullable: true
+                              description: 프로필 이미지 URL (null 가능)
+                              example: /profiles/user23.png
+                            totalTime:
+                              type: string
+                              description: 총 공부 시간 (HH:mm:ss)
+                              example: "04:43:30"
+
+              example:
+                success: true
+                message: 전체 랭킹
+                data:
+                  myRanking: 491
+                  topRankings:
+                    - rank: 1
+                      userId: 31
+                      nickname: 닉네임 23
+                      profileImage: /profiles/user23.png
+                      totalTime: "04:43:30"
+                    - rank: 2
+                      userId: 16
+                      nickname: 닉네임 01
+                      profileImage: /profiles/user01.png
+                      totalTime: "03:43:30"
+                    - rank: 3
+                      userId: 17
+                      nickname: 닉네임 27
+                      profileImage: /profiles/user27.png
+                      totalTime: "02:43:30"
+                  ranks:
                     - rank: 1
                       userId: 31
                       nickname: 닉네임 23
@@ -1874,12 +2038,21 @@ paths:
                     example: 익명 사용자 토큰 발급 완료
                   data:
                     type: object
-                    description: 추가 데이터 없음
-                    example: {}
-                example:
-                  success: true
-                  message: 익명 사용자 토큰 발급 완료
-                  data: {}
+                    properties:
+                      userName:
+                        type: string
+                        example: 잔잔한 등불
+                        description: 랜덤 생성된 사용자 닉네임
+                      image:
+                        type: string
+                        example: /image/url
+                        description: 프로필 이미지 URL (null 가능)                       
+              example:
+                success: true
+                message: 익명 사용자 토큰 발급 완료
+                data:
+                  userName: 잔잔한 등불
+                  image: /image/url
 
         '500':
           description: 서버 오류

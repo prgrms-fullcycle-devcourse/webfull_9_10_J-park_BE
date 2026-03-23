@@ -1,7 +1,7 @@
 {
   "name": "lampfire",
   "version": "1.0.0",
-  "description": "",
+  "description": "Team 제이팍 - 등불 프로젝트의 백엔드 작업 공간",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon --watch src --ext ts,d.ts --exec npx ts-node --files src/main.ts",
@@ -54,5 +54,13 @@
     "prisma": "^7.5.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/prgrms-fullcycle-devcourse/webfull_9_10_J-park_BE.git"
+  },
+  "bugs": {
+    "url": "https://github.com/prgrms-fullcycle-devcourse/webfull_9_10_J-park_BE/issues"
+  },
+  "homepage": "https://github.com/prgrms-fullcycle-devcourse/webfull_9_10_J-park_BE#readme"
 }
