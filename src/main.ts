@@ -7,11 +7,12 @@ import { StatusCodes } from 'http-status-codes';
 
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
-import goalRoutes from './routes/goal.routes';
 
 import { ApiResponse } from './types/response';
 
 import categoryRouter from './routes/category.route';
+import goalRoutes from './routes/goal.routes';
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,6 +26,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 //라우터 연결
 app.use('/goals', goalRoutes);
+
+
 
 app.get('/', (req: Request, res: Response<ApiResponse>) => {
   return res.status(StatusCodes.OK).json({

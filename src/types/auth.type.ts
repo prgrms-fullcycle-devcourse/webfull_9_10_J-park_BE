@@ -1,4 +1,5 @@
 export interface AuthUser {
-  userId: number;
-  userName?: string;
+  id: number;        // Prisma User.id
+  email?: string;
+  nickname?: string;
 }
