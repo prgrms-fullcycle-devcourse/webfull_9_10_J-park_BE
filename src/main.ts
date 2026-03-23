@@ -7,6 +7,7 @@ import { StatusCodes } from 'http-status-codes';
 
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
+import goalRoutes from './routes/goal.routes';
 
 import { ApiResponse } from './types/response';
 
@@ -22,7 +23,9 @@ app.use(cookieParser());
 app.use(express.json());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// 향후 삭제
+//라우터 연결
+app.use('/goals', goalRoutes);
+
 app.get('/', (req: Request, res: Response<ApiResponse>) => {
   return res.status(StatusCodes.OK).json({
     success: true,
