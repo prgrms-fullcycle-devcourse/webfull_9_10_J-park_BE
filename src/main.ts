@@ -27,6 +27,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 //라우터 연결
 app.use('/goals', goalRoutes);
 
+
+
 app.get('/', (req: Request, res: Response<ApiResponse>) => {
   return res.status(StatusCodes.OK).json({
     success: true,
