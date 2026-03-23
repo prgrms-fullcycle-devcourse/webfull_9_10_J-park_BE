@@ -19,6 +19,7 @@ import jwt from 'jsonwebtoken';
 import { StatusCodes } from 'http-status-codes';
 
 import prisma from '../config/prisma';
+import { generateRandomUsername } from '../utils/nickname.util';
 
 export const authUser = async (
   req: Request,
@@ -30,7 +31,7 @@ export const authUser = async (
 
     if (!token) {
       // 쿠키 부여
-      const randomUsername = 'asdf';
+      const randomUsername = generateRandomUsername();
 
       const newUser = await prisma.user.create({
         data: {
