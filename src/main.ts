@@ -10,9 +10,9 @@ import { swaggerSpec } from './config/swagger';
 
 import { ApiResponse } from './types/response';
 
+import userRouter from './routes/users.routes';
 import categoryRouter from './routes/category.route';
 import goalRoutes from './routes/goal.routes';
-
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -78,6 +78,7 @@ app.get('/', (req: Request, res: Response<ApiResponse>) => {
 //   },
 // );
 
+app.use('/users', userRouter);
 app.use('/categories', categoryRouter);
 
 app.listen(PORT, () => {
