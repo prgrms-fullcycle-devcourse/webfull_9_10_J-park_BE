@@ -1,25 +1,8 @@
-<<<<<<< HEAD
-import { Request, Response, NextFunction } from 'express';
-
-export const authMiddleware = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  req.user = {
-    userId: 1,
-    userName: 'testUser',
-  };
-
-  next();
-};
-=======
 import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { StatusCodes } from 'http-status-codes';
 
 import prisma from '../config/prisma';
-import { generateRandomUsername } from '../utils/nickname.util';
 
 export const authUser = async (
   req: Request,
@@ -31,7 +14,7 @@ export const authUser = async (
 
     if (!token) {
       // 쿠키 부여
-      const randomUsername = generateRandomUsername();
+      const randomUsername = 'asdf';
 
       const newUser = await prisma.user.create({
         data: {
@@ -49,7 +32,7 @@ export const authUser = async (
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
-      req.user = { id: newUser.id };
+      req.user = { userId: newUser.id };
       return next();
     }
 
@@ -57,7 +40,7 @@ export const authUser = async (
       id: number;
     };
 
-    req.user = { id: decoded.id };
+    req.user = { userId: decoded.id };
 
     return next();
   } catch (err) {
@@ -66,4 +49,3 @@ export const authUser = async (
     return res.status(StatusCodes.UNAUTHORIZED).json();
   }
 };
->>>>>>> 4af8ff9 ([feat] 추가: 사용자 인증 미들웨어)
