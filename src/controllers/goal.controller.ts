@@ -1,8 +1,11 @@
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { createGoalService } from '../services/goal.service';
+import { createGoalService, getGoalListService } from '../services/goal.service';
 import { CreateGoalRequestDto } from '../types/goal.type';
 
+/**
+ * 목표 생성 컨트롤러
+ */
 export const createGoalController = async (req: Request, res: Response) => {
   try {
     const user = req.user;
@@ -37,55 +40,7 @@ export const createGoalController = async (req: Request, res: Response) => {
       });
     }
 
-    if (
-      typeof title !== 'string' ||
-      typeof categoryId !== 'number' ||
-      (description !== undefined && typeof description !== 'string') ||
-      typeof targetValue !== 'number' ||
-      typeof startDate !== 'string' ||
-      typeof endDate !== 'string' ||
-      typeof quota !== 'number'
-    ) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        error: {
-          code: 'INVALID_INPUT',
-          message: '요청 데이터 타입이 올바르지 않습니다.',
-        },
-      });
-    }
-
-    if (title.trim().length === 0) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        error: {
-          code: 'INVALID_TITLE',
-          message: '목표 이름은 비어 있을 수 없습니다.',
-        },
-      });
-    }
-
-    if (targetValue <= 0 || quota <= 0) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        error: {
-          code: 'INVALID_AMOUNT',
-          message: '목표 총량과 하루 할당량은 1 이상이어야 합니다.',
-        },
-      });
-    }
-
-    if (quota > targetValue) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        error: {
-          code: 'INVALID_QUOTA',
-          message: '하루 할당량은 목표 총량보다 클 수 없습니다.',
-        },
-      });
-    }
-
-    const createdGoal = await createGoalService(user.userId, {
+    const result = await createGoalService(user.id, {
       title,
       categoryId,
       description,
@@ -97,8 +52,8 @@ export const createGoalController = async (req: Request, res: Response) => {
 
     return res.status(StatusCodes.CREATED).json({
       success: true,
-      message: '목표 생성 완료',
-      data: createdGoal,
+      message: '목표 생성 성공',
+      data: result,
     });
   } catch (error) {
     console.error('createGoalController error:', error);
@@ -119,7 +74,7 @@ export const createGoalController = async (req: Request, res: Response) => {
           success: false,
           error: {
             code: 'CATEGORY_NOT_FOUND',
-            message: '해당 카테고리를 찾을 수 없습니다.',
+            message: '카테고리를 찾을 수 없습니다.',
           },
         });
       }
@@ -129,7 +84,7 @@ export const createGoalController = async (req: Request, res: Response) => {
           success: false,
           error: {
             code: 'INVALID_DATE',
-            message: '날짜 형식이 올바르지 않습니다.',
+            message: '유효하지 않은 날짜 형식입니다.',
           },
         });
       }
@@ -139,11 +94,48 @@ export const createGoalController = async (req: Request, res: Response) => {
           success: false,
           error: {
             code: 'INVALID_DATE_RANGE',
-            message: '종료일은 시작일보다 빠를 수 없습니다.',
+            message: '시작일은 종료일보다 늦을 수 없습니다.',
           },
         });
       }
     }
+
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: '서버 오류가 발생했습니다.',
+      },
+    });
+  }
+};
+
+/**
+ * 전체 목표 리스트 조회 컨트롤러
+ */
+export const getGoalListController = async (req: Request, res: Response) => {
+  try {
+    const user = req.user;
+
+    if (!user) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: '유효하지 않은 토큰입니다.',
+        },
+      });
+    }
+
+    const result = await getGoalListService(user.id);
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      message: '전체 목표 리스트',
+      data: result,
+    });
+  } catch (error) {
+    console.error('getGoalListController error:', error);
 
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,

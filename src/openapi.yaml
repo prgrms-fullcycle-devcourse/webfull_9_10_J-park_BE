@@ -202,17 +202,31 @@ paths:
                               format: date
                               description: 마감 기한
                               example: 2026-03-20
-                example:
-                  success: true
-                  message: 전체 목표 리스트
-                  data:
-                    goals:
-                      - id: 1
-                        title: 목표 1
-                        endDate: 2026-03-20
-                      - id: 2
-                        title: 목표 2
-                        endDate: 2026-03-22
+                            description:
+                              type: string
+                              description: 목표에 대한 간단한 설명
+                              example: 매일 알고리즘 2문제 이상 풀기
+                            progressRate:
+                              type: integer
+                              description: 목표 진행도(%)
+                              minimum: 0
+                              maximum: 100
+                              example: 73
+              example:
+                success: true
+                message: 전체 목표 리스트
+                data:
+                  goals:
+                    - id: 1
+                      title: 목표 1
+                      endDate: 2026-03-20
+                      description: 목표에 대한 설명 간략하게 여기가 작성
+                      progressRate: 73
+                    - id: 2
+                      title: 목표 2
+                      endDate: 2026-03-21
+                      description: 하루 1시간 이상 공부하기
+                      progressRate: 45
 
         '401':
           description: 인증 실패
