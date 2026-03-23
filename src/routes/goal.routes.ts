@@ -3,7 +3,7 @@ import {
   createGoalController,
   getGoalListController,
 } from '../controllers/goal.controller';
-import { authMiddleware } from '../middlewares/auth.middleware';
+import { authUser } from '../middlewares/auth.middleware';
 
 const router = Router();
 
@@ -11,12 +11,12 @@ const router = Router();
  * 목표 생성
  * POST /goals
  */
-router.post('/', authMiddleware, createGoalController);
+router.post('/', authUser, createGoalController);
 
 /**
  * 전체 목표 리스트 조회
  * GET /goals
  */
-router.get('/', authMiddleware, getGoalListController);
+router.get('/', authUser, getGoalListController);
 
 export default router;

@@ -22,7 +22,7 @@ export const readCategories = async (
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: `에러 발생`,
-      data: [],
+      data: null,
     });
   }
 };
