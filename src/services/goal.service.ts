@@ -48,17 +48,26 @@ export const createGoalService = async (
     throw new Error('CATEGORY_NOT_FOUND');
   }
 
+  /**
+   * 3. 날짜 검증
+   * - 문자열 → Date 객체 변환
+   */
   const parsedStartDate = new Date(startDate);
   const parsedEndDate = new Date(endDate);
 
+  // 유효한 날짜인지 체크
   if (Number.isNaN(parsedStartDate.getTime()) || Number.isNaN(parsedEndDate.getTime())) {
     throw new Error('INVALID_DATE');
   }
 
+  // 시작일 > 종료일이면 잘못된 범위
   if (parsedStartDate > parsedEndDate) {
     throw new Error('INVALID_DATE_RANGE');
   }
 
+   /**
+   * 4. 목표 생성
+   */
   const createdGoal = await prisma.goal.create({
     data: {
       userId,
@@ -83,6 +92,10 @@ export const createGoalService = async (
     },
   });
 
+  /**
+   * 5. 응답 데이터 구성
+   * - 사용자 nickname 추가
+   */
   return {
     ...createdGoal,
     nickname: user.nickname,
