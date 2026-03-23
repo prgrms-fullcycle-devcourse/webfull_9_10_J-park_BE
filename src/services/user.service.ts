@@ -19,3 +19,17 @@ export const getUserById = async (userId: number): Promise<UserProfile> => {
 
   return user;
 };
+
+export const updateNickname = async (userId: number, newNickname: string) => {
+  return await prisma.user.update({
+    where: { id: userId },
+    data: { nickname: newNickname },
+    select: {
+      id: true,
+      nickname: true,
+      profileImageUrl: true,
+      totalTime: true,
+      createdAt: true,
+    },
+  });
+};
