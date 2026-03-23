@@ -6,10 +6,10 @@ export const getUserById = async (userId: number): Promise<UserProfile> => {
     where: { id: userId },
     select: {
       id: true,
-      username: true,
-      profile_image_url: true,
-      total_time: true,
-      created_at: true,
+      nickname: true,
+      profileImageUrl: true,
+      totalTime: true,
+      createdAt: true,
     },
   });
 

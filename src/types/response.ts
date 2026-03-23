@@ -6,9 +6,6 @@ export type ApiResponse<T = null> =
     }
   | {
       success: false;
-      error: {
-        code: string;
-        message: string;
-      };
+      message: string;
       data?: null;
     };
