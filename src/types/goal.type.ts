@@ -5,8 +5,8 @@
 export interface CreateGoalRequest {
   title: string;
   categoryId: number;
-  description?: string;
-  targetValue: number;
+  detail?: string;
+  totalAmount: number;
   startDate: string;
   endDate: string;
   quota: number;

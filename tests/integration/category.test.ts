@@ -2,9 +2,6 @@ import request from 'supertest';
 import app from '../../src/main';
 import * as categoryService from '../../src/services/category.service';
 
-// 필요하면 서비스 mock
-// import * as categoryService from '../../src/services/category.service';
-
 describe('Category API', () => {
   // 카테고리 목록 조회
   describe('GET /categories', () => {

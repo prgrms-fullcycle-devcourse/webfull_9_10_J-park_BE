@@ -28,15 +28,8 @@ export const createGoalService = async (
   payload: CreateGoalRequest,
 ): Promise<CreateGoalResponse> => {
   // 요청 데이터 구조 분해
-  const {
-    title,
-    categoryId,
-    description,
-    targetValue,
-    startDate,
-    endDate,
-    quota,
-  } = payload;
+  const { title, categoryId, detail, totalAmount, startDate, endDate, quota } =
+    payload;
 
   /**
    * 사용자 존재 여부 확인
@@ -61,7 +54,7 @@ export const createGoalService = async (
   const category = await prisma.category.findFirst({
     where: {
       id: categoryId,
-      userId,
+      // userId,
     },
   });
 
@@ -97,12 +90,12 @@ export const createGoalService = async (
       userId,
       categoryId,
       title,
-      description,
+      description: detail,
       status: 'active', // 기본 상태
       startDate: parsedStartDate,
       endDate: parsedEndDate,
       currentValue: 0, // 초기 진행도
-      targetValue,
+      targetValue: totalAmount,
       quota,
     },
     select: {

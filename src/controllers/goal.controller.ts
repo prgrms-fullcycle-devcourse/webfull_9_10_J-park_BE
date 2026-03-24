@@ -29,8 +29,8 @@ export const createGoalController = async (req: Request, res: Response) => {
     const {
       title,
       categoryId,
-      description,
-      targetValue,
+      detail,
+      totalAmount,
       startDate,
       endDate,
       quota,
@@ -39,7 +39,7 @@ export const createGoalController = async (req: Request, res: Response) => {
     if (
       !title ||
       categoryId === undefined ||
-      targetValue === undefined ||
+      totalAmount === undefined ||
       !startDate ||
       !endDate ||
       quota === undefined
@@ -56,8 +56,8 @@ export const createGoalController = async (req: Request, res: Response) => {
     const result = await createGoalService(user.userId, {
       title,
       categoryId,
-      description,
-      targetValue,
+      detail,
+      totalAmount,
       startDate,
       endDate,
       quota,
@@ -65,7 +65,7 @@ export const createGoalController = async (req: Request, res: Response) => {
 
     return res.status(StatusCodes.CREATED).json({
       success: true,
-      message: '목표 생성 성공',
+      message: '목표 생성 완료',
       data: result,
     });
   } catch (error) {
