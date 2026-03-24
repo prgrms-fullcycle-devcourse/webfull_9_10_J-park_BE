@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { createGoalService, getGoalListService } from '../services/goal.service';
+import {
+  createGoalService,
+  getGoalListService,
+} from '../services/goal.service';
 import { CreateGoalRequest } from '../types/goal.type';
 
 /**
@@ -20,8 +23,15 @@ export const createGoalController = async (req: Request, res: Response) => {
       });
     }
 
-    const { title, categoryId, description, targetValue, startDate, endDate, quota } =
-      req.body as CreateGoalRequest;
+    const {
+      title,
+      categoryId,
+      description,
+      targetValue,
+      startDate,
+      endDate,
+      quota,
+    } = req.body as CreateGoalRequest;
 
     if (
       !title ||
