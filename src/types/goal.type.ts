@@ -78,3 +78,53 @@ export interface GoalDetailResponse { //DTO
   };
   dailyProgress: DailyProgressItem[];
 }
+
+/**
+ * 개별 목표 수정
+ * PATCH /goals/:goalId
+ */
+export interface UpdateGoalRequest {
+  targetValue?: number;
+  endDate?: string;
+}
+
+export interface UpdatedDailyProgressItem {
+  date: string;
+  quota: number;
+  isCompleted: boolean;
+}
+
+export interface UpdatedGoalResponse {
+  id: number;
+  title: string;
+  description: string | null;
+  category: string;
+  progress: {
+    rate: number;
+    currentAmount: number;
+    targetAmount: number;
+    unit: string | null;
+  };
+  period: {
+    startDate: string;
+    endDate: string;
+    daysRemaining: number;
+  };
+  dailyProgress: UpdatedDailyProgressItem[];
+}
+
+/**
+ * 인증 사용자
+ */
+export interface AuthenticatedUser {
+  id: number;
+}
+
+/**
+ * 개별 목표 삭제
+ * DELETE /goals/:goalId
+ */
+export interface DeleteGoalResponse {
+  id: number;
+  title: string;
+}

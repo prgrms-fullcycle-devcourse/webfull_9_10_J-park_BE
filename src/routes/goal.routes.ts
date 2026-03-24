@@ -2,7 +2,9 @@ import { Router } from 'express';
 import {
   createGoalController,
   getGoalListController,
-  getGoalDetailController
+  getGoalDetailController,
+  updateGoalController,
+  deleteGoalController
 } from '../controllers/goal.controller';
 import { authUser } from '../middlewares/auth.middleware';
 
@@ -26,5 +28,17 @@ router.get('/', authUser, getGoalListController);
  * /goals/:goalId/detail?startDate=?&endDate=?
  */
 router.get('/:goalId/detail', authUser, getGoalDetailController);
+
+/**
+ * 개별 목표 수정 
+ * PATCH /goals/{goalId}
+ */
+router.patch('/:goalId', authUser, updateGoalController);
+
+/**
+ * 목표 삭제
+ * DELETE /goals/{goalId}
+ */
+router.delete('/:goalId', authUser, deleteGoalController);
 
 export default router;
