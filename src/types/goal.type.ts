@@ -2,7 +2,7 @@
  * 목표 생성
  * POST /goals
  */
-export interface CreateGoalRequestDto {
+export interface CreateGoalRequest {
   title: string;
   categoryId: number;
   description?: string;
@@ -12,7 +12,7 @@ export interface CreateGoalRequestDto {
   quota: number;
 }
 
-export interface CreateGoalResponseDto {
+export interface CreateGoalResponse {
   id: number;
   title: string;
   categoryId: number;
@@ -27,7 +27,7 @@ export interface CreateGoalResponseDto {
  * 전체 목표 리스트 조회
  * GET /goals
  */
-export interface GoalListItemDto {
+export interface GoalListItem {
   id: number;
   title: string;
   endDate: string;
@@ -35,6 +35,6 @@ export interface GoalListItemDto {
   progressRate: number;
 }
 
-export interface GoalListResponseDto {
-  goals: GoalListItemDto[];
+export interface GoalListResponse {
+  goals: GoalListItem[];
 }
