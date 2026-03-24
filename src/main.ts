@@ -38,49 +38,49 @@ app.get('/', (req: Request, res: Response<ApiResponse>) => {
 
 // 활용 예시, 향후 삭제
 // app.get(
-//   '/user',
-//   async (
-//     req: Request,
-//     res: Response<ApiResponse<{ user: string; allNicknames: string[] } | null>>,
-//   ) => {
-//     try {
-//       const newUser = await prisma.user.create({
-//         data: {
-//           nickname: `User ${Math.floor(Math.random() * 1000)}`,
-//         },
-//       });
-
-//       const allUsers = await prisma.user.findMany({
-//         select: {
-//           nickname: true,
-//         },
-//       });
-
-//       const allNicknames = allUsers.map((user) => user.nickname);
-
-//       return res.status(StatusCodes.OK).json({
-//         success: true,
-//         message: `사용자 생성 완료`,
-//         data: {
-//           user: newUser.nickname,
-//           allNicknames,
-//         },
-//       });
-//     } catch (err) {
-//       console.error(`에러 발생: ${err}`);
-//       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-//         success: false,
-//         message: `에러 발생`,
-//         data: null,
-//       });
-//     }
-//   },
-// );
-
-app.use('/users', userRouter);
-app.use('/categories', categoryRouter);
-app.use('/rankings', rankRouter);
-
+  //   '/user',
+  //   async (
+    //     req: Request,
+    //     res: Response<ApiResponse<{ user: string; allNicknames: string[] } | null>>,
+    //   ) => {
+      //     try {
+        //       const newUser = await prisma.user.create({
+          //         data: {
+            //           nickname: `User ${Math.floor(Math.random() * 1000)}`,
+            //         },
+            //       });
+            
+            //       const allUsers = await prisma.user.findMany({
+              //         select: {
+                //           nickname: true,
+                //         },
+                //       });
+                
+                //       const allNicknames = allUsers.map((user) => user.nickname);
+                
+                //       return res.status(StatusCodes.OK).json({
+                  //         success: true,
+                  //         message: `사용자 생성 완료`,
+                  //         data: {
+                    //           user: newUser.nickname,
+                    //           allNicknames,
+                    //         },
+                    //       });
+                    //     } catch (err) {
+                      //       console.error(`에러 발생: ${err}`);
+                      //       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                        //         success: false,
+                        //         message: `에러 발생`,
+                        //         data: null,
+                        //       });
+                        //     }
+                        //   },
+                        // );
+                        
+                        app.use('/users', userRouter);
+                        app.use('/categories', categoryRouter);
+                        app.use('/rankings', rankRouter);
+                        
 app.listen(PORT, () => {
   console.log(`🚀 Server is running at http://localhost:${PORT}`);
 });
