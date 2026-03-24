@@ -522,6 +522,25 @@ paths:
                 error:
                   code: UNAUTHORIZED
                   message: 유효하지 않은 토큰입니다.
+        '404':
+          description: 목표를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: GOAL_NOT_FOUND
+                      message:
+                        type: string
+                        example: 해당 목표를 찾을 수 없습니다.
 
         '500':
           description: 서버 오류
