@@ -12,6 +12,7 @@ import { ApiResponse } from './types/response';
 
 import userRouter from './routes/users.routes';
 import categoryRouter from './routes/category.route';
+import rankRouter from './routes/ranking.route';
 import goalRoutes from './routes/goal.routes';
 
 const app = express();
@@ -26,8 +27,6 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 //라우터 연결
 app.use('/goals', goalRoutes);
-
-
 
 app.get('/', (req: Request, res: Response<ApiResponse>) => {
   return res.status(StatusCodes.OK).json({
@@ -80,6 +79,7 @@ app.get('/', (req: Request, res: Response<ApiResponse>) => {
 
 app.use('/users', userRouter);
 app.use('/categories', categoryRouter);
+app.use('/rankings', rankRouter);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server is running at http://localhost:${PORT}`);
