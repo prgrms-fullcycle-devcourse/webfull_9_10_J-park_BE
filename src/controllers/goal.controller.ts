@@ -4,6 +4,7 @@ import {
   createGoalService,
   getGoalListService,
   getTodayGoalsService,
+  getTodayGoalCompletionService,
   getGoalDetailService,
   updateGoalService,
   deleteGoalService,
@@ -193,6 +194,41 @@ export const getTodayGoalsController = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('getTodayGoalsController error:', error);
+
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: '서버 오류가 발생했습니다.',
+      },
+    });
+  }
+};
+
+//오늘 목표 달성률 조회
+export const getTodayGoalCompletionController = async (req: Request, res: Response) => {
+  try {
+    const user = req.user;
+
+    if (!user) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: '유효하지 않은 토큰입니다.',
+        },
+      });
+    }
+
+    const data = await getTodayGoalCompletionService(user.userId);
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      message: '오늘 목표 달성률',
+      data,
+    });
+  } catch (error) {
+    console.error('오늘 목표 달성률 조회 실패:', error);
 
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,

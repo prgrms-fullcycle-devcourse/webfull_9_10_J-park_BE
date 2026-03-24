@@ -3,6 +3,7 @@ import {
   createGoalController,
   getGoalListController,
   getTodayGoalsController,
+  getTodayGoalCompletionController,
   getGoalDetailController,
   updateGoalController,
   deleteGoalController
@@ -18,16 +19,22 @@ const router = Router();
 router.post('/', authUser, createGoalController);
 
 /**
+ * 전체 목표 리스트 조회
+ * GET /goals
+*/
+router.get('/', authUser, getGoalListController);
+
+/**
  * 데일리 목표 리스트 조회
  * GET /goals/today
  */
 router.get('/today', authUser, getTodayGoalsController);
 
 /**
- * 전체 목표 리스트 조회
- * GET /goals
+ * 오늘 목표 달성률 조회
+ * GET /goals/today/complete
  */
-router.get('/', authUser, getGoalListController);
+router.get('/today/complete', authUser, getTodayGoalCompletionController);
 
 /**
  * 개별 목표 상세 조회
