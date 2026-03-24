@@ -23,6 +23,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@faker-js/faker": "^10.4.0",
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
     "cookie-parser": "^1.4.7",
@@ -44,6 +45,7 @@
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.10",
     "@types/node": "^25.5.0",
     "@types/pg": "^8.18.0",
@@ -62,7 +64,6 @@
     "prettier": "^3.8.1",
     "prisma": "^7.5.0",
     "ts-node": "^10.9.2",
-
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.57.1"
   },
@@ -74,5 +75,4 @@
     "url": "https://github.com/prgrms-fullcycle-devcourse/webfull_9_10_J-park_BE/issues"
   },
   "homepage": "https://github.com/prgrms-fullcycle-devcourse/webfull_9_10_J-park_BE#readme"
-  }
-
+}
