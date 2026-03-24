@@ -283,7 +283,7 @@ paths:
       tags:
         - 목표
       summary: 개별 목표 상세 조회
-      description: "특정 목표의 상세 정보와 기간별 일자 진행 현황을 조회합니다."
+      description: '특정 목표의 상세 정보와 기간별 일자 진행 현황을 조회합니다.'
       security:
         - bearerAuth: []
 
@@ -299,7 +299,7 @@ paths:
         - name: startDate
           in: query
           required: false
-          description: "조회 시작 날짜 (YYYY-MM-DD, 기본값: today-7)"
+          description: '조회 시작 날짜 (YYYY-MM-DD, 기본값: today-7)'
           schema:
             type: string
             format: date
@@ -308,7 +308,7 @@ paths:
         - name: endDate
           in: query
           required: false
-          description: "조회 종료 날짜 (YYYY-MM-DD, 기본값: today+14)"
+          description: '조회 종료 날짜 (YYYY-MM-DD, 기본값: today+14)'
           schema:
             type: string
             format: date
@@ -1502,7 +1502,7 @@ paths:
                         example: 1
                       timerRunning:
                         type: boolean
-                        description: "타이머 실행 상태 (true: 실행 중)"
+                        description: '타이머 실행 상태 (true: 실행 중)'
                         example: true
               example:
                 success: true
@@ -1621,7 +1621,7 @@ paths:
                         example: 1
                       isTimerRunning:
                         type: boolean
-                        description: "타이머 실행 상태 (false: 종료됨)"
+                        description: '타이머 실행 상태 (false: 종료됨)'
                         example: false
                       goalDuration:
                         type: integer
@@ -1703,7 +1703,7 @@ paths:
         - name: page
           in: query
           required: false
-          description: "페이지 번호 (default: 1)"
+          description: '페이지 번호 (default: 1)'
           schema:
             type: integer
             example: 1
@@ -1712,7 +1712,7 @@ paths:
         - name: limit
           in: query
           required: false
-          description: "데이터 수 제한 (default: 30)"
+          description: '데이터 수 제한 (default: 30)'
           schema:
             type: integer
             example: 30
@@ -2001,7 +2001,7 @@ paths:
                       image:
                         type: string
                         example: /image/url
-                        description: 프로필 이미지 URL (null 가능)                       
+                        description: 프로필 이미지 URL (null 가능)
               example:
                 success: true
                 message: 익명 사용자 토큰 발급 완료

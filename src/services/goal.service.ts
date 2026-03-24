@@ -23,12 +23,20 @@ import {
  */
 export const createGoalService = async (
   userId: number,
-  payload: CreateGoalRequest
+  payload: CreateGoalRequest,
 ): Promise<CreateGoalResponse> => {
-   // 요청 데이터 구조 분해
-  const { title, categoryId, description, targetValue, startDate, endDate, quota } = payload;
+  // 요청 데이터 구조 분해
+  const {
+    title,
+    categoryId,
+    description,
+    targetValue,
+    startDate,
+    endDate,
+    quota,
+  } = payload;
 
-   /**
+  /**
    * 사용자 존재 여부 확인
    */
   const user = await prisma.user.findUnique({
@@ -64,7 +72,10 @@ export const createGoalService = async (
   const parsedEndDate = new Date(endDate);
 
   // 잘못된 날짜 형식 체크
-  if (Number.isNaN(parsedStartDate.getTime()) || Number.isNaN(parsedEndDate.getTime())) {
+  if (
+    Number.isNaN(parsedStartDate.getTime()) ||
+    Number.isNaN(parsedEndDate.getTime())
+  ) {
     throw new Error('INVALID_DATE');
   }
 
@@ -123,9 +134,9 @@ export const createGoalService = async (
  * @returns 목표 리스트 배열
  */
 export const getGoalListService = async (
-  userId: number
+  userId: number,
 ): Promise<GoalListResponse> => {
-   /**
+  /**
    * 목표 목록 조회 (마감일 기준 오름차순)
    */
   const goals = await prisma.goal.findMany({
@@ -152,7 +163,10 @@ export const getGoalListService = async (
     // 진행률 계산 (%)
     const progressRate =
       goal.targetValue > 0
-        ? Math.min(Math.round((goal.currentValue / goal.targetValue) * 100), 100)
+        ? Math.min(
+            Math.round((goal.currentValue / goal.targetValue) * 100),
+            100,
+          )
         : 0;
 
     return {
