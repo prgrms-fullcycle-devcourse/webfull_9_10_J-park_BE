@@ -25,7 +25,7 @@ export const getMyRank = async (userId: number) => {
       totalTime: true,
     },
   });
-  if (!user) throw new Error('User not Found');
+  if (!user) return null;
 
   const higherRankCount = await prisma.user.count({
     where: {
@@ -35,7 +35,7 @@ export const getMyRank = async (userId: number) => {
     },
   });
 
-  return higherRankCount + 1;
+  return { myRanking: higherRankCount + 1 };
 };
 
 export const getTopRanks = async () => {

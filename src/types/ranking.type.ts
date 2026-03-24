@@ -2,13 +2,16 @@ interface MyRank {
   myRanking: number;
 }
 
-interface TopRanks {
-  topRanks: RankItem[];
+interface RankItem {
+  id: number;
+  nickname: string;
+  profileImageUrl: string | null;
+  totalTime: string;
+  rank: number;
 }
 
-interface RankItem {
-  userId: number;
-  nickname: string;
-  profileImage: string;
-  totalTime: string;
+interface RankResult {
+  myRanking: MyRank;
+  topRankings: RankItem[];
+  ranks: RankItem[];
 }
