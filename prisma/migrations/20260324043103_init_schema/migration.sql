@@ -1,21 +1,16 @@
-/*
-  Warnings:
+-- CreateTable
+CREATE TABLE "users" (
+    "id" SERIAL NOT NULL,
+    "nickname" TEXT NOT NULL,
+    "profileImageUrl" TEXT,
+    "totalTime" INTEGER NOT NULL DEFAULT 0,
+    "email" TEXT,
+    "password" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
-  - You are about to drop the column `created_at` on the `users` table. All the data in the column will be lost.
-  - You are about to drop the column `updated_at` on the `users` table. All the data in the column will be lost.
-  - A unique constraint covering the columns `[email]` on the table `users` will be added. If there are existing duplicate values, this will fail.
-  - Added the required column `updatedAt` to the `users` table without a default value. This is not possible if the table is not empty.
-
-*/
--- AlterTable
-ALTER TABLE "users" DROP COLUMN "created_at",
-DROP COLUMN "updated_at",
-ADD COLUMN     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-ADD COLUMN     "email" TEXT,
-ADD COLUMN     "password" TEXT,
-ADD COLUMN     "profileImageUrl" TEXT,
-ADD COLUMN     "totalTime" INTEGER NOT NULL DEFAULT 0,
-ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL;
+    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
 CREATE TABLE "categories" (
@@ -76,10 +71,10 @@ CREATE TABLE "timer_logs" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "goal_logs_goalId_achievedAt_key" ON "goal_logs"("goalId", "achievedAt");
+CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+CREATE UNIQUE INDEX "goal_logs_goalId_achievedAt_key" ON "goal_logs"("goalId", "achievedAt");
 
 -- AddForeignKey
 ALTER TABLE "categories" ADD CONSTRAINT "categories_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
