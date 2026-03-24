@@ -22,7 +22,11 @@ export const readCategories = async (
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: `에러 발생`,
+<<<<<<< HEAD
       data: null,
+=======
+      data: null, // 2026-03-24 이정현 npm install @faker-js/faker 이후 에러 발생하여 null로 수정
+>>>>>>> develop
     });
   }
 };

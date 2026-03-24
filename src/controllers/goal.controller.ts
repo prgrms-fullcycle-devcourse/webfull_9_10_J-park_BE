@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { createGoalService, getGoalListService } from '../services/goal.service';
-import { CreateGoalRequestDto } from '../types/goal.type';
+import { CreateGoalRequest } from '../types/goal.type';
 
 /**
  * 목표 생성 컨트롤러
@@ -21,7 +21,7 @@ export const createGoalController = async (req: Request, res: Response) => {
     }
 
     const { title, categoryId, description, targetValue, startDate, endDate, quota } =
-      req.body as CreateGoalRequestDto;
+      req.body as CreateGoalRequest;
 
     if (
       !title ||
@@ -40,7 +40,7 @@ export const createGoalController = async (req: Request, res: Response) => {
       });
     }
 
-    const result = await createGoalService(user.id, {
+    const result = await createGoalService(user.userId, {
       title,
       categoryId,
       description,
@@ -127,7 +127,7 @@ export const getGoalListController = async (req: Request, res: Response) => {
       });
     }
 
-    const result = await getGoalListService(user.id);
+    const result = await getGoalListService(user.userId);
 
     return res.status(StatusCodes.OK).json({
       success: true,

@@ -1,8 +1,8 @@
 import prisma from '../config/prisma';
 import {
-  CreateGoalRequestDto,
-  CreateGoalResponseDto,
-  GoalListResponseDto,
+  CreateGoalRequest,
+  CreateGoalResponse,
+  GoalListResponse,
 } from '../types/goal.type';
 
 /**
@@ -23,8 +23,8 @@ import {
  */
 export const createGoalService = async (
   userId: number,
-  payload: CreateGoalRequestDto
-): Promise<CreateGoalResponseDto> => {
+  payload: CreateGoalRequest
+): Promise<CreateGoalResponse> => {
    // 요청 데이터 구조 분해
   const { title, categoryId, description, targetValue, startDate, endDate, quota } = payload;
 
@@ -124,7 +124,7 @@ export const createGoalService = async (
  */
 export const getGoalListService = async (
   userId: number
-): Promise<GoalListResponseDto> => {
+): Promise<GoalListResponse> => {
    /**
    * 목표 목록 조회 (마감일 기준 오름차순)
    */
