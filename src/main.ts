@@ -1,7 +1,7 @@
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import 'dotenv/config';
-import express, { Request, Response } from 'express';
+import express, { application, Request, Response } from 'express';
 import helmet from 'helmet';
 import { StatusCodes } from 'http-status-codes';
 
@@ -84,3 +84,5 @@ app.use('/rankings', rankRouter);
 app.listen(PORT, () => {
   console.log(`🚀 Server is running at http://localhost:${PORT}`);
 });
+
+export default app;

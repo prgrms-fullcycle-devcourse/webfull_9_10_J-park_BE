@@ -56,8 +56,10 @@ export const getRanks = async (
     console.error(`Get Ranks Error: ${err}`);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: '서버 오류가 발생했습니다.',
-      data: null,
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: '서버 오류가 발생했습니다.',
+      },
     });
   }
 };
