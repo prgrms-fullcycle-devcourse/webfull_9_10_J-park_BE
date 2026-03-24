@@ -12,6 +12,7 @@ import { ApiResponse } from './types/response';
 
 import userRouter from './routes/users.routes';
 import categoryRouter from './routes/category.route';
+import rankRouter from './routes/ranking.route';
 import goalRoutes from './routes/goal.routes';
 
 const app = express();
@@ -78,6 +79,7 @@ app.get('/', (req: Request, res: Response<ApiResponse>) => {
 
 app.use('/users', userRouter);
 app.use('/categories', categoryRouter);
+app.use('/rankings', rankRouter);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server is running at http://localhost:${PORT}`);

@@ -27,6 +27,7 @@ model User {
   categories       Category[]
   goalLogs         GoalLog[]
 
+  @@index([totalTime(sort: Desc)]) // 랭킹 조회용
   @@map("users")
 }
 
