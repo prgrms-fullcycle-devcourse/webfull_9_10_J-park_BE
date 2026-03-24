@@ -4,18 +4,21 @@ import {
   createGoalService,
   getGoalListService,
   getGoalDetailService,
+  updateGoalService,
+  deleteGoalService,
 } from '../services/goal.service';
 import { 
   CreateGoalRequest,
-  GetGoalDetailQuery  
+  GetGoalDetailQuery,
+  UpdateGoalRequest  
 } from '../types/goal.type';
 
 /**
  * 목표 생성 컨트롤러
  */
 export const createGoalController = async (req: Request, res: Response) => {
-  console.log(' [CREATE] req.user:', req.user);
-  console.log(' [CREATE] req.body:', req.body);
+  console.log('req.user:', req.user);
+  console.log('categoryId:', req.body.categoryId);
   try {
     const user = req.user;
 
@@ -268,6 +271,186 @@ export const getGoalDetailController = async (req: Request, res: Response) => {
     }
     //예상치 못한 애러
     console.error('getGoalDetailController error:', error);
+
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: '서버 오류가 발생했습니다.',
+      },
+    });
+  }
+};
+
+/**
+ * 개별 목표 수정 컨트롤러
+ */
+export const updateGoalController = async (req: Request, res: Response) => {
+  try {
+    const user = req.user;
+
+    if (!user) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: '유효하지 않은 토큰입니다.',
+        },
+      });
+    }
+
+    const goalId = Number(req.params.goalId);
+
+    if (!goalId || Number.isNaN(goalId)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        error: {
+          code: 'BAD_REQUEST',
+          message: '유효한 goalId가 필요합니다.',
+        },
+      });
+    }
+
+    const { targetValue, endDate } = req.body as UpdateGoalRequest;
+
+    if (
+      (targetValue !== undefined && typeof targetValue !== 'number') ||
+      (endDate !== undefined && typeof endDate !== 'string')
+    ) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        error: {
+          code: 'BAD_REQUEST',
+          message: '요청 형식이 올바르지 않습니다.',
+        },
+      });
+    }
+
+    const result = await updateGoalService(user.userId, goalId, {
+      targetValue,
+      endDate,
+    });
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      message: '목표 수정 성공',
+      data: result,
+    });
+  } catch (error) {
+    console.error('updateGoalController error:', error);
+
+    if (error instanceof Error) {
+      if (error.message === 'GOAL_NOT_FOUND') {
+        return res.status(StatusCodes.NOT_FOUND).json({
+          success: false,
+          error: {
+            code: 'GOAL_NOT_FOUND',
+            message: '해당 목표를 찾을 수 없습니다.',
+          },
+        });
+      }
+
+      if (error.message === 'EMPTY_UPDATE_DATA') {
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          success: false,
+          error: {
+            code: 'EMPTY_UPDATE_DATA',
+            message: '수정할 값이 없습니다.',
+          },
+        });
+      }
+
+      if (error.message === 'INVALID_TARGET_VALUE') {
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          success: false,
+          error: {
+            code: 'INVALID_TARGET_VALUE',
+            message: 'targetValue는 1 이상의 정수여야 합니다.',
+          },
+        });
+      }
+
+      if (error.message === 'INVALID_DATE') {
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          success: false,
+          error: {
+            code: 'INVALID_DATE',
+            message: '유효하지 않은 날짜 형식입니다.',
+          },
+        });
+      }
+
+      if (error.message === 'INVALID_DATE_RANGE') {
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          success: false,
+          error: {
+            code: 'INVALID_DATE_RANGE',
+            message: '종료일은 시작일보다 빠를 수 없습니다.',
+          },
+        });
+      }
+    }
+
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: '서버 오류가 발생했습니다.',
+      },
+    });
+  }
+};
+
+/**
+ * 개별 목표 삭제 컨트롤러
+ */
+export const deleteGoalController = async (req: Request, res: Response) => {
+  try {
+    const user = req.user;
+
+    if (!user) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: '유효하지 않은 토큰입니다.',
+        },
+      });
+    }
+
+    const goalId = Number(req.params.goalId);
+
+    if (!goalId || Number.isNaN(goalId)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        error: {
+          code: 'BAD_REQUEST',
+          message: '유효한 goalId가 필요합니다.',
+        },
+      });
+    }
+
+    const result = await deleteGoalService(user.userId, goalId);
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      message: '목표 삭제 성공',
+      data: result,
+    });
+  } catch (error) {
+    console.error('deleteGoalController error:', error);
+
+    if (error instanceof Error) {
+      if (error.message === 'GOAL_NOT_FOUND') {
+        return res.status(StatusCodes.NOT_FOUND).json({
+          success: false,
+          error: {
+            code: 'GOAL_NOT_FOUND',
+            message: '해당 목표를 찾을 수 없습니다.',
+          },
+        });
+      }
+    }
 
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
