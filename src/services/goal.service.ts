@@ -695,3 +695,174 @@ export const getTodayGoalsService = async (
     todayGoals,
   };
 };
+
+/**
+ * 오늘 목표 달성률 조회 서비스
+ *
+ * 역할:
+ * - 오늘 기준 진행 중인 목표 조회
+ * - 오늘 기록된 GoalLog / TimerLog 조회
+ * - 완료 목표 수와 전체 공부 시간 계산
+ *
+ * 계산 기준:
+ * - 날짜 범위는 로컬 시간 기준 "오늘 00:00 ~ 23:59:59.999"
+ * - completedGoals:
+ *   actualValue >= targetValue 인 목표 개수
+ * - ratio:
+ *   completedGoals / totalGoals * 100
+ *
+ * 주의:
+ * - 현재 서비스는 한국에서만 사용하는 전제를 두고
+ *   로컬 시간 기준으로 계산
+ * - 서버/DB 시간대가 크게 달라지면 추후 timezone 보정 로직 추가 가능
+ */
+export const getTodayGoalCompletionService = async (userId: number) => {
+  /**
+   * 오늘 시작 / 끝 시각 계산
+   *
+   * 기존 util(toStartOfDay / toEndOfDay)을 그대로 사용해서
+   * 최소 수정으로 현재 프로젝트 스타일 유지
+   */
+
+  const today = new Date();
+  const startOfDay = toStartOfDay(today);
+  const endOfDay = toEndOfDay(today);
+
+  /**
+   * 오늘 기준 진행 중인 목표 조회
+   *
+   * 조건:
+   * - 본인 목표
+   * - active 상태
+   * - 시작일 <= 오늘 끝
+   * - 종료일 >= 오늘 시작
+   */
+  const goals = await prisma.goal.findMany({
+    where: {
+      userId,
+      status: 'active',
+      startDate: {
+        lte: endOfDay,
+      },
+      endDate: {
+        gte: startOfDay,
+      },
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  const goalIds = goals.map((goal) => goal.id);
+
+  /**
+   * 오늘 진행 중인 목표가 하나도 없으면
+   * 기본값 반환
+   */
+  if (goalIds.length === 0) {
+    return {
+      totalTime: 0,
+      totalGoals: 0,
+      completedGoals: 0,
+      ratio: 0,
+    };
+  }
+
+  /**
+   * 오늘 GoalLog / TimerLog 병렬 조회
+   *
+   * GoalLog:
+   * - 오늘 목표 완료 여부 판단용
+   *
+   * TimerLog:
+   * - 오늘 전체 공부 시간 합산용
+   */
+  const [goalLogs, timerLogs] = await Promise.all([
+    prisma.goalLog.findMany({
+      where: {
+        userId,
+        goalId: {
+          in: goalIds,
+        },
+        achievedAt: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+      select: {
+        goalId: true,
+        targetValue: true,
+        actualValue: true,
+      },
+    }),
+
+    prisma.timerLog.findMany({
+      where: {
+        goalId: {
+          in: goalIds,
+        },
+        timerDate: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+      select: {
+        durationSec: true,
+      },
+    }),
+  ]);
+
+  /**
+   * 오늘 완료된 목표 계산
+   *
+   * 완료 조건:
+   * - actualValue, targetValue 둘 다 null이 아니고
+   * - actualValue >= targetValue
+   *
+   * Set 사용 이유:
+   * - 같은 goalId 로그가 여러 번 있어도
+   *   완료 목표 수는 1개로만 세기 위함
+   */
+  const completedGoalIdSet = new Set<number>();
+
+  for (const log of goalLogs) {
+    if (
+      log.actualValue !== null &&
+      log.actualValue !== undefined &&
+      log.targetValue !== null &&
+      log.targetValue !== undefined &&
+      log.actualValue >= log.targetValue
+    ) {
+      completedGoalIdSet.add(log.goalId);
+    }
+  }
+
+  /**
+   * 오늘 전체 공부 시간 계산
+   *
+   * durationSec는 초 단위이므로
+   * 명세에 맞춰 밀리초(ms)로 변환
+   */
+  const totalTime = timerLogs.reduce((sum, log) => sum + log.durationSec, 0) * 1000;
+
+  const totalGoals = goals.length;
+  const completedGoals = completedGoalIdSet.size;
+
+  /**
+   * 목표 진행도(%)
+   *
+   * 예:
+   * - 3개 중 1개 완료 -> 33
+   * - 3개 중 2개 완료 -> 66
+   */
+  const ratio =
+    totalGoals === 0 ? 0 : Math.floor((completedGoals / totalGoals) * 100);
+
+  return {
+    totalTime,
+    totalGoals,
+    completedGoals,
+    ratio,
+  };
+};
+
