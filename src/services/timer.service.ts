@@ -1,5 +1,3 @@
-import { StatusCodes } from 'http-status-codes';
-
 import { AppError } from '../errors/app.error';
 import prisma from '../config/prisma';
 
@@ -22,11 +20,7 @@ export const startTimerService = async (
     },
   });
   if (!goal) {
-    throw new AppError(
-      StatusCodes.NOT_FOUND,
-      'GOAL_NOT_FOUND',
-      '해당 목표가 존재하지 않습니다.',
-    );
+    throw new AppError('GOAL_NOT_FOUND');
   }
 
   // 이미 실행 중인 타이머가 있으면 409 error
@@ -37,11 +31,7 @@ export const startTimerService = async (
     },
   });
   if (runningTimer) {
-    throw new AppError(
-      StatusCodes.CONFLICT,
-      'TIMER_ALREADY_RUNNING',
-      '이미 실행 중인 타이머가 있습니다.',
-    );
+    throw new AppError('TIMER_ALREADY_RUNNING');
   }
 
   // 현재 시간 (timerDate는 시작시간 기준으로)
@@ -110,11 +100,7 @@ export const getRunningTimerService = async (
     },
   });
   if (!goal) {
-    throw new AppError(
-      StatusCodes.NOT_FOUND,
-      'GOAL_NOT_FOUND',
-      '해당 목표가 존재하지 않습니다.',
-    );
+    throw new AppError('GOAL_NOT_FOUND');
   }
 
   // 실행 중인 타이머 가져오기
@@ -132,20 +118,12 @@ export const getRunningTimerService = async (
 
   // 실행 중인 타이머가 없을 경우 404
   if (!runningTimers) {
-    throw new AppError(
-      StatusCodes.NOT_FOUND,
-      'RUNNING_TIMER_NOT_FOUND',
-      '실행 중인 타이머가 없습니다.',
-    );
+    throw new AppError('RUNNING_TIMER_NOT_FOUND');
   }
 
   // 실행 중인 타이머가 두 개 이상일 경우 500
   if (runningTimers.length > 1) {
-    throw new AppError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      'INVALID_TIMER_STATE',
-      '실행 중인 타이머 상태가 올바르지 않습니다.',
-    );
+    throw new AppError('INVALID_TIMER_STATE');
   }
 
   const runningTimer = runningTimers[0];
@@ -166,11 +144,7 @@ export const getRunningTimerService = async (
   });
 
   if (!todayGoalLog) {
-    throw new AppError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      'INVALID_GOAL_LOG',
-      '목표 기록 정보를 불러오는 과정에서 오류가 발생했습니다.',
-    );
+    throw new AppError('GOAL_NOT_FOUND');
   }
 
   // 오늘 목표 분량, 실제 진행한 분량 할당

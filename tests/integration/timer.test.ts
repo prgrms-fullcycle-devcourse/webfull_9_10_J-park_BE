@@ -199,7 +199,7 @@ describe('POST /timers/start', () => {
         success: false,
         error: expect.objectContaining({
           code: 'GOAL_NOT_FOUND',
-          message: '해당 목표가 존재하지 않습니다.',
+          message: '목표를 찾을 수 없습니다.',
         }),
       }),
     );

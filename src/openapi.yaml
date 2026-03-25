@@ -1599,7 +1599,7 @@ paths:
           description:  |
             요청한 리소스를 찾을 수 없음
 
-            - GOAL_NOT_FOUND | 해당 목표가 존재하지 않습니다.
+            - GOAL_NOT_FOUND | 목표를 찾을 수 없습니다.
             - RUNNING_TIMER_NOT_FOUND | 실행 중인 타이머가 없습니다.
           content:
             application/json:
@@ -1617,12 +1617,12 @@ paths:
                         example: GOAL_NOT_FOUND
                       message:
                         type: string
-                        example: 해당 목표가 존재하지 않습니다.
+                        example: 목표를 찾을 수 없습니다.
               example:
                 success: false
                 error:
                   code: GOAL_NOT_FOUND
-                  message: 해당 목표가 존재하지 않습니다.
+                  message: 목표를 찾을 수 없습니다.
 
         '500':
           description: |
@@ -1754,12 +1754,12 @@ paths:
                         example: GOAL_NOT_FOUND
                       message:
                         type: string
-                        example: 해당 목표가 존재하지 않습니다.
+                        example: 목표를 찾을 수 없습니다.
               example:
                 success: false
                 error:
                   code: GOAL_NOT_FOUND
-                  message: 해당 목표가 존재하지 않습니다.
+                  message: 목표를 찾을 수 없습니다.
 
         '409':
           description: 실행 중인 타이머 충돌
