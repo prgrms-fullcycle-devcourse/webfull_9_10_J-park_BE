@@ -21,7 +21,11 @@ export const startTimerService = async (
     },
   });
   if (!goal) {
-    throw new AppError(404, 'GOAL_NOT_FOUND', '해당 목표가 존재하지 않습니다.');
+    throw new AppError(
+      StatusCodes.NOT_FOUND,
+      'GOAL_NOT_FOUND',
+      '해당 목표가 존재하지 않습니다.',
+    );
   }
 
   // 이미 실행 중인 타이머가 있으면 409 error
