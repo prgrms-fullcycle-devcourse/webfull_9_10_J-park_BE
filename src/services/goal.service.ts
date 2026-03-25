@@ -688,7 +688,10 @@ export const getTodayGoalsService = async (
     progressRate: calculateProgressRate(goal.currentValue, goal.targetValue),
   }));
 
-  const totalStudyTime = todayGoals.reduce((sum, goal) => sum + goal.studyTime, 0);
+  const totalStudyTime = todayGoals.reduce(
+    (sum, goal) => sum + goal.studyTime,
+    0,
+  );
 
   return {
     totalStudyTime,
@@ -843,7 +846,8 @@ export const getTodayGoalCompletionService = async (userId: number) => {
    * durationSec는 초 단위이므로
    * 명세에 맞춰 밀리초(ms)로 변환
    */
-  const totalTime = timerLogs.reduce((sum, log) => sum + log.durationSec, 0) * 1000;
+  const totalTime =
+    timerLogs.reduce((sum, log) => sum + log.durationSec, 0) * 1000;
 
   const totalGoals = goals.length;
   const completedGoals = completedGoalIdSet.size;
@@ -865,4 +869,3 @@ export const getTodayGoalCompletionService = async (userId: number) => {
     ratio,
   };
 };
-
