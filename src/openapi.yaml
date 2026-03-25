@@ -1382,9 +1382,9 @@ paths:
                         description: 목표 이름
                         example: 자료구조 공부
                       todayStudyDuration:
-                        type: string
+                        type: number
                         description: 목표에 대한 오늘 공부 시간
-                        example: '01:20:15'
+                        example: 4815000
                       todayProgressRate:
                         type: integer
                         description: 오늘 진행률
@@ -1415,7 +1415,7 @@ paths:
                   data:
                     goalId: 1
                     goalTitle: 자료구조 공부
-                    todayStudyDuration: '01:20:15'
+                    todayStudyDuration: 4815000
                     todayProgressRate: 65
                     todayCompletedAmount: 0
                     todayTargetAmount: 1

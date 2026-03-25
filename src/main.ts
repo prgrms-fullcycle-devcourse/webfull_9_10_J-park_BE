@@ -14,6 +14,7 @@ import userRouter from './routes/users.routes';
 import categoryRouter from './routes/category.route';
 import rankRouter from './routes/ranking.route';
 import goalRoutes from './routes/goal.routes';
+import timerRoutes from './routes/timer.route';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -80,6 +81,7 @@ app.get('/', (req: Request, res: Response<ApiResponse>) => {
 app.use('/users', userRouter);
 app.use('/categories', categoryRouter);
 app.use('/rankings', rankRouter);
+app.use('/timers', timerRoutes);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server is running at http://localhost:${PORT}`);
