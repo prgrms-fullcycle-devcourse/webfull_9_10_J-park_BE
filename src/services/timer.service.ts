@@ -1,4 +1,8 @@
-// import prisma from '../config/prisma';
+import { StatusCodes } from 'http-status-codes';
+
+import { AppError } from '../errors/app.error';
+import prisma from '../config/prisma';
+
 import {
   StartTimerResponse,
   EndTimerResponse,
@@ -9,25 +13,50 @@ export const startTimerService = async (
   userId: number,
   goalId: number,
 ): Promise<StartTimerResponse> => {
-  const timer = {
-    goalId: 1,
+  // 해당 목표가 존재하지 않을 경우 404 error
+  const goal = await prisma.goal.findFirst({
+    where: {
+      id: goalId,
+      userId,
+    },
+  });
+  if (!goal) {
+    throw new AppError(404, 'GOAL_NOT_FOUND', '해당 목표가 존재하지 않습니다.');
+  }
+
+  // 이미 실행 중인 타이머가 있으면 409 error
+  const runningTimer = await prisma.timerLog.findFirst({
+    where: {
+      userId,
+      endTime: null,
+    },
+  });
+  if (runningTimer) {
+    throw new AppError(
+      StatusCodes.CONFLICT,
+      'TIMER_ALREADY_RUNNING',
+      '이미 실행 중인 타이머가 있습니다.',
+    );
+  }
+
+  // 현재 시간 (timerDate는 시작시간 기준으로)
+  const now = new Date();
+  const timerDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  // 데이터 추가
+  await prisma.timerLog.create({
+    data: {
+      timerDate,
+      startTime: now,
+      userId,
+      goalId,
+    },
+  });
+
+  return {
+    goalId,
     timerRunning: true,
   };
-  return timer;
-  // const user = await prisma.user.findUnique({
-  //   where: { id: userId },
-  //   select: {
-  //     id: true,
-  //     nickname: true,
-  //     profileImageUrl: true,
-  //     totalTime: true,
-  //     createdAt: true,
-  //   },
-  // });
-  // if (!user) {
-  //   throw new Error('USER_NOT_FOUND');
-  // }
-  // return user;
 };
 
 export const endTimerService = async (

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
 import { ApiResponse } from '../types/response';
+import { AppError } from '../errors/app.error';
 
 import {
   endTimerService,
@@ -30,6 +31,19 @@ export const startTimerController = async (
     });
   } catch (err) {
     console.error(`startTimerController error: ${err}`);
+
+    // 커스텀 에러 발생 시
+    if (err instanceof AppError) {
+      if (err.code === 'GOAL_NOT_FOUND') {
+        return res.status(err.statusCode).json({
+          success: false,
+          error: {
+            code: err.code,
+            message: err.message,
+          },
+        });
+      }
+    }
 
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
@@ -62,7 +76,7 @@ export const endTimerController = async (
     });
   } catch (err) {
     console.error(`startTimerController error: ${err}`);
-  
+
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       error: {
