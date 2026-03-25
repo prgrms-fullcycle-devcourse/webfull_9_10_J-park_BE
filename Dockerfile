@@ -12,6 +12,7 @@ RUN npm install
 
 # 소스 복사 및 Prisma Client 생성
 COPY . .
+RUN rm -rf prisma/migrations/20260319052252_init
 RUN npx prisma generate
 
 # TypeScript 빌드
