@@ -22,8 +22,10 @@ export const getMe = async (
     console.error(`getMe error: ${err}`);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: '서버 오류가 발생했습니다.',
-      data: null,
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: '서버 오류가 발생했습니다.',
+      },
     });
   }
 };
@@ -39,8 +41,10 @@ export const updateProfile = async (
     if (!nickname) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        message: '닉네임이 주어지지 않았습니다.',
-        data: null,
+        error: {
+          code: 'BAD_REQUEST',
+          message: '닉네임이 주어지지 않았습니다.',
+        },
       });
     }
 
@@ -55,8 +59,10 @@ export const updateProfile = async (
     console.error(`updateUser error: ${err}`);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: '서버 오류가 발생했습니다.',
-      data: null,
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: '서버 오류가 발생했습니다.',
+      },
     });
   }
 };

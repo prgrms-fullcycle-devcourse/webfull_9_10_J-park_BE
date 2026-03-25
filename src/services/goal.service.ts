@@ -80,26 +80,25 @@ const buildUpdatedGoalResponse = async (
       daysRemaining: calculateDaysRemaining(goal.endDate),
     },
     dailyProgress: goal.goalLogs.map((log) => ({
+      /**
+       * 날짜: 로그 생성일 기준 (YYYY-MM-DD)
+       */
+      date: formatDate(log.achievedAt),
 
-    /**
-     * 날짜: 로그 생성일 기준 (YYYY-MM-DD)
-     */
-    date: formatDate(log.achievedAt),
+      /**
+       * quota:
+       * - 실제 수행량(actualValue)
+       * - null이면 0으로 보정 (응답 타입 number 유지)
+       */
+      quota: log.actualValue ?? 0,
 
-    /**
-     * quota:
-     * - 실제 수행량(actualValue)
-     * - null이면 0으로 보정 (응답 타입 number 유지)
-     */
-    quota: log.actualValue ?? 0,
-
-    /**
-     * 완료 여부:
-     * - actualValue >= targetValue
-     * - 둘 다 nullable이므로 안전하게 보정 후 비교
-     */
-    isCompleted: (log.actualValue ?? 0) >= (log.targetValue ?? 0),
-  })),
+      /**
+       * 완료 여부:
+       * - actualValue >= targetValue
+       * - 둘 다 nullable이므로 안전하게 보정 후 비교
+       */
+      isCompleted: (log.actualValue ?? 0) >= (log.targetValue ?? 0),
+    })),
   };
 };
 
@@ -116,7 +115,7 @@ export const createGoalService = async (
   userId: number,
   payload: CreateGoalRequest,
 ): Promise<CreateGoalResponse> => {
-  const { title, categoryId, description, targetValue, startDate, endDate, quota } =
+  const { title, categoryId, detail, totalAmount, startDate, endDate, quota } =
     payload;
 
   /**
@@ -140,7 +139,7 @@ export const createGoalService = async (
   const category = await prisma.category.findFirst({
     where: {
       id: categoryId,
-      userId,
+      // userId,
     },
   });
 
@@ -173,12 +172,12 @@ export const createGoalService = async (
       userId,
       categoryId,
       title,
-      description,
+      description: detail,
       status: 'active',
       startDate: parsedStartDate,
       endDate: parsedEndDate,
       currentValue: 0,
-      targetValue,
+      targetValue: totalAmount,
       quota,
     },
     select: {
@@ -255,7 +254,6 @@ export const getGoalDetailService = async ({
   startDate,
   endDate,
 }: GetGoalDetailServiceParams): Promise<GoalDetailResponse> => {
-
   /**
    * 조회 기간 설정
    *
@@ -369,14 +367,14 @@ export const getGoalDetailService = async ({
    * - formatDate는 Date만 받기 때문에 사전 필터링 필요
    */
   const timerLogMap = new Map(
-  timerLogs
-    /**
-     * timerDate가 null인 데이터는 제외
-     * (formatDate는 Date만 받기 때문)
-     */
-    .filter((log) => log.timerDate !== null)
-    .map((log) => [formatDate(log.timerDate as Date), log]),
-);
+    timerLogs
+      /**
+       * timerDate가 null인 데이터는 제외
+       * (formatDate는 Date만 받기 때문)
+       */
+      .filter((log) => log.timerDate !== null)
+      .map((log) => [formatDate(log.timerDate as Date), log]),
+  );
   /**
    * 날짜 범위 배열 생성 후 일별 진행 현황 구성
    */
@@ -541,7 +539,7 @@ export const updateGoalService = async (
  * - 목표 존재 여부 / 권한 확인
  * - 목표 삭제
  * - 삭제 결과 반환
- * 
+ *
  * 주의:
  * - goalLog, timerLog가 FK로 연결되어 있으면
  *   cascade 설정 없을 경우 삭제 실패 가능
