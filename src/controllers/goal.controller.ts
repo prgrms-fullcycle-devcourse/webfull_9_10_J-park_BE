@@ -47,6 +47,7 @@ export const createGoalController = async (req: Request, res: Response) => {
     if (
       !title ||
       categoryId === undefined ||
+      !detail ||
       totalAmount === undefined ||
       !startDate ||
       !endDate ||
