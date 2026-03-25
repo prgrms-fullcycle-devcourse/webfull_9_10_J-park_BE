@@ -5,6 +5,7 @@ import {
   DeleteGoalResponse,
   GoalDetailResponse,
   GoalListResponse,
+  TodayGoalsResponse,
   UpdateGoalRequest,
   UpdatedGoalResponse,
 } from '../types/goal.type';
@@ -578,5 +579,119 @@ export const deleteGoalService = async (
   return {
     id: goal.id,
     title: goal.title,
+  };
+};
+
+/**
+ * 오늘 목표 리스트 조회 서비스
+ *
+ * 역할:
+ * - 오늘 진행 중인 목표 조회
+ * - 오늘의 TimerLog 조회
+ * - 목표별 공부 시간 / 타이머 실행 여부 / 진행률 가공
+ */
+export const getTodayGoalsService = async (
+  userId: number,
+): Promise<TodayGoalsResponse> => {
+  const today = new Date();
+  const startOfToday = toStartOfDay(today);
+  const endOfToday = toEndOfDay(today);
+
+  /**
+   * 오늘 기준 진행 중인 목표 조회
+   * - startDate <= 오늘의 끝
+   * - endDate >= 오늘의 시작
+   */
+  const goals = await prisma.goal.findMany({
+    where: {
+      userId,
+      status: 'active',
+      startDate: {
+        lte: endOfToday,
+      },
+      endDate: {
+        gte: startOfToday,
+      },
+    },
+    orderBy: {
+      endDate: 'asc',
+    },
+    select: {
+      id: true,
+      title: true,
+      currentValue: true,
+      targetValue: true,
+      category: {
+        select: {
+          unit: true,
+        },
+      },
+    },
+  });
+
+  if (goals.length === 0) {
+    return {
+      totalStudyTime: 0,
+      todayGoals: [],
+    };
+  }
+
+  const goalIds = goals.map((goal) => goal.id);
+
+  /**
+   * 오늘의 타이머 로그 조회
+   */
+  const timerLogs = await prisma.timerLog.findMany({
+    where: {
+      goalId: {
+        in: goalIds,
+      },
+      timerDate: {
+        gte: startOfToday,
+        lte: endOfToday,
+      },
+    },
+    orderBy: {
+      timerDate: 'asc',
+    },
+    select: {
+      goalId: true,
+      durationSec: true,
+      endTime: true,
+    },
+  });
+
+  /**
+   * 목표별 공부 시간 합계 / 실행 중 여부 계산
+   */
+  const studyTimeMap = new Map<number, number>();
+  const runningGoalSet = new Set<number>();
+
+  timerLogs.forEach((log) => {
+    const prevStudyTime = studyTimeMap.get(log.goalId) ?? 0;
+    studyTimeMap.set(log.goalId, prevStudyTime + log.durationSec);
+
+    if (log.endTime === null) {
+      runningGoalSet.add(log.goalId);
+    }
+  });
+
+  const todayGoals = goals.map((goal) => ({
+    id: goal.id,
+    title: goal.title,
+    targetAmount: goal.targetValue,
+    currentAmount: goal.currentValue,
+    unit: goal.category.unit,
+    studyTime: studyTimeMap.get(goal.id) ?? 0,
+    completed: goal.currentValue >= goal.targetValue,
+    isTimerRunning: runningGoalSet.has(goal.id),
+    progressRate: calculateProgressRate(goal.currentValue, goal.targetValue),
+  }));
+
+  const totalStudyTime = todayGoals.reduce((sum, goal) => sum + goal.studyTime, 0);
+
+  return {
+    totalStudyTime,
+    todayGoals,
   };
 };
