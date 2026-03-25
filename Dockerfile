@@ -31,6 +31,9 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/prisma.config.ts ./
 COPY --from=builder /app/prisma ./prisma
 
+RUN rm -rf /app/prisma/migrations/20260319052252_init
+RUN ls -R /app/prisma/migrations
+
 # 포트 개방
 EXPOSE 3000
 
