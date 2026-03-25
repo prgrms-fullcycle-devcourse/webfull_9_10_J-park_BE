@@ -15,6 +15,7 @@ import {
   StartTimerResponse,
 } from '../types/timer.type';
 
+// 타이머 측정 시작
 export const startTimerController = async (
   req: Request,
   res: Response<ApiResponse<StartTimerResponse>>,
@@ -85,6 +86,7 @@ export const endTimerController = async (
   }
 };
 
+// 실행 중인 타이머 조회
 export const runningTimerController = async (
   req: Request,
   res: Response<ApiResponse<RunningTimerResponse>>,
@@ -100,29 +102,10 @@ export const runningTimerController = async (
       },
     });
   }
-  const {
-    goalId,
-    goalTitle,
-    todayStudyDuration,
-    todayProgressRate,
-    todayCompletedAmount,
-    todayTargetAmount,
-    isRunning,
-    startedAt,
-  } = req.body;
+  const { goalId } = req.body;
 
   try {
-    const runningTimer = await getRunningTimerService(
-      userId,
-      goalId,
-      goalTitle,
-      todayStudyDuration,
-      todayProgressRate,
-      todayCompletedAmount,
-      todayTargetAmount,
-      isRunning,
-      startedAt,
-    );
+    const runningTimer = await getRunningTimerService(userId, goalId);
 
     return res.status(StatusCodes.OK).json({
       success: true,

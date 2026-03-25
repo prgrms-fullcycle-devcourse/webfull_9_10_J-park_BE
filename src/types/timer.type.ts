@@ -33,6 +33,6 @@ export interface RunningTimerResponse {
   todayTargetAmount: number;
   timer: {
     isRunning: boolean;
-    startedAt: string;
+    startedAt: Date;
   };
 }

@@ -9,6 +9,7 @@ import {
   RunningTimerResponse,
 } from '../types/timer.type';
 
+// 타이머 측정 시작
 export const startTimerService = async (
   userId: number,
   goalId: number,
@@ -93,43 +94,105 @@ export const endTimerService = async (
   // return user;
 };
 
+// 실행 중인 타이머 조회
 export const getRunningTimerService = async (
   userId: number,
   goalId: number,
-  goalTitle: string,
-  todayStudyDuration: number,
-  todayProgressRate: number,
-  todayCompletedAmount: number,
-  todayTargetAmount: number,
-  isRunning = true,
-  startedAt: string,
 ): Promise<RunningTimerResponse> => {
-  const runningTimer = {
+  // goal 존재 여부 확인
+  const goal = await prisma.goal.findFirst({
+    where: {
+      id: goalId,
+      userId,
+    },
+    select: {
+      title: true,
+    },
+  });
+  if (!goal) {
+    throw new AppError(
+      StatusCodes.NOT_FOUND,
+      'GOAL_NOT_FOUND',
+      '해당 목표가 존재하지 않습니다.',
+    );
+  }
+
+  // 실행 중인 타이머 가져오기
+  const runningTimers = await prisma.timerLog.findMany({
+    where: {
+      userId,
+      goalId,
+      endTime: null,
+    },
+    include: {
+      goal: true,
+    },
+  });
+  // console.log('runningTimers...', runningTimers);
+
+  // 실행 중인 타이머가 없을 경우 404
+  if (!runningTimers) {
+    throw new AppError(
+      StatusCodes.NOT_FOUND,
+      'RUNNING_TIMER_NOT_FOUND',
+      '실행 중인 타이머가 없습니다.',
+    );
+  }
+
+  // 실행 중인 타이머가 두 개 이상일 경우 500
+  if (runningTimers.length > 1) {
+    throw new AppError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'INVALID_TIMER_STATE',
+      '실행 중인 타이머 상태가 올바르지 않습니다.',
+    );
+  }
+
+  const runningTimer = runningTimers[0];
+  // console.log('runningTimer...', runningTimer);
+
+  // 해당 날짜의 goalId, userId에 해당하는 목표 측정 기록 가져오기
+  const todayGoalLog = await prisma.goalLog.findFirst({
+    where: {
+      goalId,
+      userId,
+      achievedAt: runningTimer.timerDate ?? undefined, // 향후 goalLog와 timerLog를 연결할 생각은 없는지?
+    },
+    select: {
+      actualValue: true,
+      targetValue: true,
+      timeSpent: true,
+    },
+  });
+
+  if (!todayGoalLog) {
+    throw new AppError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'INVALID_GOAL_LOG',
+      '목표 기록 정보를 불러오는 과정에서 오류가 발생했습니다.',
+    );
+  }
+
+  // 오늘 목표 분량, 실제 진행한 분량 할당
+  const todayCompletedAmount = todayGoalLog.actualValue ?? 0;
+  let todayTargetAmount = todayGoalLog.targetValue ?? 1;
+  todayTargetAmount = todayTargetAmount > 0 ? todayTargetAmount : 1;
+
+  // 진행률 계산
+  const todayProgressRate = Math.floor(
+    (todayCompletedAmount / todayTargetAmount) * 100,
+  );
+
+  return {
     goalId,
-    goalTitle,
-    todayStudyDuration,
+    goalTitle: goal.title,
+    todayStudyDuration: todayGoalLog.timeSpent ?? 0,
     todayProgressRate,
     todayCompletedAmount,
     todayTargetAmount,
     timer: {
-      isRunning,
-      startedAt,
+      isRunning: true,
+      startedAt: runningTimer.startTime,
     },
   };
-
-  return runningTimer;
-  // const user = await prisma.user.findUnique({
-  //   where: { id: userId },
-  //   select: {
-  //     id: true,
-  //     nickname: true,
-  //     profileImageUrl: true,
-  //     totalTime: true,
-  //     createdAt: true,
-  //   },
-  // });
-  // if (!user) {
-  //   throw new Error('USER_NOT_FOUND');
-  // }
-  // return user;
 };
