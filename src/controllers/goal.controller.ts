@@ -3,6 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import {
   createGoalService,
   getGoalListService,
+  getTodayGoalsService,
   getGoalDetailService,
   updateGoalService,
   deleteGoalService,
@@ -167,8 +168,45 @@ export const getGoalListController = async (req: Request, res: Response) => {
 };
 
 /**
+ * 오늘 목표 리스트 조회 컨트롤러
+ */
+export const getTodayGoalsController = async (req: Request, res: Response) => {
+  try {
+    const user = req.user;
+
+    if (!user) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: '유효하지 않은 토큰입니다.',
+        },
+      });
+    }
+
+    const result = await getTodayGoalsService(user.userId);
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      message: '오늘 목표 리스트',
+      data: result,
+    });
+  } catch (error) {
+    console.error('getTodayGoalsController error:', error);
+
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: '서버 오류가 발생했습니다.',
+      },
+    });
+  }
+};
+
+/**
  * 개별 목표 상세 조회 컨트롤러
- *
+*
  * 역할:
  * - 인증된 사용자의 특정 목표 상세 정보를 조회
  * - query로 받은 날짜 범위를 검증
@@ -461,3 +499,4 @@ export const deleteGoalController = async (req: Request, res: Response) => {
     });
   }
 };
+

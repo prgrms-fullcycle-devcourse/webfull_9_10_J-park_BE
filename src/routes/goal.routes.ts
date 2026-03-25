@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   createGoalController,
   getGoalListController,
+  getTodayGoalsController,
   getGoalDetailController,
   updateGoalController,
   deleteGoalController
@@ -13,8 +14,14 @@ const router = Router();
 /**
  * 목표 생성
  * POST /goals
- */
+*/
 router.post('/', authUser, createGoalController);
+
+/**
+ * 데일리 목표 리스트 조회
+ * GET /goals/today
+ */
+router.get('/today', authUser, getTodayGoalsController);
 
 /**
  * 전체 목표 리스트 조회
@@ -40,5 +47,6 @@ router.patch('/:goalId', authUser, updateGoalController);
  * DELETE /goals/{goalId}
  */
 router.delete('/:goalId', authUser, deleteGoalController);
+
 
 export default router;

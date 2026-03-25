@@ -128,3 +128,24 @@ export interface DeleteGoalResponse {
   id: number;
   title: string;
 }
+
+/**
+ * 데일리 목표 리스트
+ * GET /goals/todat
+ */
+export interface TodayGoalItem {
+  id: number;
+  title: string;
+  targetAmount: number;
+  currentAmount: number;
+  unit: string | null;
+  studyTime: number;
+  completed: boolean;
+  isTimerRunning: boolean;
+  progressRate: number;
+}
+
+export interface TodayGoalsResponse {
+  totalStudyTime: number;
+  todayGoals: TodayGoalItem[];
+}
