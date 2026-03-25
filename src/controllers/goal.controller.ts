@@ -287,7 +287,7 @@ export const getGoalDetailController = async (req: Request, res: Response) => {
       });
     }
 
-    //날씨 형식 검증
+    //날짜 형식 검증
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 
     if (startDate && !dateRegex.test(startDate)) {

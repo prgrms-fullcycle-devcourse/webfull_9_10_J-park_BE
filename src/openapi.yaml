@@ -535,7 +535,54 @@ paths:
                       isCompleted: false
                       studyTime: 2836238
                       isToday: false
-
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: BAD_REQUEST
+                      message:
+                        type: string
+                        example: 유효한 goalId가 필요합니다.
+              examples:
+                invalidGoalId:
+                  summary: goalId가 유효하지 않은 경우
+                  value:
+                    success: false
+                    error:
+                      code: BAD_REQUEST
+                      message: 유효한 goalId가 필요합니다.
+                invalidStartDate:
+                  summary: startDate 형식 오류
+                  value:
+                    success: false
+                    error:
+                      code: BAD_REQUEST
+                      message: startDate 형식은 YYYY-MM-DD 이어야 합니다.
+                invalidEndDate:
+                  summary: endDate 형식 오류
+                  value:
+                    success: false
+                    error:
+                      code: BAD_REQUEST
+                      message: endDate 형식은 YYYY-MM-DD 이어야 합니다.
+                invalidDateRange:
+                  summary: 날짜 범위 오류
+                  value:
+                    success: false
+                    error:
+                      code: BAD_REQUEST
+                      message: startDate는 endDate보다 늦을 수 없습니다.
         '401':
           description: 인증 실패
           content:
