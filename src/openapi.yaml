@@ -109,7 +109,29 @@ paths:
                   title: 목표 4
                   categoryId: 1
                   userName: DFs43AEs
-
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              examples:
+                BAD_REQUEST:
+                  value:
+                    success: false
+                    error:
+                      code: BAD_REQUEST
+                      message: 필수값이 누락되었습니다.
+                INVALID_DATE:
+                  value:
+                    success: false
+                    error:
+                      code: INVALID_DATE
+                      message: 유효하지 않은 날짜 형식입니다.
+                INVALID_DATE_RANGE:
+                  value:
+                    success: false
+                    error:
+                      code: INVALID_DATE_RANGE
+                      message: 시작일은 종료일보다 늦을 수 없습니다.
         '401':
           description: 인증 실패
           content:
@@ -134,7 +156,23 @@ paths:
                 error:
                   code: UNAUTHORIZED
                   message: 유효하지 않은 토큰입니다.
-
+        '404':
+          description: 리소스를 찾을 수 없음
+          content:
+            application/json:
+              examples:
+                USER_NOT_FOUND:
+                  value:
+                    success: false
+                    error:
+                      code: USER_NOT_FOUND
+                      message: 사용자를 찾을 수 없습니다.
+                CATEGORY_NOT_FOUND:
+                  value:
+                    success: false
+                    error:
+                      code: CATEGORY_NOT_FOUND
+                      message: 카테고리를 찾을 수 없습니다.
         '500':
           description: 서버 오류
           content:
@@ -497,7 +535,54 @@ paths:
                       isCompleted: false
                       studyTime: 2836238
                       isToday: false
-
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: BAD_REQUEST
+                      message:
+                        type: string
+                        example: 유효한 goalId가 필요합니다.
+              examples:
+                invalidGoalId:
+                  summary: goalId가 유효하지 않은 경우
+                  value:
+                    success: false
+                    error:
+                      code: BAD_REQUEST
+                      message: 유효한 goalId가 필요합니다.
+                invalidStartDate:
+                  summary: startDate 형식 오류
+                  value:
+                    success: false
+                    error:
+                      code: BAD_REQUEST
+                      message: startDate 형식은 YYYY-MM-DD 이어야 합니다.
+                invalidEndDate:
+                  summary: endDate 형식 오류
+                  value:
+                    success: false
+                    error:
+                      code: BAD_REQUEST
+                      message: endDate 형식은 YYYY-MM-DD 이어야 합니다.
+                invalidDateRange:
+                  summary: 날짜 범위 오류
+                  value:
+                    success: false
+                    error:
+                      code: BAD_REQUEST
+                      message: startDate는 endDate보다 늦을 수 없습니다.
         '401':
           description: 인증 실패
           content:
@@ -572,7 +657,7 @@ paths:
       tags:
         - 목표
       summary: 개별 목표 수정
-      description: 특정 goalId에 해당하는 목표의 목표량 또는 종료일을 수정합니다. 두 값 중 하나만 전송해도 됩니다.
+      description: 특정 goalId에 해당하는 목표의 목표량 또는 종료일을 수정합니다. targetValue와 endDate 중 하나만 전송해도 됩니다.
       security:
         - bearerAuth: []
       parameters:
@@ -583,6 +668,7 @@ paths:
           schema:
             type: integer
             example: 1
+
       requestBody:
         required: true
         content:
@@ -599,9 +685,21 @@ paths:
                   format: date
                   description: 변경할 목표 종료일
                   example: 2026-04-20
-            example:
-              targetValue: 150
-              endDate: 2026-04-20
+            examples:
+              targetValueOnly:
+                summary: 목표량만 수정
+                value:
+                  targetValue: 150
+              endDateOnly:
+                summary: 종료일만 수정
+                value:
+                  endDate: 2026-04-20
+              both:
+                summary: 목표량과 종료일 모두 수정
+                value:
+                  targetValue: 150
+                  endDate: 2026-04-20
+
       responses:
         '200':
           description: 개별 목표 수정 성공
@@ -615,119 +713,94 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: 수정된 개별 목표 상세 정보
+                    example: 목표 수정 성공
                   data:
                     type: object
+                    description: 수정된 목표 상세 정보
+              example:
+                success: true
+                message: 목표 수정 성공
+                data:
+                  id: 1
+                  title: 목표 1
+                  description: 목표의 설명입니다.
+                  category: 책
+                  progress:
+                    rate: 78
+                    currentAmount: 78
+                    targetAmount: 100
+                    unit: 페이지
+                  period:
+                    startDate: 2026-02-01
+                    endDate: 2026-03-30
+                    daysRemaining: 13
+                  dailyProgress:
+                    - date: 2026-03-14
+                      quota: 3
+                      isCompleted: true
+
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
                     properties:
-                      id:
-                        type: integer
-                        description: 목표 id
-                        example: 1
-                      title:
+                      code:
                         type: string
-                        description: 목표 이름
-                        example: 목표 1
-                      description:
+                        example: BAD_REQUEST
+                      message:
                         type: string
-                        description: 목표 설명
-                        example: 목표의 설명입니다.
-                      category:
-                        type: string
-                        description: 목표 카테고리
-                        example: 책
-                      progress:
-                        type: object
-                        description: 진행도 관련 정보
-                        properties:
-                          rate:
-                            type: integer
-                            description: 진행률
-                            example: 78
-                          currentAmount:
-                            type: integer
-                            description: 현재 진행도
-                            example: 78
-                          targetAmount:
-                            type: integer
-                            description: 목표
-                            example: 100
-                          unit:
-                            type: string
-                            description: 단위
-                            example: 페이지
-                      period:
-                        type: object
-                        description: 목표 기간 정보
-                        properties:
-                          startDate:
-                            type: string
-                            format: date
-                            example: 2026-02-01
-                          endDate:
-                            type: string
-                            format: date
-                            example: 2026-03-30
-                          daysRemaining:
-                            type: integer
-                            description: 남은 일수
-                            example: 13
-                      dailyProgress:
-                        type: array
-                        description: 일별 진행 현황
-                        items:
-                          type: object
-                          properties:
-                            date:
-                              type: string
-                              format: date
-                              example: 2026-03-14
-                            quota:
-                              type: integer
-                              description: 그날 실제로 진행된 양
-                              example: 3
-                            isCompleted:
-                              type: boolean
-                              description: 해당 일자 목표 달성 여부
-                              example: true
-                example:
-                  success: true
-                  message: 수정된 개별 목표 상세 정보
-                  data:
-                    id: 1
-                    title: 목표 1
-                    description: 목표의 설명입니다.
-                    category: 책
-                    progress:
-                      rate: 78
-                      currentAmount: 78
-                      targetAmount: 100
-                      unit: 페이지
-                    period:
-                      startDate: 2026-02-01
-                      endDate: 2026-03-30
-                      daysRemaining: 13
-                    dailyProgress:
-                      - date: 2026-03-14
-                        quota: 3
-                        isCompleted: true
-                      - date: 2026-03-15
-                        quota: 2
-                        isCompleted: true
-                      - date: 2026-03-16
-                        quota: 3
-                        isCompleted: true
-                      - date: 2026-03-17
-                        quota: 2
-                        isCompleted: true
-                      - date: 2026-03-18
-                        quota: 1
-                        isCompleted: false
-                      - date: 2026-03-19
-                        quota: 0
-                        isCompleted: false
-                      - date: 2026-03-20
-                        quota: 2
-                        isCompleted: false
+                        example: 요청 형식이 올바르지 않습니다.
+              examples:
+                invalidGoalId:
+                  summary: 잘못된 goalId
+                  value:
+                    success: false
+                    error:
+                      code: BAD_REQUEST
+                      message: 유효한 goalId가 필요합니다.
+                invalidRequestFormat:
+                  summary: 요청 형식 오류
+                  value:
+                    success: false
+                    error:
+                      code: BAD_REQUEST
+                      message: 요청 형식이 올바르지 않습니다.
+                emptyUpdateData:
+                  summary: 수정할 값 없음
+                  value:
+                    success: false
+                    error:
+                      code: EMPTY_UPDATE_DATA
+                      message: 수정할 값이 없습니다.
+                invalidTargetValue:
+                  summary: 잘못된 targetValue
+                  value:
+                    success: false
+                    error:
+                      code: INVALID_TARGET_VALUE
+                      message: targetValue는 1 이상의 정수여야 합니다.
+                invalidDate:
+                  summary: 잘못된 날짜 형식
+                  value:
+                    success: false
+                    error:
+                      code: INVALID_DATE
+                      message: 유효하지 않은 날짜 형식입니다.
+                invalidDateRange:
+                  summary: 잘못된 날짜 범위
+                  value:
+                    success: false
+                    error:
+                      code: INVALID_DATE_RANGE
+                      message: 종료일은 시작일보다 빠를 수 없습니다.
 
         '401':
           description: 인증 실패
@@ -754,6 +827,30 @@ paths:
                   code: UNAUTHORIZED
                   message: 유효하지 않은 토큰입니다.
 
+        '404':
+          description: 목표를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: GOAL_NOT_FOUND
+                      message:
+                        type: string
+                        example: 해당 목표를 찾을 수 없습니다.
+              example:
+                success: false
+                error:
+                  code: GOAL_NOT_FOUND
+                  message: 해당 목표를 찾을 수 없습니다.
         '500':
           description: 서버 오류
           content:
@@ -807,7 +904,7 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: 목표1이 삭제되었습니다.
+                    example: 목표 삭제 성공
                   data:
                     type: object
                     properties:
@@ -819,12 +916,37 @@ paths:
                         type: string
                         description: 삭제된 목표 이름
                         example: 목표1
-                example:
-                  success: true
-                  message: 목표1이 삭제되었습니다.
-                  data:
-                    id: 1
-                    title: 목표1
+              example:
+                success: true
+                message: 목표 삭제 성공
+                data:
+                  id: 1
+                  title: 목표1
+
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: BAD_REQUEST
+                      message:
+                        type: string
+                        example: 유효한 goalId가 필요합니다.
+              example:
+                success: false
+                error:
+                  code: BAD_REQUEST
+                  message: 유효한 goalId가 필요합니다.
 
         '401':
           description: 인증 실패
@@ -850,6 +972,31 @@ paths:
                 error:
                   code: UNAUTHORIZED
                   message: 유효하지 않은 토큰입니다.
+
+        '404':
+          description: 목표를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: GOAL_NOT_FOUND
+                      message:
+                        type: string
+                        example: 해당 목표를 찾을 수 없습니다.
+              example:
+                success: false
+                error:
+                  code: GOAL_NOT_FOUND
+                  message: 해당 목표를 찾을 수 없습니다.
 
         '500':
           description: 서버 오류
