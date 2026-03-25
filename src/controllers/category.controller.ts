@@ -21,8 +21,10 @@ export const readCategories = async (
     console.error(`에러 발생: ${err}`);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: `에러 발생`,
-      data: null, // 2026-03-24 이정현 npm install @faker-js/faker 이후 에러 발생하여 null로 수정
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: '서버 오류가 발생했습니다.',
+      },
     });
   }
 };

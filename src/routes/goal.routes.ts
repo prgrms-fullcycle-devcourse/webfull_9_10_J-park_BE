@@ -6,7 +6,7 @@ import {
   getTodayGoalCompletionController,
   getGoalDetailController,
   updateGoalController,
-  deleteGoalController
+  deleteGoalController,
 } from '../controllers/goal.controller';
 import { authUser } from '../middlewares/auth.middleware';
 
@@ -38,13 +38,13 @@ router.get('/today/complete', authUser, getTodayGoalCompletionController);
 
 /**
  * 개별 목표 상세 조회
- * /goals/{goalId}/detail: 
+ * /goals/{goalId}/detail:
  * /goals/:goalId/detail?startDate=?&endDate=?
  */
 router.get('/:goalId/detail', authUser, getGoalDetailController);
 
 /**
- * 개별 목표 수정 
+ * 개별 목표 수정
  * PATCH /goals/{goalId}
  */
 router.patch('/:goalId', authUser, updateGoalController);

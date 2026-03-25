@@ -45,7 +45,6 @@ export const authUser = async (
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
-      
       req.user = { userId: newUser.id };
       return next();
     }

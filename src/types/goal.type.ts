@@ -5,8 +5,8 @@
 export interface CreateGoalRequest {
   title: string;
   categoryId: number;
-  description?: string;
-  targetValue: number;
+  detail?: string;
+  totalAmount: number;
   startDate: string;
   endDate: string;
   quota: number;
@@ -41,11 +41,12 @@ export interface GoalListResponse {
 
 /**
  * 개별 목표 상세 조회
- * /goals/{goalId}/detail: 
+ * /goals/{goalId}/detail:
  * /goals/:goalId/detail?startDate=?&endDate=?
  */
 
-export interface GetGoalDetailQuery { //DTO
+export interface GetGoalDetailQuery {
+  //DTO
   startDate?: string;
   endDate?: string;
 }
@@ -59,7 +60,8 @@ export interface DailyProgressItem {
   isToday: boolean;
 }
 
-export interface GoalDetailResponse { //DTO
+export interface GoalDetailResponse {
+  //DTO
   id: number;
   title: string;
   description: string | null;
