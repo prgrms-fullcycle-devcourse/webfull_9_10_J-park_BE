@@ -24,6 +24,7 @@ WORKDIR /app
 
 # 빌드 결과물과 필요한 파일만 복사
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/src/openapi.yaml ./src/openapi.yaml
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package*.json ./
 
@@ -31,7 +32,7 @@ COPY --from=builder /app/prisma.config.ts ./
 COPY --from=builder /app/prisma ./prisma
 
 # 포트 개방
-EXPOSE 3000
+EXPOSE 10000
 
 # 실행 시 마이그레이션 적용 후 서버 시작
 # migrate deploy는 기존 데이터를 보존하며 스키마만 업데이트합니다.

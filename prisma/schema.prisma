@@ -26,6 +26,7 @@ model User {
   goals            Goal[]
   categories       Category[]
   goalLogs         GoalLog[]
+  timerLogs        TimerLog[]
 
   @@index([totalTime(sort: Desc)]) // 랭킹 조회용
   @@map("users")
@@ -33,14 +34,14 @@ model User {
 
 model Category {
   id         Int        @id @default(autoincrement())
-  userId     Int
+  userId     Int?
   name       String
   unit       String?
 
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
   goals      Goal[]
 
   @@map("categories")
@@ -98,11 +99,15 @@ model TimerLog {
   startTime   DateTime
   endTime     DateTime?
   durationSec Int        @default(0)
+  userId      Int
 
   goalId      Int
   createdAt   DateTime   @default(now())
 
   goal        Goal       @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, endTime])  // 실행중 타이머 빠른 조회용
 
   @@map("timer_logs")
 }
