@@ -15,13 +15,13 @@ const router = Router();
 /**
  * 목표 생성
  * POST /goals
-*/
+ */
 router.post('/', authUser, createGoalController);
 
 /**
  * 전체 목표 리스트 조회
  * GET /goals
-*/
+ */
 router.get('/', authUser, getGoalListController);
 
 /**
@@ -54,6 +54,5 @@ router.patch('/:goalId', authUser, updateGoalController);
  * DELETE /goals/{goalId}
  */
 router.delete('/:goalId', authUser, deleteGoalController);
-
 
 export default router;

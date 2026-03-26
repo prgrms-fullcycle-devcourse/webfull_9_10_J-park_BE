@@ -207,7 +207,10 @@ export const getTodayGoalsController = async (req: Request, res: Response) => {
 };
 
 //오늘 목표 달성률 조회
-export const getTodayGoalCompletionController = async (req: Request, res: Response) => {
+export const getTodayGoalCompletionController = async (
+  req: Request,
+  res: Response,
+) => {
   try {
     const user = req.user;
 
@@ -243,7 +246,7 @@ export const getTodayGoalCompletionController = async (req: Request, res: Respon
 
 /**
  * 개별 목표 상세 조회 컨트롤러
-*
+ *
  * 역할:
  * - 인증된 사용자의 특정 목표 상세 정보를 조회
  * - query로 받은 날짜 범위를 검증
@@ -537,4 +540,3 @@ export const deleteGoalController = async (req: Request, res: Response) => {
     });
   }
 };
-

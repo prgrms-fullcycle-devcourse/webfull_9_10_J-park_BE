@@ -1529,9 +1529,9 @@ paths:
                         description: 목표 이름
                         example: 자료구조 공부
                       todayStudyDuration:
-                        type: string
+                        type: number
                         description: 목표에 대한 오늘 공부 시간
-                        example: '01:20:15'
+                        example: 4815000
                       todayProgressRate:
                         type: integer
                         description: 오늘 진행률
@@ -1562,7 +1562,7 @@ paths:
                   data:
                     goalId: 1
                     goalTitle: 자료구조 공부
-                    todayStudyDuration: '01:20:15'
+                    todayStudyDuration: 4815000
                     todayProgressRate: 65
                     todayCompletedAmount: 0
                     todayTargetAmount: 1
@@ -1594,6 +1594,35 @@ paths:
                 error:
                   code: UNAUTHORIZED
                   message: 유효하지 않은 토큰입니다.
+
+        '404':
+          description:  |
+            요청한 리소스를 찾을 수 없음
+
+            - GOAL_NOT_FOUND | 목표를 찾을 수 없습니다.
+            - RUNNING_TIMER_NOT_FOUND | 실행 중인 타이머가 없습니다.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: GOAL_NOT_FOUND
+                      message:
+                        type: string
+                        example: 목표를 찾을 수 없습니다.
+              example:
+                success: false
+                error:
+                  code: GOAL_NOT_FOUND
+                  message: 목표를 찾을 수 없습니다.
 
         '500':
           description: 서버 오류
@@ -1701,6 +1730,56 @@ paths:
                 error:
                   code: UNAUTHORIZED
                   message: 유효하지 않은 토큰입니다.
+
+        '404':
+          description: 해당 사용자의 goalId가 존재하지 않음
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: GOAL_NOT_FOUND
+                      message:
+                        type: string
+                        example: 목표를 찾을 수 없습니다.
+              example:
+                success: false
+                error:
+                  code: GOAL_NOT_FOUND
+                  message: 목표를 찾을 수 없습니다.
+
+        '409':
+          description: 실행 중인 타이머 충돌
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: TIMER_ALREADY_RUNNING
+                      message:
+                        type: string
+                        example: 이미 실행 중인 타이머가 있습니다.
+              example:
+                success: false
+                error:
+                  code: TIMER_ALREADY_RUNNING
+                  message: 이미 실행 중인 타이머가 있습니다.
 
         '500':
           description: 서버 오류
@@ -1830,6 +1909,35 @@ paths:
                 error:
                   code: UNAUTHORIZED
                   message: 유효하지 않은 토큰입니다.
+
+        '404':
+          description:  |
+            요청한 리소스를 찾을 수 없음
+
+            - GOAL_NOT_FOUND | 목표를 찾을 수 없습니다.
+            - RUNNING_TIMER_NOT_FOUND | 실행 중인 타이머가 없습니다.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: GOAL_NOT_FOUND
+                      message:
+                        type: string
+                        example: 목표를 찾을 수 없습니다.
+              example:
+                success: false
+                error:
+                  code: GOAL_NOT_FOUND
+                  message: 목표를 찾을 수 없습니다.
 
         '500':
           description: 서버 오류
