@@ -1625,12 +1625,7 @@ paths:
                   message: 목표를 찾을 수 없습니다.
 
         '500':
-          description: |
-            서버 오류
-
-            - INTERNAL_SERVER_ERROR | 서버 오류가 발생했습니다.
-            - INVALID_TIMER_STATE | 실행 중인 타이머 상태가 올바르지 않습니다.
-            - INVALID_GOAL_LOG | 목표 기록 정보를 불러오는 과정에서 오류가 발생했습니다.
+          description: 서버 오류
           content:
             application/json:
               schema:

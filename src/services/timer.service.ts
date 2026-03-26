@@ -244,7 +244,7 @@ export const getRunningTimerService = async (
 
   // 실행 중인 타이머가 두 개 이상일 경우 500
   if (runningTimers.length > 1) {
-    throw new AppError('INVALID_TIMER_STATE');
+    throw Error('실행 중인 타이머가 두 개 이상입니다.');
   }
 
   const runningTimer = runningTimers[0];
