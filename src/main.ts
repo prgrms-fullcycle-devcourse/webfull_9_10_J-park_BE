@@ -1,7 +1,7 @@
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import 'dotenv/config';
-import express, { application, Request, Response } from 'express';
+import express, { Request, Response } from 'express';
 import helmet from 'helmet';
 import { StatusCodes } from 'http-status-codes';
 
@@ -10,21 +10,35 @@ import { swaggerSpec } from './config/swagger';
 
 import { ApiResponse } from './types/response';
 
-import userRouter from './routes/users.routes';
 import categoryRouter from './routes/category.route';
-import rankRouter from './routes/ranking.route';
 import goalRoutes from './routes/goal.routes';
+import rankRouter from './routes/ranking.route';
 import timerRoutes from './routes/timer.route';
+import userRouter from './routes/users.routes';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // 미들웨어 설정
 app.use(helmet());
-app.use(cors());
 app.use(cookieParser());
 app.use(express.json());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// cors 설정 추가
+const originsString = process.env.ALLOWED_ORIGINS || '';
+const allowedOrigins = originsString
+  .split(',')
+  .map((url) => url.trim())
+  .filter(Boolean);
+app.use(
+  cors({
+    origin: [...allowedOrigins, /^http:\/\/localhost(:\d+)?$/], // 추후 배포 시 localhost 제거
+    credentials: true,
+    methods: 'GET,POST,PATCH,DELETE',
+    allowedHeaders: 'Content-Type,Authorization',
+  }),
+);
 
 //라우터 연결
 app.use('/goals', goalRoutes);
