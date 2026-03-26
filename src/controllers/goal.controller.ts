@@ -41,7 +41,6 @@ export const createGoalController = async (req: Request, res: Response) => {
       totalAmount,
       startDate,
       endDate,
-      quota,
     } = req.body as CreateGoalRequest;
 
     if (
@@ -50,8 +49,7 @@ export const createGoalController = async (req: Request, res: Response) => {
       !detail ||
       totalAmount === undefined ||
       !startDate ||
-      !endDate ||
-      quota === undefined
+      !endDate
     ) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
@@ -69,7 +67,6 @@ export const createGoalController = async (req: Request, res: Response) => {
       totalAmount,
       startDate,
       endDate,
-      quota,
     });
 
     return res.status(StatusCodes.CREATED).json({
