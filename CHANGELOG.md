@@ -81,20 +81,13 @@
 
 - `eslint`에서 error에 대한 console 활용을 허용
 
-### 🐛 Fixed
-- 
-
-### 🔒 Security
-- 
 
 ### 🧪 Test
 - GET /categories (카테고리 목록 조회)
     - 기댓값 수정
 
-- POST /timers/start ()
+- POST /timers/start (타이머 측정 시작)
     - 500 에러 케이스 추가
 
 
-### 📄 Docs
-- 
 ---
