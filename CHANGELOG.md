@@ -29,5 +29,72 @@
 - 에러 코드 정의 및 문서화
 - 프로젝트 구조 및 실행 방법 README 정리
 
-## 🚀 Initial Release
-- 등불(Lampfire) 백엔드 서버 초기 배포
+---
+
+## 🏷️ [v0.2.0] - 2026-03-28
+
+### ✨ Added
+- 버전 관리: CHANGELOG.md 추가
+
+### 🛠 Changed
+- POST /goals
+    - [🚨 BREAKING] request body field 삭제
+        - `quota`
+    - response field 추가 (201)
+        - `status`
+        - `currentValue`
+        - `targetValue`
+        - `quota`
+    - [🚨 BREAKING] response field 변경 (201)
+        - `userName` -> `nickname`
+
+- GET /rankings
+    - response field 추가 (200)
+        - `myRanking`
+        - `topRankings`
+        - `ranks`
+    - [🚨 BREAKING] response field 변경 (200)
+        - `profileImage` -> `profileImageUrl`
+    - [🚨 BREAKING] response field 값 형식 변경 (200)
+        - `totalTime` ("HH:mm:ss" → ms)
+
+- POST /users (명세만 수정, 개발되지 않았습니다.)
+    - response field 변경 (200)
+        - `userName` -> `nickname`
+
+- PATCH /users
+    - [🚨 BREAKING] response field 변경 (200)
+        - `profileImage` -> `profileImageUrl`
+        - `userName` -> `nickname`
+    - [🚨 BREAKING] response field 값 형식 변경 (200)
+        - `totalTime` ("HH:mm:ss" → ms)
+
+- GET /users/me
+    - [🚨 BREAKING] response field 변경 (200)
+        - `profileImage` -> `profileImageUrl`
+        - `userName` -> `nickname`
+    - [🚨 BREAKING] response field 값 형식 변경 (200)
+        - `totalTime` ("HH:mm:ss" → ms)
+
+- prisma schema 변경
+  - `DateTime` 컬럼의 타임존을 UTC로 지정 
+
+- `eslint`에서 error에 대한 console 활용을 허용
+
+### 🐛 Fixed
+- 
+
+### 🔒 Security
+- 
+
+### 🧪 Test
+- GET /categories (카테고리 목록 조회)
+    - 기댓값 수정
+
+- POST /timers/start ()
+    - 500 에러 케이스 추가
+
+
+### 📄 Docs
+- 
+---
