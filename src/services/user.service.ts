@@ -1,7 +1,23 @@
 import prisma from '../config/prisma';
-import { UserProfile } from '../types/user.type';
+import { User, UserProfileResponse } from '../types/user.type';
+import { formatDateString } from '../utils/time.util';
 
-export const getUserById = async (userId: number): Promise<UserProfile> => {
+const mapToUserResponse = (user: User) => {
+  const dateString = formatDateString(user.createdAt);
+
+  return {
+    ...user,
+    goals: user.goals.map(({ quota, ...rest }) => ({
+      ...rest,
+      todayQuota: quota,
+    })),
+    createdAt: dateString,
+  };
+};
+
+export const getUserById = async (
+  userId: number,
+): Promise<UserProfileResponse> => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
@@ -9,6 +25,13 @@ export const getUserById = async (userId: number): Promise<UserProfile> => {
       nickname: true,
       profileImageUrl: true,
       totalTime: true,
+      goals: {
+        select: {
+          id: true,
+          title: true,
+          quota: true,
+        },
+      },
       createdAt: true,
     },
   });
@@ -17,11 +40,13 @@ export const getUserById = async (userId: number): Promise<UserProfile> => {
     throw new Error('USER_NOT_FOUND');
   }
 
-  return user;
+  const userResponse = mapToUserResponse(user);
+
+  return userResponse;
 };
 
 export const updateNickname = async (userId: number, newNickname: string) => {
-  return await prisma.user.update({
+  const user = await prisma.user.update({
     where: { id: userId },
     data: { nickname: newNickname },
     select: {
@@ -29,7 +54,18 @@ export const updateNickname = async (userId: number, newNickname: string) => {
       nickname: true,
       profileImageUrl: true,
       totalTime: true,
+      goals: {
+        select: {
+          id: true,
+          title: true,
+          quota: true,
+        },
+      },
       createdAt: true,
     },
   });
+
+  const userResponse = mapToUserResponse(user);
+
+  return userResponse;
 };
