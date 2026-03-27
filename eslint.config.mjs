@@ -1,4 +1,3 @@
-// eslint.config.mjs
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 // import importPlugin from 'eslint-plugin-import';
@@ -39,7 +38,7 @@ export default [
     },
 
     rules: {
-      'no-console': 'warn',
+      'no-console': ['warn', { allow: ['error'] }],
 
       '@typescript-eslint/naming-convention': [
         'error',
