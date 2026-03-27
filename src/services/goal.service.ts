@@ -171,7 +171,7 @@ export const createGoalService = async (
   const diffTime = parsedEndDate.getTime() - parsedStartDate.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
   const quota = Math.ceil(totalAmount / diffDays);
-  
+
   /**
    * 목표 생성
    */
