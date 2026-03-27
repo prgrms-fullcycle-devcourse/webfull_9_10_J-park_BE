@@ -9,7 +9,6 @@ export interface CreateGoalRequest {
   totalAmount: number;
   startDate: string;
   endDate: string;
-  quota: number;
 }
 
 export interface CreateGoalResponse {
