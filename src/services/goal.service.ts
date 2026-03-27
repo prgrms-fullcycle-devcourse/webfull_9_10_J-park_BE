@@ -115,7 +115,7 @@ export const createGoalService = async (
   userId: number,
   payload: CreateGoalRequest,
 ): Promise<CreateGoalResponse> => {
-  const { title, categoryId, detail, totalAmount, startDate, endDate, quota } =
+  const { title, categoryId, detail, totalAmount, startDate, endDate } =
     payload;
 
   /**
@@ -164,6 +164,14 @@ export const createGoalService = async (
     throw new Error('INVALID_DATE_RANGE');
   }
 
+  /**
+   * 하루 할당량(quota) 계산
+   * 시작일 ~ 종료일 포함
+   */
+  const diffTime = parsedEndDate.getTime() - parsedStartDate.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  const quota = Math.ceil(totalAmount / diffDays);
+  
   /**
    * 목표 생성
    */
