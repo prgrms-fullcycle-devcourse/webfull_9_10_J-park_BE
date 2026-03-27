@@ -9,25 +9,13 @@ const RANKING_SELECT = {
 
 const RANKING_ORDER = [{ totalTime: 'desc' as const }, { id: 'asc' as const }];
 
-export const getUserRankings = async (page: number, limit: number) => {
-  const userRanks = await prisma.user.findMany({
-    select: RANKING_SELECT,
-    take: limit,
-    skip: (page - 1) * limit,
-    orderBy: RANKING_ORDER,
-  });
-
-  return userRanks;
-};
-
 export const getMyRank = async (userId: number) => {
-  const user = await prisma.user.findUnique({
+  const user = (await prisma.user.findUnique({
     where: { id: userId },
     select: {
       totalTime: true,
     },
-  });
-  if (!user) return null;
+  }))!;
 
   const higherRankCount = await prisma.user.count({
     where: {
@@ -42,7 +30,10 @@ export const getMyRank = async (userId: number) => {
     },
   });
 
-  return { myRanking: higherRankCount + 1 };
+  const myRankData = { myRanking: higherRankCount + 1 };
+  const myRanking = myRankData ?? { myRanking: 0 };
+
+  return myRanking;
 };
 
 export const getTopRanks = async () => {
@@ -52,5 +43,28 @@ export const getTopRanks = async () => {
     orderBy: RANKING_ORDER,
   });
 
-  return topRanks;
+  const topThree = topRanks.map((user, index) => ({
+    ...user,
+    rank: index + 1,
+  }));
+
+  return topThree;
+};
+
+export const getUserRankings = async (page: number, limit: number) => {
+  const skip = (page - 1) * limit;
+
+  const userRanks = await prisma.user.findMany({
+    select: RANKING_SELECT,
+    take: limit,
+    skip: (page - 1) * limit,
+    orderBy: RANKING_ORDER,
+  });
+
+  const rankingList = userRanks.map((user, index) => ({
+    ...user,
+    rank: skip + index + 1,
+  }));
+
+  return rankingList;
 };
