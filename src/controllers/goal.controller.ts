@@ -32,14 +32,8 @@ export const createGoalController = async (req: Request, res: Response) => {
       });
     }
 
-    const {
-      title,
-      categoryId,
-      detail,
-      totalAmount,
-      startDate,
-      endDate,
-    } = req.body as CreateGoalRequest;
+    const { title, categoryId, detail, totalAmount, startDate, endDate } =
+      req.body as CreateGoalRequest;
 
     if (
       !title ||
