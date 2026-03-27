@@ -111,7 +111,7 @@ describe('Timer API', () => {
       await prisma.$disconnect();
     });
 
-    describe('201 - 성공', () => {
+    describe('201 - CREATED', () => {
       it('200 - 타이머 생성 후 형식에 맞게 응답한다.', async () => {
         const res = await request(app)
           .post('/timers/start')
