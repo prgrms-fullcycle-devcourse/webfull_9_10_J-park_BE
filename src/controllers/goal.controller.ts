@@ -19,8 +19,6 @@ import {
  * 목표 생성 컨트롤러
  */
 export const createGoalController = async (req: Request, res: Response) => {
-  console.log('req.user:', req.user);
-  console.log('categoryId:', req.body.categoryId);
   try {
     const user = req.user;
 
