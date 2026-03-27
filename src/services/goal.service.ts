@@ -629,6 +629,7 @@ export const getTodayGoalsService = async (
       title: true,
       currentValue: true,
       targetValue: true,
+      quota: true,
       category: {
         select: {
           unit: true,
@@ -687,11 +688,11 @@ export const getTodayGoalsService = async (
   const todayGoals = goals.map((goal) => ({
     id: goal.id,
     title: goal.title,
-    targetAmount: goal.targetValue,
+    targetAmount: goal.quota,
     currentAmount: goal.currentValue,
     unit: goal.category.unit,
     studyTime: studyTimeMap.get(goal.id) ?? 0,
-    completed: goal.currentValue >= goal.targetValue,
+    completed: goal.currentValue >= goal.quota,
     isTimerRunning: runningGoalSet.has(goal.id),
     progressRate: calculateProgressRate(goal.currentValue, goal.targetValue),
   }));

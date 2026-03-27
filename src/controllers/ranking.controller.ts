@@ -1,13 +1,13 @@
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
-import { ApiResponse } from '../types/response';
 import {
   getMyRank,
   getTopRanks,
   getUserRankings,
 } from '../services/ranking.service';
-import { formatMSToTimeString } from '../utils/time.util';
+import { ApiResponse } from '../types/response';
+import { RankResult } from '../types/ranking.type';
 
 export const getRanks = async (
   req: Request,
@@ -18,30 +18,11 @@ export const getRanks = async (
   const limit = Number(req.query.limit as string) || 30;
 
   try {
-    const [myRankData, topRankData, paginatedRankData] = await Promise.all([
+    const [myRanking, topThree, rankingList] = await Promise.all([
       getMyRank(userId),
       getTopRanks(),
       getUserRankings(page, limit),
     ]);
-
-    const skip = (page - 1) * limit;
-
-    // 내 순위 정보
-    const myRanking = myRankData ?? { myRanking: 0 };
-
-    // 전체 랭킹 리스트
-    const rankingList = paginatedRankData.map((user, index) => ({
-      ...user,
-      rank: skip + index + 1,
-      totalTime: formatMSToTimeString(user.totalTime),
-    }));
-
-    // 상위 랭커
-    const topThree = topRankData.map((user, index) => ({
-      ...user,
-      rank: index + 1,
-      totalTime: formatMSToTimeString(user.totalTime),
-    }));
 
     return res.status(StatusCodes.OK).json({
       success: true,
