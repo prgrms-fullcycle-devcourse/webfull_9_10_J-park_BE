@@ -6,11 +6,11 @@ interface RankItem {
   id: number;
   nickname: string;
   profileImageUrl: string | null;
-  totalTime: string;
+  totalTime: number;
   rank: number;
 }
 
-interface RankResult {
+export interface RankResult {
   myRanking: MyRank;
   topRankings: RankItem[];
   ranks: RankItem[];
