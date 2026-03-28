@@ -9,8 +9,14 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
-    "sourceMap": true
+    "sourceMap": true,
+    "types": ["node", "jest"]
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "prisma.config.ts"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "tests/**/*.ts",
+    "prisma.config.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }
