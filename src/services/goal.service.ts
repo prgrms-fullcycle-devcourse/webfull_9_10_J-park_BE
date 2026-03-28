@@ -854,9 +854,10 @@ export const getTodayGoalCompletionService = async (userId: number) => {
    *
    * durationSec는 초 단위이므로
    * 명세에 맞춰 밀리초(ms)로 변환
+   * 26-03-28 DB에 이미 변환된 초로 저장되어있어 수정
    */
   const totalTime =
-    timerLogs.reduce((sum, log) => sum + log.durationSec, 0) * 1000;
+    timerLogs.reduce((sum, log) => sum + log.durationSec, 0);
 
   const totalGoals = goals.length;
   const completedGoals = completedGoalIdSet.size;
