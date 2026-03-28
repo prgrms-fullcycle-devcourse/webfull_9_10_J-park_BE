@@ -13,101 +13,100 @@ datasource db {
 }
 
 model User {
-  id               Int        @id @default(autoincrement())
-  nickname         String
-  profileImageUrl  String?
-  totalTime        Int        @default(0)
-  email            String?    @unique
-  password         String?
+  id              Int     @id @default(autoincrement())
+  nickname        String
+  profileImageUrl String?
+  totalTime       Int     @default(0)
+  email           String? @unique
+  password        String?
 
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
-  goals            Goal[]
-  categories       Category[]
-  goalLogs         GoalLog[]
-  timerLogs        TimerLog[]
+  goals      Goal[]
+  categories Category[]
+  goalLogs   GoalLog[]
+  timerLogs  TimerLog[]
 
   @@index([totalTime(sort: Desc)]) // 랭킹 조회용
   @@map("users")
 }
 
 model Category {
-  id         Int        @id @default(autoincrement())
-  userId     Int?
-  name       String
-  unit       String?
+  id     Int     @id @default(autoincrement())
+  userId Int?
+  name   String
+  unit   String?
 
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
-  user       User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  goals      Goal[]
+  user  User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goals Goal[]
 
   @@map("categories")
 }
 
 model Goal {
-  id           Int         @id @default(autoincrement())
-  userId       Int
-  categoryId   Int
+  id         Int @id @default(autoincrement())
+  userId     Int
+  categoryId Int
 
-  title        String
-  description  String?
-  status       String      @default("active")
+  title       String
+  description String?
+  status      String  @default("active")
 
-  startDate    DateTime
-  endDate      DateTime
+  startDate DateTime @db.Timestamptz(3)
+  endDate   DateTime @db.Timestamptz(3)
 
-  currentValue Int         @default(0)
+  currentValue Int @default(0)
   targetValue  Int
   quota        Int
 
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
-  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category     Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  goalLogs     GoalLog[]
-  timerLogs    TimerLog[]
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category  Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  goalLogs  GoalLog[]
+  timerLogs TimerLog[]
 
   @@map("goals")
 }
 
 model GoalLog {
-  id          Int       @id @default(autoincrement())
-  achievedAt  DateTime
+  id          Int      @id @default(autoincrement())
+  achievedAt  DateTime @db.Timestamptz(3)
   targetValue Int?
   actualValue Int?
   timeSpent   Int?
 
-  goalId      Int
-  userId      Int
+  goalId Int
+  userId Int
 
-  createdAt   DateTime  @default(now())
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
 
-  goal        Goal      @relation(fields: [goalId], references: [id], onDelete: Cascade)
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([goalId, achievedAt])
   @@map("goal_logs")
 }
 
 model TimerLog {
-  id          Int        @id @default(autoincrement())
-  timerDate   DateTime?
-  startTime   DateTime
-  endTime     DateTime?
-  durationSec Int        @default(0)
+  id          Int       @id @default(autoincrement())
+  timerDate   DateTime? @db.Timestamptz(3)
+  startTime   DateTime  @db.Timestamptz(3)
+  endTime     DateTime? @db.Timestamptz(3)
+  durationSec Int       @default(0)
   userId      Int
 
-  goalId      Int
-  createdAt   DateTime   @default(now())
+  goalId    Int
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
 
-  goal        Goal       @relation(fields: [goalId], references: [id], onDelete: Cascade)
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId, endTime])  // 실행중 타이머 빠른 조회용
-
+  @@index([userId, endTime]) // 실행중 타이머 빠른 조회용
   @@map("timer_logs")
 }

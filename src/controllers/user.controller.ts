@@ -3,16 +3,17 @@ import { StatusCodes } from 'http-status-codes';
 
 import { getUserById, updateNickname } from '../services/user.service';
 import { ApiResponse } from '../types/response';
-import { UserProfile } from '../types/user.type';
+import { UserProfileResponse } from '../types/user.type';
 
 export const getMe = async (
   req: Request,
-  res: Response<ApiResponse<UserProfile>>,
+  res: Response<ApiResponse<UserProfileResponse>>,
 ) => {
   const userId = req.user!.userId;
 
   try {
     const user = await getUserById(userId);
+
     return res.status(StatusCodes.OK).json({
       success: true,
       message: '내 정보 보기',
@@ -32,13 +33,13 @@ export const getMe = async (
 
 export const updateProfile = async (
   req: Request,
-  res: Response<ApiResponse<UserProfile>>,
+  res: Response<ApiResponse<UserProfileResponse>>,
 ) => {
   try {
     const { userId } = req.user!;
-    const { nickname } = req.body;
+    const { name } = req.body;
 
-    if (!nickname) {
+    if (!name) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         error: {
@@ -48,7 +49,7 @@ export const updateProfile = async (
       });
     }
 
-    const updatedUser = await updateNickname(userId, nickname);
+    const updatedUser = await updateNickname(userId, name);
 
     return res.status(StatusCodes.OK).json({
       success: true,

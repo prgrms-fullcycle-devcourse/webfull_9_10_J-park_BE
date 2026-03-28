@@ -10,3 +10,18 @@ export const formatMSToTimeString = (ms: number) => {
 
   return `${pad(hour)}:${pad(min)}:${pad(sec)}`;
 };
+
+export const formatDateString = (date: Date) => {
+  const utcDate = new Date(date);
+
+  const kstDate = new Intl.DateTimeFormat('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'Asia/Seoul',
+  }).format(utcDate);
+
+  const formattedDate = kstDate.replace(/\. /g, '-').replace(/\./g, '');
+
+  return formattedDate;
+};
