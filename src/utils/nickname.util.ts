@@ -1,4 +1,92 @@
-import { fakerKO as faker } from '@faker-js/faker';
+const ADJECTIVES = [
+  // 공부 태도 및 상태
+  '열공하는',
+  '집중하는',
+  '몰입중인',
+  '성실한',
+  '꾸준한',
+  '부지런한',
+  '깨어있는',
+  '똑똑한',
+  '영리한',
+  '명석한',
+  '신중한',
+  '꼼꼼한',
+  '철저한',
+  '완벽한',
+  '비범한',
+  '끈기있는',
+  '인내심깊은',
+  '포기않는',
+  '노력하는',
+  '꿈을꾸는',
+  '열정적인',
+  '도전하는',
+
+  // 공부 중 느끼는 감정/상태
+  '졸린',
+  '몽롱한',
+  '피곤한',
+  '배고픈',
+  '목마른',
+  '멍한',
+  '생생한',
+  '팔팔한',
+  '차분한',
+  '평온한',
+  '느긋한',
+  '여유로운',
+  '조용한',
+  '정숙한',
+  '심각한',
+  '진지한',
+  '뿌듯한',
+  '보람찬',
+  '기분좋은',
+  '설레는',
+  '자신만만',
+  '당당한',
+  '활기찬',
+
+  // 동물과 어울리는 귀여운 수식어
+  '말랑말랑',
+  '폭신폭신',
+  '몽글몽글',
+  '동글동글',
+  '보들보들',
+  '매끄러운',
+  '반짝이는',
+  '작고소중한',
+  '덩치큰',
+  '듬직한',
+  '귀여운',
+  '깜찍한',
+  '사랑스런',
+  '앙증맞은',
+  '용맹한',
+  '씩씩한',
+  '늠름한',
+  '멋진',
+  '우아한',
+  '신비로운',
+  '영롱한',
+
+  // 행동 묘사
+  '끄적이는',
+  '줄긋는',
+  '책장넘기는',
+  '안경쓴',
+  '펜을든',
+  '밤샘하는',
+  '일찍일어난',
+  '달리는',
+  '기어가는',
+  '날아가는',
+  '헤엄치는',
+  '명상하는',
+  '생각중인',
+  '고민하는',
+];
 
 const ANIMALS = [
   // 포유류
@@ -114,10 +202,13 @@ const ANIMALS = [
   //   '청룡',
 ];
 
+const MIN = 100;
+const MAX = 999;
+
 export const generateRandomUsername = (): string => {
-  const adjective = faker.commerce.productAdjective();
-  const noun = faker.helpers.arrayElement(ANIMALS);
-  const num = faker.number.int({ min: 100, max: 999 });
+  const adjective = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+  const noun = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
+  const num = Math.floor(Math.random() * (MAX - MIN + 1)) + MIN;
 
   return `${adjective} ${noun} ${num}`;
 };
