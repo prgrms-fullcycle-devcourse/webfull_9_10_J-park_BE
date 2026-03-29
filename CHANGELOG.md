@@ -91,3 +91,24 @@
 
 
 ---
+
+---
+
+## 🏷️ [v0.3.0] - 2026-03-30
+
+### ✨ Added
+
+### 🛠 Changed
+
+### 🐛 Fixed
+- GET /goals/today/complete (오늘 목표 달성률 조회)
+    - totalTime의 값을 초(s) 단위 -> 밀리초(ms) 단위로 수정
+
+### 🧪 Test
+- POST /goals (목표 생성) 
+    - 테스트 코드 작성 완료
+
+- GET /goals (전체 목표 리스트 조회)
+    - 테스트 코드 작성 완료
+
+---
