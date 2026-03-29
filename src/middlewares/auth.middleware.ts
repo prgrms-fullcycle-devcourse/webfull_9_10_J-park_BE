@@ -3,6 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import jwt from 'jsonwebtoken';
 
 import prisma from '../config/prisma';
+import { ApiResponse } from '../types/response';
 import { generateRandomUsername } from '../utils/nickname.util';
 
 const authCookieOptions: CookieOptions = {
@@ -24,7 +25,7 @@ export const authUser = async (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): Promise<void | Response<ApiResponse>> => {
   try {
     let { token } = req.cookies;
 
@@ -90,6 +91,12 @@ export const authUser = async (
     //토큰 문제 말생 시 쿠키 제거
     res.clearCookie('token');
 
-    return res.status(StatusCodes.UNAUTHORIZED).json();
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      success: false,
+      error: {
+        code: 'UNAUTHORIZED',
+        message: '유효하지 않은 토큰입니다.',
+      },
+    } as ApiResponse);
   }
 };
