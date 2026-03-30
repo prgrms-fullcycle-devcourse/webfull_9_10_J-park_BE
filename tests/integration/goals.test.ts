@@ -1,6 +1,6 @@
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
-import app from '../../src/main';
+import app from '../../src/app';
 import prisma from '../../src/config/prisma';
 
 describe('Goal API Integration', () => {
