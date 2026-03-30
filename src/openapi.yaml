@@ -761,6 +761,7 @@ paths:
                     endDate: 2026-03-30
                     daysRemaining: 13
                   dailyProgress:
+                    - dailyId: 17
                     - date: 2026-03-14
                       quota: 3
                       isCompleted: true
