@@ -169,7 +169,7 @@ describe('Goal API Integration', () => {
       },
     });
 
-     // 3. Goal 삭제
+    // 3. Goal 삭제
     await prisma.goal.deleteMany({
       where: {
         userId: {

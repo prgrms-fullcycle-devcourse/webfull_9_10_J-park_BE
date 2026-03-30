@@ -102,20 +102,20 @@
 - GET /goals/{goalId}/detail (개별 목표 상세 조회)
     - response body field 추가 (200)
         - `dailyProgress[].dailyId`
-    - 조회 범위를 목표 기간 내로 보정 (clampedStartDate / clampedEndDate)
+    - 조회 범위를 목표 기간 내로 보정 (`clampedStartDate` / `clampedEndDate`)
 
-- goal_logs, timer_logs 스키마 변경 및 연관 코드 리팩토링
-    - GoalLog의 targetValue, actualValue, timeSpent를 필수값으로 변경
-    - GoalLog와 TimerLog를 1:N 관계로 연결
-    - TimerLog 실행중타이머 조회용 인덱스에 goalId 추가
-        - @@index([userId, goalId, endTime])
+- `goal_logs`, `timer_logs` 스키마 변경 및 연관 코드 리팩토링
+    - `GoalLog`의 `targetValue`, `actualValue`, `timeSpent를` 필수값으로 변경
+    - `GoalLog`와 `TimerLog`를 1:N 관계로 연결
+    - `TimerLog` 실행중타이머 조회용 인덱스에 `goalId` 추가
+        - `@@index([userId, goalId, endTime])`
 
 ### 🐛 Fixed
 - GET /goals/today/complete (오늘 목표 달성률 조회)
-    - totalTime의 값을 초(s) 단위 -> 밀리초(ms) 단위로 수정
+    - `totalTime`의 값을 초(s) 단위 -> 밀리초(ms) 단위로 수정
 
 - PATCH /goals/{goalId} (개별 목표 수정)
-    - 목표 수정 시 quota 재계산 로직 추가
+    - 목표 수정 시 `quota` 재계산 로직 추가
 
 ### 🧪 Test
 - POST /goals (목표 생성) 
@@ -123,5 +123,51 @@
 
 - GET /goals (전체 목표 리스트 조회)
     - 테스트 코드 작성 완료
+
+---
+
+## 🏷️ [v0.4.0] - 2026-03-31
+
+### ✨ Added
+
+### 🛠 Changed
+- 인증 오류 시 401 응답객체 추가 
+- @faker-js/faker v9 제거
+- goal_logs의 
+### 🐛 Fixed
+- 랜덤 닉네임 생성 로직 오류 수정 
+    -  영어로 반환하던 오류를 수정
+
+### 🔒 Security
+- 사용자의 토큰 갱신 로직 추가
+
+### 🧪 Test
+
+- GET /goals (전체 목표 조회)
+    - 테스트 코드 작성 완료
+
+- POST /goals (목표 생성)
+    - 테스트 코드 작성 완료
+
+- GET /goals/{goalId}/detail (목표 상세 조회)
+    - 테스트 코드 작성 완료
+
+- PATCH /goals/{goalId} (목표 수정)
+    - 테스트 코드 작성 완료
+
+- DELETE /goals/{goalId} (목표 삭제)
+   - 테스트 코드 작성 완료
+
+- GET /goals/today (오늘 목표 조회)
+    - 테스트 코드 작성 완료
+
+- GET /goals/today/complete (오늘 목표 달성률 조회)
+    - 테스트 코드 작성 완료
+
+- 테스트 데이터 생성 코드
+    - `prisma/seeds/`
+    - `db:seed`, `db:format` 스크립트로 db에 랜덤 테스트 데이터 생성 가능
+
+### 📄 Docs
 
 ---
