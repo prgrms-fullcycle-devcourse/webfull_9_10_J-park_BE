@@ -326,12 +326,12 @@ paths:
                   code: INTERNAL_SERVER_ERROR
                   message: 서버 오류가 발생했습니다.
 
-  /goals/{goalId}/detail: #/goals/:goalId/detail?startDate=?&endDate=?
+  /goals/{goalId}/detail: # /goals/:goalId/detail?startDate=?&endDate=?
     get:
       tags:
         - 목표
       summary: 개별 목표 상세 조회
-      description: '특정 목표의 상세 정보와 기간별 일자 진행 현황을 조회합니다.'
+      description: '특정 목표의 상세 정보와 기간별 일자 진행 현황을 조회합니다. 조회 기간은 목표 기간 내로 보정되며, 요청 범위가 목표 기간과 겹치지 않으면 dailyProgress는 빈 배열로 반환됩니다.'
       security:
         - bearerAuth: []
 
@@ -347,7 +347,7 @@ paths:
         - name: startDate
           in: query
           required: false
-          description: '조회 시작 날짜 (YYYY-MM-DD, 기본값: today-7)'
+          description: '조회 시작 날짜 (YYYY-MM-DD, 기본값: today-7, 목표 시작일 이전 날짜는 목표 시작일로 보정)'
           schema:
             type: string
             format: date
@@ -356,7 +356,7 @@ paths:
         - name: endDate
           in: query
           required: false
-          description: '조회 종료 날짜 (YYYY-MM-DD, 기본값: today+14)'
+          description: '조회 종료 날짜 (YYYY-MM-DD, 기본값: today+14, 목표 종료일 이후 날짜는 목표 종료일로 보정)'
           schema:
             type: string
             format: date
@@ -442,10 +442,14 @@ paths:
 
                       dailyProgress:
                         type: array
-                        description: 날짜별 목표 진행 현황
+                        description: 목표 기간 내 날짜별 목표 진행 현황
                         items:
                           type: object
                           properties:
+                            dailyId:
+                              type: integer
+                              description: 목표 시작일 기준 n일차
+                              example: 42
                             date:
                               type: string
                               format: date
@@ -491,60 +495,70 @@ paths:
                     endDate: 2026-03-30
                     daysRemaining: 13
                   dailyProgress:
-                    - date: 2026-03-14
+                    - dailyId: 42
+                      date: 2026-03-14
                       targetAmount: 3
                       completedAmount: 3
                       isCompleted: true
                       studyTime: 39334748
                       isToday: false
-                    - date: 2026-03-15
+                    - dailyId: 43
+                      date: 2026-03-15
                       targetAmount: 4
                       completedAmount: 4
                       isCompleted: true
                       studyTime: 2733902
                       isToday: false
-                    - date: 2026-03-16
+                    - dailyId: 44
+                      date: 2026-03-16
                       targetAmount: 3
                       completedAmount: 3
                       isCompleted: true
                       studyTime: 2733902
                       isToday: false
-                    - date: 2026-03-17
+                    - dailyId: 45
+                      date: 2026-03-17
                       targetAmount: 5
                       completedAmount: 7
                       isCompleted: true
                       studyTime: 2836238
                       isToday: false
-                    - date: 2026-03-18
+                    - dailyId: 46
+                      date: 2026-03-18
                       targetAmount: 5
                       completedAmount: 3
                       isCompleted: false
                       studyTime: 2836238
                       isToday: false
-                    - date: 2026-03-19
+                    - dailyId: 47
+                      date: 2026-03-19
                       targetAmount: 3
                       completedAmount: 2
                       isCompleted: false
                       studyTime: 2836238
                       isToday: false
-                    - date: 2026-03-20
+                    - dailyId: 48
+                      date: 2026-03-20
                       targetAmount: 3
                       completedAmount: 3
                       isCompleted: true
                       studyTime: 2836238
                       isToday: false
-                    - date: 2026-03-21
+                    - dailyId: 49
+                      date: 2026-03-21
                       targetAmount: 3
                       completedAmount: 2
                       isCompleted: false
                       studyTime: 2836238
                       isToday: true
-                    - date: 2026-03-22
+                    - dailyId: 50
+                      date: 2026-03-22
                       targetAmount: 3
                       completedAmount: 0
                       isCompleted: false
                       studyTime: 2836238
                       isToday: false
+
         '400':
           description: 잘못된 요청
           content:
@@ -593,6 +607,7 @@ paths:
                     error:
                       code: BAD_REQUEST
                       message: startDate는 endDate보다 늦을 수 없습니다.
+
         '401':
           description: 인증 실패
           content:
@@ -617,6 +632,7 @@ paths:
                 error:
                   code: UNAUTHORIZED
                   message: 유효하지 않은 토큰입니다.
+
         '404':
           description: 목표를 찾을 수 없음
           content:
@@ -1072,6 +1088,10 @@ paths:
                               type: integer
                               description: 목표 ID
                               example: 1
+                            dailyId:
+                              type: integer
+                              description: 목표 시작일 기준 n일차
+                              example: 5
                             title:
                               type: string
                               description: 목표 이름
@@ -1111,6 +1131,7 @@ paths:
                   totalStudyTime: 9374836
                   todayGoals:
                     - id: 1
+                      dailyId: 5
                       title: 목표 1
                       targetAmount: 10
                       currentAmount: 10
@@ -1120,6 +1141,7 @@ paths:
                       isTimerRunning: false
                       progressRate: 100
                     - id: 2
+                      dailyId: 5
                       title: 목표 2
                       targetAmount: 10
                       currentAmount: 10
