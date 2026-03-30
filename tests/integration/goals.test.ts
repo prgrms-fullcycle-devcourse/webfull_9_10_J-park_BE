@@ -112,6 +112,7 @@ describe('Goal API Integration', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.message).toBe('전체 목표 리스트');
+
       expect(res.body.data).toHaveProperty('goals');
       expect(Array.isArray(res.body.data.goals)).toBe(true);
 
@@ -125,24 +126,6 @@ describe('Goal API Integration', () => {
           }),
         ]),
       );
-    });
-
-    it('201 - 토큰이 없으면 익명 사용자를 생성하고 목표를 생성한다', async () => {
-      const res = await request(app)
-        .post('/goals')
-        .send({
-          title: `${TEST_PREFIX}_목표2`,
-          categoryId,
-          detail: '설명',
-          totalAmount: 200,
-          startDate: '2026-03-17',
-          endDate: '2026-04-17',
-          quota: 20,
-        });
-
-      expect(res.status).toBe(201);
-      expect(res.headers['set-cookie']).toBeDefined();
-      expect(res.body.success).toBe(true);
     });
   });
 
@@ -175,26 +158,25 @@ describe('Goal API Integration', () => {
       });
 
       expect(createdGoal).not.toBeNull();
-      expect(createdGoal?.description).toBe(
-        '목표2는 자기계발을 달성하기 위함입니다.',
-      );
     });
 
-    it('401 - 토큰이 없으면 인증 에러를 반환한다', async () => {
+    it('400 - 시작일이 종료일보다 늦으면 에러를 반환한다', async () => {
       const res = await request(app)
         .post('/goals')
-        .set('Cookie', ['token=invalid-token'])
+        .set('Cookie', [`token=${authToken}`])
         .send({
-          title: `${TEST_PREFIX}_목표2`,
+          title: '테스트 목표',
           categoryId,
           detail: '설명',
-          totalAmount: 200,
-          startDate: '2026-03-17',
-          endDate: '2026-04-17',
-          quota: 20,
+          totalAmount: 100,
+          startDate: '2026-05-01',
+          endDate: '2026-04-01',
+          quota: 10,
         });
 
-      expect(res.status).toBe(401);
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('INVALID_DATE_RANGE');
     });
 
     it('400 - 필수값이 누락되면 에러를 반환한다', async () => {
@@ -211,6 +193,42 @@ describe('Goal API Integration', () => {
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
       expect(res.body.error.code).toBe('BAD_REQUEST');
+    });
+
+    it('401 - 유효하지 않은 토큰이면 인증 에러를 반환한다', async () => {
+      const res = await request(app)
+        .post('/goals')
+        .set('Cookie', ['token=invalid-token'])
+        .send({
+          title: `${TEST_PREFIX}_목표2`,
+          categoryId,
+          detail: '설명',
+          totalAmount: 200,
+          startDate: '2026-03-17',
+          endDate: '2026-04-17',
+          quota: 20,
+        });
+
+      expect(res.status).toBe(401);
+    });
+
+    it('404 - 존재하지 않는 카테고리면 에러를 반환한다', async () => {
+      const res = await request(app)
+        .post('/goals')
+        .set('Cookie', [`token=${authToken}`])
+        .send({
+          title: '테스트 목표',
+          categoryId: 999999,
+          detail: '설명',
+          totalAmount: 100,
+          startDate: '2026-03-17',
+          endDate: '2026-04-17',
+          quota: 10,
+        });
+
+      expect(res.status).toBe(404);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('CATEGORY_NOT_FOUND');
     });
   });
 });

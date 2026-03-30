@@ -79,26 +79,33 @@ const buildUpdatedGoalResponse = async (
       endDate: formatDate(goal.endDate),
       daysRemaining: calculateDaysRemaining(goal.endDate),
     },
-    dailyProgress: goal.goalLogs.map((log) => ({
-      /**
-       * 날짜: 로그 생성일 기준 (YYYY-MM-DD)
-       */
-      date: formatDate(log.achievedAt),
+    dailyProgress: goal.goalLogs.map((log) => {
+      const diff = Math.floor(
+        (toStartOfDay(log.achievedAt).getTime() -
+          toStartOfDay(goal.startDate).getTime()) /
+          86400000,
+      );
 
-      /**
-       * quota:
-       * - 실제 수행량(actualValue)
-       * - null이면 0으로 보정 (응답 타입 number 유지)
-       */
-      quota: log.actualValue ?? 0,
-
-      /**
-       * 완료 여부:
-       * - actualValue >= targetValue
-       * - 둘 다 nullable이므로 안전하게 보정 후 비교
-       */
-      isCompleted: (log.actualValue ?? 0) >= (log.targetValue ?? 0),
-    })),
+      return {
+        dailyId: diff + 1,
+        /**
+         * 날짜: 로그 생성일 기준 (YYYY-MM-DD)
+         */
+        date: formatDate(log.achievedAt),
+        /**
+         * quota:
+         * - 실제 수행량(actualValue)
+         * - null이면 0으로 보정 (응답 타입 number 유지)
+         */
+        quota: log.actualValue ?? 0,
+        /**
+         * 완료 여부:
+         * - actualValue >= targetValue
+         * - 둘 다 nullable이므로 안전하게 보정 후 비교
+         */
+        isCompleted: (log.actualValue ?? 0) >= (log.targetValue ?? 0),
+      };
+    }),
   };
 };
 
@@ -307,6 +314,38 @@ export const getGoalDetailService = async ({
     throw new Error('GOAL_NOT_FOUND');
   }
 
+  //26-03-30 추가
+  const clampedStartDate =
+  queryStartDate < toStartOfDay(goal.startDate)
+    ? toStartOfDay(goal.startDate)
+    : queryStartDate;
+
+  const clampedEndDate =
+    queryEndDate > toEndOfDay(goal.endDate)
+      ? toEndOfDay(goal.endDate)
+      : queryEndDate;
+
+  if (clampedStartDate > clampedEndDate) {
+    return {
+      id: goal.id,
+      title: goal.title,
+      description: goal.description,
+      category: goal.category.name,
+      progress: {
+        rate: calculateProgressRate(goal.currentValue, goal.targetValue),
+        currentAmount: goal.currentValue,
+        targetAmount: goal.targetValue,
+        totalStudyTime: 0,
+        unit: goal.category.unit,
+      },
+      period: {
+        startDate: formatDate(goal.startDate),
+        endDate: formatDate(goal.endDate),
+        daysRemaining: calculateDaysRemaining(goal.endDate),
+      },
+      dailyProgress: [],
+    };
+  }
   /**
    * 기간 내 GoalLog / TimerLog 병렬 조회
    */
@@ -316,8 +355,8 @@ export const getGoalDetailService = async ({
         goalId: goal.id,
         userId,
         achievedAt: {
-          gte: queryStartDate,
-          lte: queryEndDate,
+          gte: clampedStartDate,
+          lte: clampedEndDate,
         },
       },
       orderBy: {
@@ -329,8 +368,8 @@ export const getGoalDetailService = async ({
       where: {
         goalId: goal.id,
         timerDate: {
-          gte: queryStartDate,
-          lte: queryEndDate,
+          gte: clampedStartDate,
+          lte: clampedEndDate,
         },
       },
       orderBy: {
@@ -386,7 +425,7 @@ export const getGoalDetailService = async ({
   /**
    * 날짜 범위 배열 생성 후 일별 진행 현황 구성
    */
-  const dateRange = getDateRange(queryStartDate, toStartOfDay(queryEndDate));
+  const dateRange = getDateRange(clampedStartDate, toStartOfDay(clampedEndDate));
   /**
    * 날짜 범위 기준으로 일별 진행 데이터 생성
    *
@@ -414,7 +453,14 @@ export const getGoalDetailService = async ({
      */
     const completedAmount = goalLog?.actualValue ?? 0;
 
+    // 26-03-30 dailyId 계산 추가 
+    const diff = Math.floor(
+      (toStartOfDay(date).getTime() - toStartOfDay(goal.startDate).getTime()) /
+        86400000,
+    );
+
     return {
+      dailyId: diff + 1, // 추가
       date: dateKey,
       targetAmount,
       completedAmount,
@@ -479,6 +525,8 @@ export const updateGoalService = async (
     select: {
       id: true,
       startDate: true,
+      targetValue: true,
+      endDate: true,
     },
   });
 
@@ -524,6 +572,12 @@ export const updateGoalService = async (
   /**
    * 목표 수정
    */
+  const nextTargetValue = targetValue ?? goal.targetValue;
+  const nextEndDate = parsedEndDate ?? goal.endDate;
+
+  const diffTime = nextEndDate.getTime() - goal.startDate.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  const nextQuota = Math.ceil(nextTargetValue / diffDays);
   await prisma.goal.update({
     where: {
       id: goalId,
@@ -531,6 +585,7 @@ export const updateGoalService = async (
     data: {
       ...(targetValue !== undefined ? { targetValue } : {}),
       ...(parsedEndDate ? { endDate: parsedEndDate } : {}),
+      quota: nextQuota,
     },
   });
 
@@ -630,6 +685,7 @@ export const getTodayGoalsService = async (
       currentValue: true,
       targetValue: true,
       quota: true,
+      startDate: true, // 26-03-30 추가
       category: {
         select: {
           unit: true,
@@ -685,17 +741,26 @@ export const getTodayGoalsService = async (
     }
   });
 
-  const todayGoals = goals.map((goal) => ({
-    id: goal.id,
-    title: goal.title,
-    targetAmount: goal.quota,
-    currentAmount: goal.currentValue,
-    unit: goal.category.unit,
-    studyTime: studyTimeMap.get(goal.id) ?? 0,
-    completed: goal.currentValue >= goal.quota,
-    isTimerRunning: runningGoalSet.has(goal.id),
-    progressRate: calculateProgressRate(goal.currentValue, goal.targetValue),
-  }));
+  // 26-03-30 dailyId 추가
+  const todayGoals = goals.map((goal) => {
+  const diff = Math.floor(
+    (toStartOfDay(today).getTime() - toStartOfDay(goal.startDate).getTime()) /
+      86400000,
+  );
+
+    return {
+      id: goal.id,
+      dailyId: diff + 1, // 추가
+      title: goal.title,
+      targetAmount: goal.quota,
+      currentAmount: goal.currentValue,
+      unit: goal.category.unit,
+      studyTime: studyTimeMap.get(goal.id) ?? 0,
+      completed: goal.currentValue >= goal.quota,
+      isTimerRunning: runningGoalSet.has(goal.id),
+      progressRate: calculateProgressRate(goal.currentValue, goal.targetValue),
+    };
+  });
 
   const totalStudyTime = todayGoals.reduce(
     (sum, goal) => sum + goal.studyTime,
