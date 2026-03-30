@@ -1,5 +1,5 @@
-import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 import { PrismaClient } from '../generated/prisma';
 
 // 1. Pool 생성 (DATABASE_URL 사용)
