@@ -4,6 +4,7 @@ import app from '../../src/main';
 import prisma from '../../src/config/prisma';
 
 describe('Goal API Integration', () => {
+  // 테스트 데이터 구분용 prefix (삭제할 때 식별)
   const TEST_PREFIX = `TEST_GOALS_${Date.now()}`;
 
   let userId: number;
@@ -12,6 +13,7 @@ describe('Goal API Integration', () => {
   let authToken: string;
 
   beforeEach(async () => {
+    // 테스트용 사용자 생성
     const user = await prisma.user.create({
       data: {
         nickname: `${TEST_PREFIX}_USER`,
@@ -20,6 +22,7 @@ describe('Goal API Integration', () => {
 
     userId = user.id;
 
+    // 카테고리 생성 (Goal 생성에 필요)
     const category = await prisma.category.create({
       data: {
         name: `${TEST_PREFIX}_CATEGORY`,
@@ -30,6 +33,7 @@ describe('Goal API Integration', () => {
 
     categoryId = category.id;
 
+    // 목표 생성 (테스트 대상 핵심 데이터)
     const goal = await prisma.goal.create({
       data: {
         title: `${TEST_PREFIX}_목표1`,
@@ -47,6 +51,7 @@ describe('Goal API Integration', () => {
 
     goalId = goal.id;
 
+    // 하루 단위 목표 기록 생성 (GoalLog)
     const goalLog1 = await prisma.goalLog.create({
       data: {
         goalId,
@@ -69,12 +74,13 @@ describe('Goal API Integration', () => {
       },
     });
 
+    // TimerLog는 이제 반드시 goalLogId를 가져야 함 (relation 기반 구조)
     await prisma.timerLog.createMany({
       data: [
         {
           goalId,
           userId,
-          goalLogId: goalLog1.id,
+          goalLogId: goalLog1.id, // 어떤 GoalLog에 속하는지 명확히 연결
           timerDate: new Date('2026-03-14'),
           startTime: new Date('2026-03-14T10:00:00'),
           endTime: new Date('2026-03-14T11:00:00'),
@@ -92,12 +98,14 @@ describe('Goal API Integration', () => {
       ],
     });
 
+    // 인증용 JWT 생성 (미들웨어 통과용)
     authToken = jwt.sign({ id: userId }, process.env.JWT_SECRET!, {
       expiresIn: '10m',
     });
   });
 
   afterEach(async () => {
+    // 테스트 데이터만 삭제하기 위해 prefix 기반 조회
     const testUsers = await prisma.user.findMany({
       where: {
         nickname: {
@@ -122,7 +130,10 @@ describe('Goal API Integration', () => {
 
     const testGoalIds = testGoals.map((goal) => goal.id);
 
-    // 핵심: TimerLog가 GoalLog를 참조하므로 먼저 삭제
+    // FK 의존성 순서
+    // TimerLog → GoalLog → Goal → Category → User 순으로 삭제해야 함
+
+    // 1. TimerLog 삭제 (GoalLog 참조 중)
     await prisma.timerLog.deleteMany({
       where: {
         OR: [
@@ -140,6 +151,7 @@ describe('Goal API Integration', () => {
       },
     });
 
+    // 2. GoalLog 삭제
     await prisma.goalLog.deleteMany({
       where: {
         OR: [
@@ -157,6 +169,7 @@ describe('Goal API Integration', () => {
       },
     });
 
+     // 3. Goal 삭제
     await prisma.goal.deleteMany({
       where: {
         userId: {
@@ -165,6 +178,7 @@ describe('Goal API Integration', () => {
       },
     });
 
+    // 4. Category 삭제
     await prisma.category.deleteMany({
       where: {
         userId: {
@@ -173,6 +187,7 @@ describe('Goal API Integration', () => {
       },
     });
 
+    // 5. User 삭제
     await prisma.user.deleteMany({
       where: {
         id: {
