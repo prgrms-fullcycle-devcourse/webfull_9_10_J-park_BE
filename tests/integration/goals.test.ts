@@ -45,11 +45,9 @@ describe('Goal API Integration', () => {
 
     goalId = goal.id;
 
-    authToken = jwt.sign(
-      { id: userId },
-      process.env.JWT_SECRET!,
-      { expiresIn: '10m' },
-    );
+    authToken = jwt.sign({ id: userId }, process.env.JWT_SECRET!, {
+      expiresIn: '10m',
+    });
   });
 
   afterEach(async () => {
@@ -130,21 +128,21 @@ describe('Goal API Integration', () => {
     });
 
     it('201 - 토큰이 없으면 익명 사용자를 생성하고 목표를 생성한다', async () => {
-    const res = await request(app)
+      const res = await request(app)
         .post('/goals')
         .send({
-            title: `${TEST_PREFIX}_목표2`,
-            categoryId,
-            detail: '설명',
-            totalAmount: 200,
-            startDate: '2026-03-17',
-            endDate: '2026-04-17',
-            quota: 20,
+          title: `${TEST_PREFIX}_목표2`,
+          categoryId,
+          detail: '설명',
+          totalAmount: 200,
+          startDate: '2026-03-17',
+          endDate: '2026-04-17',
+          quota: 20,
         });
 
-    expect(res.status).toBe(201);
-    expect(res.headers['set-cookie']).toBeDefined();
-    expect(res.body.success).toBe(true);
+      expect(res.status).toBe(201);
+      expect(res.headers['set-cookie']).toBeDefined();
+      expect(res.body.success).toBe(true);
     });
   });
 
@@ -183,21 +181,21 @@ describe('Goal API Integration', () => {
     });
 
     it('401 - 토큰이 없으면 인증 에러를 반환한다', async () => {
-        const res = await request(app)
-            .post('/goals')
-            .set('Cookie', ['token=invalid-token'])
-            .send({
-                title: `${TEST_PREFIX}_목표2`,
-                categoryId,
-                detail: '설명',
-                totalAmount: 200,
-                startDate: '2026-03-17',
-                endDate: '2026-04-17',
-                quota: 20,
-            });
-
-            expect(res.status).toBe(401);
+      const res = await request(app)
+        .post('/goals')
+        .set('Cookie', ['token=invalid-token'])
+        .send({
+          title: `${TEST_PREFIX}_목표2`,
+          categoryId,
+          detail: '설명',
+          totalAmount: 200,
+          startDate: '2026-03-17',
+          endDate: '2026-04-17',
+          quota: 20,
         });
+
+      expect(res.status).toBe(401);
+    });
 
     it('400 - 필수값이 누락되면 에러를 반환한다', async () => {
       const res = await request(app)

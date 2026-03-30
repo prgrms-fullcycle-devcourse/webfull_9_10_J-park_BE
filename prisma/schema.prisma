@@ -77,9 +77,9 @@ model Goal {
 model GoalLog {
   id          Int      @id @default(autoincrement())
   achievedAt  DateTime @db.Timestamptz(3)
-  targetValue Int?
-  actualValue Int?
-  timeSpent   Int?
+  targetValue Int
+  actualValue Int
+  timeSpent   Int
 
   goalId Int
   userId Int
@@ -88,6 +88,7 @@ model GoalLog {
 
   goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  timerLogs TimerLog[]
 
   @@unique([goalId, achievedAt])
   @@map("goal_logs")
@@ -99,14 +100,17 @@ model TimerLog {
   startTime   DateTime  @db.Timestamptz(3)
   endTime     DateTime? @db.Timestamptz(3)
   durationSec Int       @default(0)
+  
   userId      Int
-
-  goalId    Int
+  goalId      Int
+  goalLogId   Int
+  
   createdAt DateTime @default(now()) @db.Timestamptz(3)
 
   goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goalLog GoalLog @relation(fields: [goalLogId], references: [id], onDelete: SetNull)
 
-  @@index([userId, endTime]) // 실행중 타이머 빠른 조회용
+  @@index([userId, goalId, endTime]) // 실행중 타이머 빠른 조회용
   @@map("timer_logs")
 }
