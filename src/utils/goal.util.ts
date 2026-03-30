@@ -38,9 +38,26 @@ export const calculateProgressRate = (
 /**
  * 문자열이 유효한 날짜인지 검증
  */
-export const isValidDateString = (value: string): boolean => {
-  const date = new Date(value);
-  return !Number.isNaN(date.getTime());
+export const isValidDateString = (dateString: string): boolean => {
+  // 1) YYYY-MM-DD 형식인지 먼저 확인
+  const regex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!regex.test(dateString)) {
+    return false;
+  }
+
+  // 2) 문자열 분리
+  const [year, month, day] = dateString.split('-').map(Number);
+
+  // 3) UTC 기준으로 Date 생성
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  // 4) 생성된 날짜가 원래 값과 정확히 일치하는지 확인
+  //    (예: 2026-02-31 같은 값 방지)
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() + 1 === month &&
+    date.getUTCDate() === day
+  );
 };
 
 /**
