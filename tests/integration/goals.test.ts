@@ -4,6 +4,7 @@ import app from '../../src/main';
 import prisma from '../../src/config/prisma';
 
 describe('Goal API Integration', () => {
+  // 테스트 데이터 구분용 prefix (삭제할 때 식별)
   const TEST_PREFIX = `TEST_GOALS_${Date.now()}`;
 
   let userId: number;
@@ -12,6 +13,7 @@ describe('Goal API Integration', () => {
   let authToken: string;
 
   beforeEach(async () => {
+    // 테스트용 사용자 생성
     const user = await prisma.user.create({
       data: {
         nickname: `${TEST_PREFIX}_USER`,
@@ -20,6 +22,7 @@ describe('Goal API Integration', () => {
 
     userId = user.id;
 
+    // 카테고리 생성 (Goal 생성에 필요)
     const category = await prisma.category.create({
       data: {
         name: `${TEST_PREFIX}_CATEGORY`,
@@ -30,6 +33,7 @@ describe('Goal API Integration', () => {
 
     categoryId = category.id;
 
+    // 목표 생성 (테스트 대상 핵심 데이터)
     const goal = await prisma.goal.create({
       data: {
         title: `${TEST_PREFIX}_목표1`,
@@ -47,30 +51,36 @@ describe('Goal API Integration', () => {
 
     goalId = goal.id;
 
-    await prisma.goalLog.createMany({
-      data: [
-        {
-          goalId,
-          userId,
-          achievedAt: new Date('2026-03-14'),
-          targetValue: 10,
-          actualValue: 8,
-        },
-        {
-          goalId,
-          userId,
-          achievedAt: new Date('2026-03-15'),
-          targetValue: 10,
-          actualValue: 10,
-        },
-      ],
+    // 하루 단위 목표 기록 생성 (GoalLog)
+    const goalLog1 = await prisma.goalLog.create({
+      data: {
+        goalId,
+        userId,
+        achievedAt: new Date('2026-03-14'),
+        targetValue: 10,
+        actualValue: 8,
+        timeSpent: 3600,
+      },
     });
 
+    const goalLog2 = await prisma.goalLog.create({
+      data: {
+        goalId,
+        userId,
+        achievedAt: new Date('2026-03-15'),
+        targetValue: 10,
+        actualValue: 10,
+        timeSpent: 1800,
+      },
+    });
+
+    // TimerLog는 이제 반드시 goalLogId를 가져야 함 (relation 기반 구조)
     await prisma.timerLog.createMany({
       data: [
         {
           goalId,
           userId,
+          goalLogId: goalLog1.id, // 어떤 GoalLog에 속하는지 명확히 연결
           timerDate: new Date('2026-03-14'),
           startTime: new Date('2026-03-14T10:00:00'),
           endTime: new Date('2026-03-14T11:00:00'),
@@ -79,6 +89,7 @@ describe('Goal API Integration', () => {
         {
           goalId,
           userId,
+          goalLogId: goalLog2.id,
           timerDate: new Date('2026-03-15'),
           startTime: new Date('2026-03-15T10:00:00'),
           endTime: new Date('2026-03-15T10:30:00'),
@@ -87,12 +98,14 @@ describe('Goal API Integration', () => {
       ],
     });
 
+    // 인증용 JWT 생성 (미들웨어 통과용)
     authToken = jwt.sign({ id: userId }, process.env.JWT_SECRET!, {
       expiresIn: '10m',
     });
   });
 
   afterEach(async () => {
+    // 테스트 데이터만 삭제하기 위해 prefix 기반 조회
     const testUsers = await prisma.user.findMany({
       where: {
         nickname: {
@@ -104,58 +117,84 @@ describe('Goal API Integration', () => {
 
     const testUserIds = testUsers.map((user) => user.id);
 
-    if (testUserIds.length > 0) {
-      const testGoals = await prisma.goal.findMany({
-        where: {
-          userId: {
-            in: testUserIds,
-          },
-        },
-        select: { id: true },
-      });
+    if (testUserIds.length === 0) return;
 
-      const testGoalIds = testGoals.map((goal) => goal.id);
-
-      await prisma.goalLog.deleteMany({
-        where: {
-          goalId: {
-            in: testGoalIds,
-          },
+    const testGoals = await prisma.goal.findMany({
+      where: {
+        userId: {
+          in: testUserIds,
         },
-      });
+      },
+      select: { id: true },
+    });
 
-      await prisma.timerLog.deleteMany({
-        where: {
-          goalId: {
-            in: testGoalIds,
-          },
-        },
-      });
+    const testGoalIds = testGoals.map((goal) => goal.id);
 
-      await prisma.goal.deleteMany({
-        where: {
-          userId: {
-            in: testUserIds,
-          },
-        },
-      });
+    // FK 의존성 순서
+    // TimerLog → GoalLog → Goal → Category → User 순으로 삭제해야 함
 
-      await prisma.category.deleteMany({
-        where: {
-          userId: {
-            in: testUserIds,
+    // 1. TimerLog 삭제 (GoalLog 참조 중)
+    await prisma.timerLog.deleteMany({
+      where: {
+        OR: [
+          {
+            goalId: {
+              in: testGoalIds,
+            },
           },
-        },
-      });
+          {
+            userId: {
+              in: testUserIds,
+            },
+          },
+        ],
+      },
+    });
 
-      await prisma.user.deleteMany({
-        where: {
-          id: {
-            in: testUserIds,
+    // 2. GoalLog 삭제
+    await prisma.goalLog.deleteMany({
+      where: {
+        OR: [
+          {
+            goalId: {
+              in: testGoalIds,
+            },
           },
+          {
+            userId: {
+              in: testUserIds,
+            },
+          },
+        ],
+      },
+    });
+
+     // 3. Goal 삭제
+    await prisma.goal.deleteMany({
+      where: {
+        userId: {
+          in: testUserIds,
         },
-      });
-    }
+      },
+    });
+
+    // 4. Category 삭제
+    await prisma.category.deleteMany({
+      where: {
+        userId: {
+          in: testUserIds,
+        },
+      },
+    });
+
+    // 5. User 삭제
+    await prisma.user.deleteMany({
+      where: {
+        id: {
+          in: testUserIds,
+        },
+      },
+    });
   });
 
   afterAll(async () => {
@@ -572,10 +611,22 @@ describe('Goal API Integration', () => {
         },
       });
 
+      const runningGoalLog = await prisma.goalLog.create({
+        data: {
+          goalId: runningGoal.id,
+          userId,
+          achievedAt: new Date(todayStr),
+          targetValue: 5,
+          actualValue: 2,
+          timeSpent: 1200,
+        },
+      });
+
       await prisma.timerLog.create({
         data: {
           goalId: runningGoal.id,
           userId,
+          goalLogId: runningGoalLog.id,
           timerDate: new Date(todayStr),
           startTime: new Date(`${todayStr}T10:00:00`),
           endTime: null,
@@ -598,6 +649,7 @@ describe('Goal API Integration', () => {
       expect(targetGoal.studyTime).toBe(1200);
     });
   });
+
   describe('GET /goals/today/complete', () => {
     it('200 - 오늘 목표 달성률을 조회한다', async () => {
       const today = new Date();
@@ -633,23 +685,26 @@ describe('Goal API Integration', () => {
         },
       });
 
-      await prisma.goalLog.createMany({
-        data: [
-          {
-            goalId: goalA.id,
-            userId,
-            achievedAt: new Date(todayStr),
-            targetValue: 10,
-            actualValue: 10, // 완료
-          },
-          {
-            goalId: goalB.id,
-            userId,
-            achievedAt: new Date(todayStr),
-            targetValue: 10,
-            actualValue: 5, // 미완료
-          },
-        ],
+      const goalLogA = await prisma.goalLog.create({
+        data: {
+          goalId: goalA.id,
+          userId,
+          achievedAt: new Date(todayStr),
+          targetValue: 10,
+          actualValue: 10,
+          timeSpent: 1800,
+        },
+      });
+
+      const goalLogB = await prisma.goalLog.create({
+        data: {
+          goalId: goalB.id,
+          userId,
+          achievedAt: new Date(todayStr),
+          targetValue: 10,
+          actualValue: 5,
+          timeSpent: 1200,
+        },
       });
 
       await prisma.timerLog.createMany({
@@ -657,6 +712,7 @@ describe('Goal API Integration', () => {
           {
             goalId: goalA.id,
             userId,
+            goalLogId: goalLogA.id,
             timerDate: new Date(todayStr),
             startTime: new Date(`${todayStr}T09:00:00`),
             endTime: new Date(`${todayStr}T09:30:00`),
@@ -665,6 +721,7 @@ describe('Goal API Integration', () => {
           {
             goalId: goalB.id,
             userId,
+            goalLogId: goalLogB.id,
             timerDate: new Date(todayStr),
             startTime: new Date(`${todayStr}T10:00:00`),
             endTime: new Date(`${todayStr}T10:20:00`),
