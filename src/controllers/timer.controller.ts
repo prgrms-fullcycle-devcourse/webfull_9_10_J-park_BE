@@ -113,6 +113,17 @@ export const runningTimerController = async (
       data: runningTimer,
     });
   } catch (err) {
+    // 커스텀 에러 발생 시
+    if (err instanceof AppError) {
+      return res.status(err.statusCode).json({
+        success: false,
+        error: {
+          code: err.code,
+          message: err.message,
+        },
+      });
+    }
+
     console.error(`runningTimerController error: ${err}`);
 
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
