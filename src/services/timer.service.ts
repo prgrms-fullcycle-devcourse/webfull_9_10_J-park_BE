@@ -30,6 +30,7 @@ export const startTimerService = async (
       endTime: null,
     },
   });
+
   if (runningTimer) {
     throw new AppError('TIMER_ALREADY_RUNNING');
   }
@@ -38,6 +39,25 @@ export const startTimerService = async (
   const now = new Date();
   const timerDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
+  // 오늘자 goalLog 데이터가 없을 경우생성, 있으면 그대로 사용
+  const goalLog = await prisma.goalLog.upsert({
+    where: {
+      goalId_achievedAt: {
+        goalId,
+        achievedAt: timerDate,
+      },
+    },
+    update: {},
+    create: {
+      achievedAt: timerDate,
+      actualValue: 0,
+      goalId,
+      targetValue: goal.quota,
+      timeSpent: 0,
+      userId,
+    },
+  });
+
   // timerLog 데이터 추가
   await prisma.timerLog.create({
     data: {
@@ -45,26 +65,9 @@ export const startTimerService = async (
       startTime: now,
       userId,
       goalId,
+      goalLogId: goalLog.id,
     },
   });
-
-  // 오늘자 goalLog가 없을 경우, goalLog 데이터 추가
-  const existing = await prisma.goalLog.findFirst({
-    where: { goalId, userId, achievedAt: timerDate },
-  });
-
-  if (!existing) {
-    await prisma.goalLog.create({
-      data: {
-        achievedAt: timerDate,
-        actualValue: 0,
-        goalId,
-        targetValue: goal.quota,
-        timeSpent: 0,
-        userId,
-      },
-    });
-  }
 
   return {
     goalId,
@@ -122,15 +125,10 @@ export const endTimerService = async (
   const runningTimer = runningTimers[0];
 
   const now = new Date();
-  let timerDate = runningTimer.timerDate;
-
-  if (!timerDate) {
-    timerDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  }
 
   // timer_logs 업데이트
   const timeDuration = now.getTime() - runningTimer.startTime.getTime();
-  await prisma.timerLog.update({
+  const timerLog = await prisma.timerLog.update({
     where: { id: runningTimer.id },
     data: {
       endTime: now,
@@ -142,11 +140,9 @@ export const endTimerService = async (
   // 주의: 유니크 값을 알 수 없어 updateMany 사용, 향수 수정이 필요
   const incrementValue = currentCompletedAmount - goal.currentValue; // 추가로 진행된 분량
 
-  await prisma.goalLog.updateMany({
+  const goalLog = await prisma.goalLog.update({
     where: {
-      userId,
-      goalId,
-      achievedAt: timerDate,
+      id: timerLog.goalLogId,
     },
     data: {
       timeSpent: { increment: timeDuration },
@@ -164,36 +160,13 @@ export const endTimerService = async (
   });
 
   // 오늘 누적 공부 시간
-  const todayGoalLog = await prisma.goalLog.findFirst({
-    where: {
-      userId,
-      goalId,
-      achievedAt: timerDate,
-    },
-    select: {
-      timeSpent: true,
-      actualValue: true,
-      targetValue: true,
-    },
-  });
-
-  if (!todayGoalLog) {
-    throw Error('todayGoalLog가 존재하지 않습니다.');
-  }
-
-  const goalDuration = todayGoalLog.timeSpent;
+  const goalDuration = goalLog.timeSpent;
   if (!goalDuration) {
     throw Error('todayGoalLog.timeSpent가 존재하지 않습니다.');
   }
 
-  const actualValue = todayGoalLog.actualValue;
-  const targetValue = todayGoalLog.targetValue;
-  if (actualValue === undefined || actualValue === null) {
-    throw Error('todayGoalLog.actualValue가 존재하지 않습니다.');
-  }
-  if (targetValue === undefined || targetValue === null) {
-    throw Error('todayGoalLog.targetValue가 존재하지 않습니다.');
-  }
+  const actualValue = goalLog.actualValue;
+  const targetValue = goalLog.targetValue;
   const goalProgressRate = Math.floor((actualValue / targetValue) * 100);
 
   const endTimer = {
@@ -238,7 +211,7 @@ export const getRunningTimerService = async (
   });
 
   // 실행 중인 타이머가 없을 경우 404
-  if (!runningTimers) {
+  if (runningTimers.length === 0) {
     throw new AppError('RUNNING_TIMER_NOT_FOUND');
   }
 
@@ -250,11 +223,9 @@ export const getRunningTimerService = async (
   const runningTimer = runningTimers[0];
 
   // 해당 날짜의 goalId, userId에 해당하는 목표 측정 기록 가져오기
-  const todayGoalLog = await prisma.goalLog.findFirst({
+  const todayGoalLog = await prisma.goalLog.findUnique({
     where: {
-      goalId,
-      userId,
-      achievedAt: runningTimer.timerDate ?? undefined, // 향후 goalLog와 timerLog를 연결할 생각은 없는지?
+      id: runningTimer.goalLogId,
     },
     select: {
       actualValue: true,

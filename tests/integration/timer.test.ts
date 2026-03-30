@@ -81,6 +81,14 @@ describe('Timer API', () => {
           },
         });
 
+        await prisma.goalLog.deleteMany({
+          where: {
+            userId: {
+              in: userIds,
+            },
+          },
+        });
+
         await prisma.goal.deleteMany({
           where: {
             userId: {
@@ -249,10 +257,22 @@ describe('Timer API', () => {
           now.getDate(),
         );
 
+        const goalLog = await prisma.goalLog.create({
+          data: {
+            userId,
+            goalId,
+            actualValue: 0,
+            targetValue: 10,
+            timeSpent: 0,
+            achievedAt: timerDate,
+          },
+        });
+
         await prisma.timerLog.create({
           data: {
             userId,
             goalId,
+            goalLogId: goalLog.id,
             timerDate,
             startTime: now,
           },
