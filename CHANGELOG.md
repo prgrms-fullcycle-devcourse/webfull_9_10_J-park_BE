@@ -91,3 +91,37 @@
 
 
 ---
+
+## 🏷️ [v0.3.0] - 2026-03-30
+
+### 🛠 Changed
+- GET /goals/today (오늘 목표 리스트 조회)
+    - response body field 추가 (200)
+        - `todayGoals[].dailyId`
+
+- GET /goals/{goalId}/detail (개별 목표 상세 조회)
+    - response body field 추가 (200)
+        - `dailyProgress[].dailyId`
+    - 조회 범위를 목표 기간 내로 보정 (clampedStartDate / clampedEndDate)
+
+- goal_logs, timer_logs 스키마 변경 및 연관 코드 리팩토링
+    - GoalLog의 targetValue, actualValue, timeSpent를 필수값으로 변경
+    - GoalLog와 TimerLog를 1:N 관계로 연결
+    - TimerLog 실행중타이머 조회용 인덱스에 goalId 추가
+        - @@index([userId, goalId, endTime])
+
+### 🐛 Fixed
+- GET /goals/today/complete (오늘 목표 달성률 조회)
+    - totalTime의 값을 초(s) 단위 -> 밀리초(ms) 단위로 수정
+
+- PATCH /goals/{goalId} (개별 목표 수정)
+    - 목표 수정 시 quota 재계산 로직 추가
+
+### 🧪 Test
+- POST /goals (목표 생성) 
+    - 테스트 코드 작성 완료
+
+- GET /goals (전체 목표 리스트 조회)
+    - 테스트 코드 작성 완료
+
+---
