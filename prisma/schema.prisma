@@ -86,8 +86,8 @@ model GoalLog {
 
   createdAt DateTime @default(now()) @db.Timestamptz(3)
 
-  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal      Goal       @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   timerLogs TimerLog[]
 
   @@unique([goalId, achievedAt])
@@ -100,16 +100,16 @@ model TimerLog {
   startTime   DateTime  @db.Timestamptz(3)
   endTime     DateTime? @db.Timestamptz(3)
   durationSec Int       @default(0)
-  
-  userId      Int
-  goalId      Int
-  goalLogId   Int
-  
+
+  userId    Int
+  goalId    Int
+  goalLogId Int
+
   createdAt DateTime @default(now()) @db.Timestamptz(3)
 
-  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  goalLog GoalLog @relation(fields: [goalLogId], references: [id], onDelete: SetNull)
+  goal    Goal    @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goalLog GoalLog @relation(fields: [goalLogId], references: [id], onDelete: Cascade)
 
   @@index([userId, goalId, endTime]) // 실행중 타이머 빠른 조회용
   @@map("timer_logs")
