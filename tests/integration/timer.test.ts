@@ -170,25 +170,25 @@ describe('Timer API', () => {
       });
     });
 
-    // describe('401 - UNAUTHORIZED', () => {
-    //   it('인증되지 않은 요청일 경우 반환한다', async () => {
-    //     const res = await request(app)
-    //       .post('/timers/start')
-    //       .set('Cookie', [`token=invalidToken`]) // 유효하지 않은 토큰을 전달
-    //       .send({ goalId });
+    describe('401 - UNAUTHORIZED', () => {
+      it('인증되지 않은 요청일 경우 반환한다', async () => {
+        const response = await request(app)
+          .post('/timers/start')
+          .set('Cookie', [`token=invalidToken`])
+          .send({ goalId });
 
-    //     expect(res.status).toBe(401);
-    //     expect(res.body).toEqual(
-    //       expect.objectContaining({
-    //         success: false,
-    //         error: expect.objectContaining({
-    //           code: 'UNAUTHORIZED',
-    //           message: '유효하지 않은 토큰입니다.',
-    //         }),
-    //       }),
-    //     );
-    //   });
-    // });
+        expect(response.status).toBe(401);
+        expect(response.body).toEqual(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              code: 'UNAUTHORIZED',
+              message: '유효하지 않은 토큰입니다.',
+            }),
+          }),
+        );
+      });
+    });
 
     describe('404 - GOAL_NOT_FOUND', () => {
       it('요청한 goal이 존재하지 않을 경우 반환한다', async () => {
@@ -333,6 +333,7 @@ describe('Timer API', () => {
     });
   });
 
+  // 타이머 측정 종료
   describe('POST /timers/end', () => {
     const TEST_PREFIX = `TEST_TIMER_END_${Date.now()}`;
 
@@ -594,6 +595,56 @@ describe('Timer API', () => {
         });
 
         expect(goal?.status).toBe('inactive');
+      });
+    });
+
+    describe('401 - UNAUTHORIZED', () => {
+      it('인증되지 않은 요청일 경우 반환한다', async () => {
+        const now = new Date();
+        const timerDate = getLocalMidnight(now);
+
+        const goalLog = await prisma.goalLog.create({
+          data: {
+            userId,
+            goalId,
+            actualValue: 1,
+            targetValue: 10,
+            timeSpent: 10000,
+            achievedAt: timerDate,
+          },
+        });
+        const goalLogId = goalLog.id;
+
+        // 5분 전 시작한 타이머 생성
+        const startTime = new Date(now.getTime() - 5 * 60 * 1000);
+        await prisma.timerLog.create({
+          data: {
+            userId,
+            goalId,
+            timerDate,
+            startTime,
+            goalLogId,
+          },
+        });
+
+        const response = await request(app)
+          .post('/timers/end')
+          .set('Cookie', [`token=invalidToken`])
+          .send({
+            goalId,
+            currentCompletedAmount: 13,
+          });
+
+        expect(response.status).toBe(401);
+        expect(response.body).toEqual(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              code: 'UNAUTHORIZED',
+              message: '유효하지 않은 토큰입니다.',
+            }),
+          }),
+        );
       });
     });
 
@@ -951,23 +1002,23 @@ describe('Timer API', () => {
       });
     });
 
-    // describe('401 - UNAUTHORIZED', () => {
-    //   it('인증되지 않은 요청일 경우 반환한다', async () => {
-    //     const response = await request(app)
-    //       .get('/timers')
-    //       .send({ goalId })
-    //       .set('Cookie', ['token=invalid-token']);
+    describe('401 - UNAUTHORIZED', () => {
+      it('인증되지 않은 요청일 경우 반환한다', async () => {
+        const response = await request(app)
+          .get('/timers')
+          .send({ goalId })
+          .set('Cookie', ['token=invalid-token']);
 
-    //     expect(response.status).toBe(401);
-    //     expect(response.body.success).toBe(false);
-    //     expect(response.body.error).toEqual(
-    //       expect.objectContaining({
-    //         code: 'UNAUTHORIZED',
-    //         message: '유효하지 않은 토큰입니다.',
-    //       }),
-    //     );
-    //   });
-    // });
+        expect(response.status).toBe(401);
+        expect(response.body.success).toBe(false);
+        expect(response.body.error).toEqual(
+          expect.objectContaining({
+            code: 'UNAUTHORIZED',
+            message: '유효하지 않은 토큰입니다.',
+          }),
+        );
+      });
+    });
 
     describe('404 - GOAL_NOT_FOUND', () => {
       it('요청한 goal이 존재하지 않을 경우 반환한다', async () => {
