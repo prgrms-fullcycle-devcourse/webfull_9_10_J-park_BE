@@ -6,7 +6,10 @@ const mapToUserResponse = (user: User) => {
   const dateString = formatDateString(user.createdAt);
 
   return {
-    ...user,
+    userId: user.id,
+    nickname: user.nickname,
+    profileImageUrl: user.profileImageUrl,
+    totalTime: user.totalTime,
     goals: user.goals.map(({ quota, ...rest }) => ({
       ...rest,
       todayQuota: quota,
