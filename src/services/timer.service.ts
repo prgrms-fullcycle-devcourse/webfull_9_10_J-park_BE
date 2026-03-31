@@ -113,7 +113,7 @@ export const endTimerService = async (
   });
 
   // 실행 중인 타이머가 없을 경우 404
-  if (!runningTimers) {
+  if (runningTimers.length === 0) {
     throw new AppError('RUNNING_TIMER_NOT_FOUND');
   }
 

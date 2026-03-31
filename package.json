@@ -16,6 +16,8 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset",
+    "db:seed": "prisma db seed",
+    "db:format": "prisma format",
     "prepare": "husky",
     "test": "jest",
     "test:watch": "jest --watch"
@@ -25,7 +27,6 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@faker-js/faker": "^9.9.0",
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
     "cookie-parser": "^1.4.7",

@@ -316,9 +316,9 @@ export const getGoalDetailService = async ({
 
   //26-03-30 추가
   const clampedStartDate =
-  queryStartDate < toStartOfDay(goal.startDate)
-    ? toStartOfDay(goal.startDate)
-    : queryStartDate;
+    queryStartDate < toStartOfDay(goal.startDate)
+      ? toStartOfDay(goal.startDate)
+      : queryStartDate;
 
   const clampedEndDate =
     queryEndDate > toEndOfDay(goal.endDate)
@@ -425,7 +425,10 @@ export const getGoalDetailService = async ({
   /**
    * 날짜 범위 배열 생성 후 일별 진행 현황 구성
    */
-  const dateRange = getDateRange(clampedStartDate, toStartOfDay(clampedEndDate));
+  const dateRange = getDateRange(
+    clampedStartDate,
+    toStartOfDay(clampedEndDate),
+  );
   /**
    * 날짜 범위 기준으로 일별 진행 데이터 생성
    *
@@ -453,7 +456,7 @@ export const getGoalDetailService = async ({
      */
     const completedAmount = goalLog?.actualValue ?? 0;
 
-    // 26-03-30 dailyId 계산 추가 
+    // 26-03-30 dailyId 계산 추가
     const diff = Math.floor(
       (toStartOfDay(date).getTime() - toStartOfDay(goal.startDate).getTime()) /
         86400000,
@@ -743,10 +746,10 @@ export const getTodayGoalsService = async (
 
   // 26-03-30 dailyId 추가
   const todayGoals = goals.map((goal) => {
-  const diff = Math.floor(
-    (toStartOfDay(today).getTime() - toStartOfDay(goal.startDate).getTime()) /
-      86400000,
-  );
+    const diff = Math.floor(
+      (toStartOfDay(today).getTime() - toStartOfDay(goal.startDate).getTime()) /
+        86400000,
+    );
 
     return {
       id: goal.id,

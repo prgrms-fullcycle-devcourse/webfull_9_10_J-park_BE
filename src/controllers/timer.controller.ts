@@ -68,13 +68,25 @@ export const endTimerController = async (
       currentCompletedAmount,
       isPaused,
     );
-    return res.status(StatusCodes.OK).json({
+
+    return res.status(StatusCodes.CREATED).json({
       success: true,
       message: '타이머 종료',
       data: timer,
     });
   } catch (err) {
     console.error(`startTimerController error: ${err}`);
+
+    // 커스텀 에러 발생 시
+    if (err instanceof AppError) {
+      return res.status(err.statusCode).json({
+        success: false,
+        error: {
+          code: err.code,
+          message: err.message,
+        },
+      });
+    }
 
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
@@ -113,6 +125,17 @@ export const runningTimerController = async (
       data: runningTimer,
     });
   } catch (err) {
+    // 커스텀 에러 발생 시
+    if (err instanceof AppError) {
+      return res.status(err.statusCode).json({
+        success: false,
+        error: {
+          code: err.code,
+          message: err.message,
+        },
+      });
+    }
+
     console.error(`runningTimerController error: ${err}`);
 
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({

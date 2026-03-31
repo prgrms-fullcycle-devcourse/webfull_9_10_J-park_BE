@@ -7,6 +7,7 @@ export default defineConfig({
   schema: 'prisma/schema.prisma',
   migrations: {
     path: 'prisma/migrations',
+    seed: 'ts-node ./prisma/seeds/user.ts', // 추후 다른 종류의 테스트 데이터 필요 시 한 파일로 묶기
   },
   datasource: {
     url: process.env['DATABASE_URL'],
