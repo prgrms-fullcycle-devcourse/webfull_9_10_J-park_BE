@@ -1528,21 +1528,14 @@ paths:
       description: 특정 목표의 실행 중인 타이머 정보를 조회합니다.
       security:
         - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - goalId
-              properties:
-                goalId:
-                  type: integer
-                  description: 목표 ID
-                  example: 1
-            example:
-              goalId: 1
+      parameters:
+        - name: goalId
+          in: query
+          required: true
+          description: 목표의 ID
+          schema:
+            type: integer
+            example: 1 
       responses:
         '200':
           description: 실행 중인 타이머 정보 조회 성공
