@@ -133,13 +133,15 @@
 
 ## 🏷️ [v0.4.0] - 2026-03-31
 
-### ✨ Added
-
 ### 🛠 Changed
 
-- 인증 오류 시 401 응답객체 추가
-- @faker-js/faker v9 제거
-- goal_logs의
+- GET /timers (실행 중인 타이머 정보 조회)
+  - swagger 오기입 내용 수정: `goalId`를 request parameters -> body로 변경
+
+- 인증 미들웨어: 인증 오류 시 401 응답객체 추가
+- `@faker-js/faker` v9 제거
+- `TimerLog` → `GoalLog` 관계의 `onDelete` 정책을 `Cascade`로 변경
+- `app.js` 분리, 이에 따른 테스트 코드 파일의 app import path 변경
 
 ### 🐛 Fixed
 
@@ -173,10 +175,16 @@
 - GET /goals/today/complete (오늘 목표 달성률 조회)
   - 테스트 코드 작성 완료
 
+- GET /timers (실행 중인 타이머 정보 조회)
+  - 테스트 코드 작성 완료
+
+- POST /timers/end (타이머 종료)
+  - 테스트 코드 작성 완료
+
 - 테스트 데이터 생성 코드
   - `prisma/seeds/`
   - `db:seed` 스크립트로 db에 랜덤 테스트 데이터 생성 가능
 
-### 📄 Docs
+- goal.test.ts 파일 삭제
 
 ---
