@@ -21,7 +21,8 @@ export interface User extends BaseUser {
   createdAt: Date;
   goals: Goal[];
 }
-export interface UserProfileResponse extends BaseUser {
+export interface UserProfileResponse extends Omit<BaseUser, 'id'> {
+  userId: number; // id 대신 userId 사용
   createdAt: string;
   goals: GoalResponse[];
 }
