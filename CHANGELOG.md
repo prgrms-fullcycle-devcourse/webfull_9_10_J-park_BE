@@ -175,7 +175,7 @@
 
 - 테스트 데이터 생성 코드
   - `prisma/seeds/`
-  - `db:seed`, `db:format` 스크립트로 db에 랜덤 테스트 데이터 생성 가능
+  - `db:seed` 스크립트로 db에 랜덤 테스트 데이터 생성 가능
 
 ### 📄 Docs
 
