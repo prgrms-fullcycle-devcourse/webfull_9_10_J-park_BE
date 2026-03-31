@@ -976,7 +976,7 @@ describe('Timer API', () => {
 
         const response = await request(app)
           .get('/timers')
-          .send({ goalId })
+          .query({ goalId })
           .set('Cookie', [`token=${token}`]);
 
         expect(response.status).toBe(200);
@@ -1006,7 +1006,7 @@ describe('Timer API', () => {
       it('인증되지 않은 요청일 경우 반환한다', async () => {
         const response = await request(app)
           .get('/timers')
-          .send({ goalId })
+          .query({ goalId })
           .set('Cookie', ['token=invalid-token']);
 
         expect(response.status).toBe(401);
@@ -1026,7 +1026,7 @@ describe('Timer API', () => {
 
         const response = await request(app)
           .get('/timers')
-          .send({ goalId: invalidGoalId })
+          .query({ goalId: invalidGoalId })
           .set('Cookie', [`token=${token}`]);
 
         expect(response.status).toBe(404);
@@ -1062,7 +1062,7 @@ describe('Timer API', () => {
 
         const response = await request(app)
           .get('/timers')
-          .send({ goalId: otherGoal.id })
+          .query({ goalId: otherGoal.id })
           .set('Cookie', [`token=${token}`]);
 
         expect(response.status).toBe(404);
@@ -1093,7 +1093,7 @@ describe('Timer API', () => {
 
         const response = await request(app)
           .get('/timers')
-          .send({ goalId })
+          .query({ goalId })
           .set('Cookie', [`token=${token}`]);
 
         expect(response.status).toBe(404);
@@ -1116,7 +1116,7 @@ describe('Timer API', () => {
         const res = await request(app)
           .get('/timers')
           .set('Cookie', [`token=${token}`])
-          .send({ goalId });
+          .query({ goalId });
 
         expect(res.status).toBe(500);
         expect(res.body).toEqual(

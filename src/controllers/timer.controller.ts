@@ -54,6 +54,7 @@ export const startTimerController = async (
   }
 };
 
+// 타이머 측정 종료
 export const endTimerController = async (
   req: Request,
   res: Response<ApiResponse<EndTimerResponse>>,
@@ -114,7 +115,8 @@ export const runningTimerController = async (
       },
     });
   }
-  const { goalId } = req.body;
+
+  const goalId = Number(req.query.goalId);
 
   try {
     const runningTimer = await getRunningTimerService(userId, goalId);
