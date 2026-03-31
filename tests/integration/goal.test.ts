@@ -1,5 +1,5 @@
 import request from 'supertest';
-import app from '../../src/main';
+import app from '../../src/app';
 import prisma from '../../src/config/prisma';
 import jwt from 'jsonwebtoken';
 
@@ -164,7 +164,7 @@ describe('Goal API', () => {
         quota: 20,
       };
 
-      console.log('jwt..', authToken);
+      // console.log('jwt..', authToken);
       const res = await request(app)
         .post('/goals')
         .set('Cookie', [`token=${authToken}`])
