@@ -1,6 +1,6 @@
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
-import app from '../../src/main';
+import app from '../../src/app';
 import prisma from '../../src/config/prisma';
 
 describe('Ranking API', () => {
@@ -18,14 +18,16 @@ describe('Ranking API', () => {
       },
     });
 
-    const user2 = await prisma.user.create({
+    //const user2
+    await prisma.user.create({
       data: {
         nickname: `${TEST_PREFIX}_USER_2`,
         totalTime: 300000,
       },
     });
 
-    const user3 = await prisma.user.create({
+    // const user3
+    await prisma.user.create({
       data: {
         nickname: `${TEST_PREFIX}_USER_3`,
         totalTime: 200000,
@@ -106,7 +108,7 @@ describe('Ranking API', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.message).toBe('전체 랭킹');
-      console.log('res.body,...', res.body);
+      // console.log('res.body,...', res.body);
       expect(res.body.data).toHaveProperty('ranks');
       expect(Array.isArray(res.body.data.ranks)).toBe(true);
 

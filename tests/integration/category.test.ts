@@ -1,5 +1,5 @@
 import request from 'supertest';
-import app from '../../src/main';
+import app from '../../src/app';
 import * as categoryService from '../../src/services/category.service';
 
 describe('Category API', () => {

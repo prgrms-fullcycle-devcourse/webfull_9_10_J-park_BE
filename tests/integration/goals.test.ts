@@ -1,6 +1,6 @@
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
-import app from '../../src/main';
+import app from '../../src/app';
 import prisma from '../../src/config/prisma';
 
 describe('Goal API Integration', () => {
@@ -169,7 +169,7 @@ describe('Goal API Integration', () => {
       },
     });
 
-     // 3. Goal 삭제
+    // 3. Goal 삭제
     await prisma.goal.deleteMany({
       where: {
         userId: {
