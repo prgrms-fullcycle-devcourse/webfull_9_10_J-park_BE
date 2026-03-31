@@ -16,6 +16,7 @@ describe('Ranking API', () => {
         nickname: `${TEST_PREFIX}_USER_1`,
         totalTime: 120000,
       },
+      select: { id: true },
     });
 
     //const user2
@@ -118,15 +119,15 @@ describe('Ranking API', () => {
         expect.arrayContaining([
           expect.objectContaining({
             nickname: `${TEST_PREFIX}_USER_1`,
-            totalTime: '00:02:00',
+            totalTime: 120000,
           }),
           expect.objectContaining({
             nickname: `${TEST_PREFIX}_USER_2`,
-            totalTime: '00:05:00',
+            totalTime: 300000,
           }),
           expect.objectContaining({
             nickname: `${TEST_PREFIX}_USER_3`,
-            totalTime: '00:03:20',
+            totalTime: 200000,
           }),
         ]),
       );
@@ -138,27 +139,58 @@ describe('Ranking API', () => {
       expect(rankingUsers[0]).toEqual(
         expect.objectContaining({
           nickname: `${TEST_PREFIX}_USER_2`,
-          totalTime: '00:05:00',
+          totalTime: 300000,
         }),
       );
 
       expect(rankingUsers[1]).toEqual(
         expect.objectContaining({
           nickname: `${TEST_PREFIX}_USER_3`,
-          totalTime: '00:03:20',
+          totalTime: 200000,
         }),
       );
 
       expect(rankingUsers[2]).toEqual(
         expect.objectContaining({
           nickname: `${TEST_PREFIX}_USER_1`,
-          totalTime: '00:02:00',
+          totalTime: 120000,
         }),
       );
     });
 
     // 401 - 잘못된 토큰일 경우, 인증 에러를 반환한다
-    // 401 - 만료된 토큰일 경우, 인증 에러를 반환한다
+    it('토큰이 잘못된 경우 401 에러를 반환한다', async () => {
+      const res = await request(app).get('/rankings'); // 쿠키 없이 요청
+
+      expect(res.status).toBe(401);
+      expect(res.body.success).toBe(false);
+
+      expect(res.body.error.code).toBe('UNAUTHORIZED');
+      expect(res.body.error.message).toBe('유효하지 않은 토큰입니다.');
+    });
+
     // 500 - 서버 오류 시 명세된 에러 형식으로 반환한다
+    it('서버 오류 시 500 에러를 반환한다', async () => {
+      const prismaSpy = jest
+        .spyOn(prisma.user, 'findMany')
+        .mockRejectedValue(new Error('DB Error'));
+
+      const res = await request(app)
+        .get('/rankings')
+        .set('Cookie', [`token=${authToken}`]);
+
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          success: false,
+          error: expect.objectContaining({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: '서버 오류가 발생했습니다.',
+          }),
+        }),
+      );
+
+      prismaSpy.mockRestore();
+    });
   });
 });
