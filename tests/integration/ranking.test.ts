@@ -1,5 +1,5 @@
-import request from 'supertest';
 import jwt from 'jsonwebtoken';
+import request from 'supertest';
 import app from '../../src/app';
 import prisma from '../../src/config/prisma';
 
@@ -160,13 +160,23 @@ describe('Ranking API', () => {
 
     // 401 - 잘못된 토큰일 경우, 인증 에러를 반환한다
     it('토큰이 잘못된 경우 401 에러를 반환한다', async () => {
-      const res = await request(app).get('/rankings'); // 쿠키 없이 요청
+      const invalidToken = jwt.sign({ id: 999999 }, process.env.JWT_SECRET!, {
+        expiresIn: '10m',
+      });
+      const res = await request(app)
+        .get('/rankings')
+        .set('Cookie', [`token=${invalidToken}`]);
 
       expect(res.status).toBe(401);
-      expect(res.body.success).toBe(false);
-
-      expect(res.body.error.code).toBe('UNAUTHORIZED');
-      expect(res.body.error.message).toBe('유효하지 않은 토큰입니다.');
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          success: false,
+          error: expect.objectContaining({
+            code: 'UNAUTHORIZED',
+            message: '유효하지 않은 토큰입니다.',
+          }),
+        }),
+      );
     });
 
     // 500 - 서버 오류 시 명세된 에러 형식으로 반환한다
