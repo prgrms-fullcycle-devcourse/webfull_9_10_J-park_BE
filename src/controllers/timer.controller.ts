@@ -70,13 +70,15 @@ export const endTimerController = async (
   res: Response<ApiResponse<EndTimerResponse>>,
 ) => {
   const userId = req.user!.userId;
-  const { goalId, currentCompletedAmount, isPaused } = req.body;
 
   try {
-    // 유효성 검사
-    if (!validatePositiveInt(goalId)) {
+    if (!req.body) {
       throw new AppError('BAD_REQUEST');
     }
+
+    const { currentCompletedAmount, isPaused } = req.body;
+
+    // 유효성 검사
     if (!validatePositiveInt(currentCompletedAmount)) {
       throw new AppError('BAD_REQUEST');
     }
@@ -86,7 +88,6 @@ export const endTimerController = async (
 
     const timer = await endTimerService(
       userId,
-      goalId,
       currentCompletedAmount,
       isPaused,
     );
@@ -137,15 +138,8 @@ export const runningTimerController = async (
     });
   }
 
-  const goalId = Number(req.query.goalId);
-
   try {
-    // 유효성 검사
-    if (!validatePositiveInt(goalId)) {
-      throw new AppError('BAD_REQUEST');
-    }
-
-    const runningTimer = await getRunningTimerService(userId, goalId);
+    const runningTimer = await getRunningTimerService(userId);
 
     return res.status(StatusCodes.OK).json({
       success: true,
