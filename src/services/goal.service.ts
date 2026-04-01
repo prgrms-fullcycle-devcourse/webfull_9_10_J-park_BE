@@ -56,12 +56,22 @@ const buildUpdatedGoalResponse = async (
           achievedAt: 'asc',
         },
       },
+      timerLogs: {
+        select: {
+          durationSec: true,
+        },
+      },
     },
   });
 
   if (!goal) {
     throw new Error('GOAL_NOT_FOUND');
   }
+
+  const totalStudyTime = goal.timerLogs.reduce(
+    (sum, log) => sum + log.durationSec,
+    0,
+  );
 
   return {
     id: goal.id,
@@ -73,6 +83,7 @@ const buildUpdatedGoalResponse = async (
       currentAmount: goal.currentValue,
       targetAmount: goal.targetValue,
       unit: goal.category.unit,
+      totalStudyTime,
     },
     period: {
       startDate: formatDate(goal.startDate),
@@ -80,30 +91,14 @@ const buildUpdatedGoalResponse = async (
       daysRemaining: calculateDaysRemaining(goal.endDate),
     },
     dailyProgress: goal.goalLogs.map((log) => {
-      const diff = Math.floor(
-        (toStartOfDay(log.achievedAt).getTime() -
-          toStartOfDay(goal.startDate).getTime()) /
-          86400000,
-      );
-
       return {
-        dailyId: diff + 1,
-        /**
-         * 날짜: 로그 생성일 기준 (YYYY-MM-DD)
-         */
+        goalLogId: log.id,
         date: formatDate(log.achievedAt),
-        /**
-         * quota:
-         * - 실제 수행량(actualValue)
-         * - null이면 0으로 보정 (응답 타입 number 유지)
-         */
-        quota: log.actualValue ?? 0,
-        /**
-         * 완료 여부:
-         * - actualValue >= targetValue
-         * - 둘 다 nullable이므로 안전하게 보정 후 비교
-         */
+        targetAmount: log.targetValue ?? 0,
+        completedAmount: log.actualValue ?? 0,
         isCompleted: (log.actualValue ?? 0) >= (log.targetValue ?? 0),
+        studyTime: log.timeSpent ?? 0,
+        isToday: formatDate(log.achievedAt) === formatDate(new Date()),
       };
     }),
   };
@@ -456,14 +451,8 @@ export const getGoalDetailService = async ({
      */
     const completedAmount = goalLog?.actualValue ?? 0;
 
-    // 26-03-30 dailyId 계산 추가
-    const diff = Math.floor(
-      (toStartOfDay(date).getTime() - toStartOfDay(goal.startDate).getTime()) /
-        86400000,
-    );
-
     return {
-      dailyId: diff + 1, // 추가
+      goalLogId: goalLog?.id ?? null,
       date: dateKey,
       targetAmount,
       completedAmount,
@@ -688,7 +677,6 @@ export const getTodayGoalsService = async (
       currentValue: true,
       targetValue: true,
       quota: true,
-      startDate: true, // 26-03-30 추가
       category: {
         select: {
           unit: true,
@@ -709,29 +697,49 @@ export const getTodayGoalsService = async (
   /**
    * 오늘의 타이머 로그 조회
    */
-  const timerLogs = await prisma.timerLog.findMany({
-    where: {
-      goalId: {
-        in: goalIds,
+  const [goalLogs, timerLogs] = await Promise.all([
+    prisma.goalLog.findMany({
+      where: {
+        userId,
+        goalId: {
+          in: goalIds,
+        },
+        achievedAt: {
+          gte: startOfToday,
+          lte: endOfToday,
+        },
       },
-      timerDate: {
-        gte: startOfToday,
-        lte: endOfToday,
+      select: {
+        id: true,
+        goalId: true,
       },
-    },
-    orderBy: {
-      timerDate: 'asc',
-    },
-    select: {
-      goalId: true,
-      durationSec: true,
-      endTime: true,
-    },
-  });
+    }),
+
+    prisma.timerLog.findMany({
+      where: {
+        goalId: {
+          in: goalIds,
+        },
+        timerDate: {
+          gte: startOfToday,
+          lte: endOfToday,
+        },
+      },
+      orderBy: {
+        timerDate: 'asc',
+      },
+      select: {
+        goalId: true,
+        durationSec: true,
+        endTime: true,
+      },
+    }),
+  ]);
 
   /**
    * 목표별 공부 시간 합계 / 실행 중 여부 계산
    */
+  const goalLogMap = new Map(goalLogs.map((log) => [log.goalId, log]));
   const studyTimeMap = new Map<number, number>();
   const runningGoalSet = new Set<number>();
 
@@ -744,16 +752,12 @@ export const getTodayGoalsService = async (
     }
   });
 
-  // 26-03-30 dailyId 추가
   const todayGoals = goals.map((goal) => {
-    const diff = Math.floor(
-      (toStartOfDay(today).getTime() - toStartOfDay(goal.startDate).getTime()) /
-        86400000,
-    );
+    const goalLog = goalLogMap.get(goal.id);
 
     return {
       id: goal.id,
-      dailyId: diff + 1, // 추가
+      goalLogId: goalLog?.id ?? null,
       title: goal.title,
       targetAmount: goal.quota,
       currentAmount: goal.currentValue,
