@@ -15,6 +15,11 @@ import {
   StartTimerResponse,
 } from '../types/timer.type';
 
+// int 유효성 검사 함수
+const validatePositiveInt = (value: unknown): boolean => {
+  return typeof value === 'number' && Number.isInteger(value) && value > 0;
+};
+
 // 타이머 측정 시작
 export const startTimerController = async (
   req: Request,
@@ -24,7 +29,12 @@ export const startTimerController = async (
   const { goalId } = req.body;
 
   try {
-    const timer = await startTimerService(userId, parseInt(goalId));
+    // 유효성 검사
+    if (!validatePositiveInt(goalId)) {
+      throw new AppError('BAD_REQUEST');
+    }
+
+    const timer = await startTimerService(userId, Number(goalId));
     return res.status(StatusCodes.OK).json({
       success: true,
       message: '타이머 시작',
@@ -63,6 +73,17 @@ export const endTimerController = async (
   const { goalId, currentCompletedAmount, isPaused } = req.body;
 
   try {
+    // 유효성 검사
+    if (!validatePositiveInt(goalId)) {
+      throw new AppError('BAD_REQUEST');
+    }
+    if (!validatePositiveInt(currentCompletedAmount)) {
+      throw new AppError('BAD_REQUEST');
+    }
+    if (isPaused && typeof isPaused !== 'boolean') {
+      throw new AppError('BAD_REQUEST');
+    }
+
     const timer = await endTimerService(
       userId,
       goalId,
@@ -119,6 +140,11 @@ export const runningTimerController = async (
   const goalId = Number(req.query.goalId);
 
   try {
+    // 유효성 검사
+    if (!validatePositiveInt(goalId)) {
+      throw new AppError('BAD_REQUEST');
+    }
+
     const runningTimer = await getRunningTimerService(userId, goalId);
 
     return res.status(StatusCodes.OK).json({
