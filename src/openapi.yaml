@@ -1610,6 +1610,31 @@ paths:
                       isRunning: true
                       startedAt: '2026-03-17T23:13:54Z'
 
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: BAD_REQUEST
+                      message:
+                        type: string
+                        example: 요청 형식이 올바르지 않습니다.
+              examples:
+                success: false
+                error:
+                  code: BAD_REQUEST
+                  message: 요청 형식이 올바르지 않습니다.
+
         '401':
           description: 인증 실패
           content:
@@ -1745,6 +1770,31 @@ paths:
                 data:
                   goalId: 1
                   timerRunning: true
+
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: BAD_REQUEST
+                      message:
+                        type: string
+                        example: 요청 형식이 올바르지 않습니다.
+              examples:
+                success: false
+                error:
+                  code: BAD_REQUEST
+                  message: 요청 형식이 올바르지 않습니다.
 
         '401':
           description: 인증 실패
@@ -1924,6 +1974,31 @@ paths:
                   isTimerRunning: false
                   goalDuration: 946834
                   goalProgressRate: 85
+
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: BAD_REQUEST
+                      message:
+                        type: string
+                        example: 요청 형식이 올바르지 않습니다.
+              examples:
+                success: false
+                error:
+                  code: BAD_REQUEST
+                  message: 요청 형식이 올바르지 않습니다.
 
         '401':
           description: 인증 실패

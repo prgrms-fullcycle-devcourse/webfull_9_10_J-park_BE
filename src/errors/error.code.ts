@@ -1,6 +1,13 @@
 import { StatusCodes } from 'http-status-codes';
 
 export const ERROR_CODES = {
+  // 400
+  BAD_REQUEST: {
+    statusCode: StatusCodes.BAD_REQUEST,
+    code: 'BAD_REQUEST',
+    message: '요청 형식이 올바르지 않습니다.',
+  },
+
   // 404
   GOAL_NOT_FOUND: {
     statusCode: StatusCodes.NOT_FOUND,

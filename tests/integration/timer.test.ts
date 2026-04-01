@@ -190,6 +190,46 @@ describe('Timer API', () => {
       });
     });
 
+    describe('400 - BAD_REQUEST', () => {
+      it('goalId가 없을 경우 반환한다', async () => {
+        const response = await request(app)
+          .post('/timers/start')
+          .set('Cookie', [`token=${token}`])
+          .send({});
+
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              code: 'BAD_REQUEST',
+              message: '요청 형식이 올바르지 않습니다.',
+            }),
+          }),
+        );
+      });
+
+      it('goalId의 형식이 올바르지 않을 경우 반환한다', async () => {
+        const response = await request(app)
+          .post('/timers/start')
+          .set('Cookie', [`token=${token}`])
+          .send({
+            goalId: 'goal_id',
+          });
+
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              code: 'BAD_REQUEST',
+              message: '요청 형식이 올바르지 않습니다.',
+            }),
+          }),
+        );
+      });
+    });
+
     describe('404 - GOAL_NOT_FOUND', () => {
       it('요청한 goal이 존재하지 않을 경우 반환한다', async () => {
         const invalidGoalId = goalId + 1; // 존재하지 않는 goal id
@@ -598,6 +638,242 @@ describe('Timer API', () => {
       });
     });
 
+    describe('400 - BAD_REQUEST', () => {
+      it('goalId가 없을 경우 반환한다', async () => {
+        const now = new Date();
+        const timerDate = getLocalMidnight(now);
+
+        const goalLog = await prisma.goalLog.create({
+          data: {
+            userId,
+            goalId,
+            actualValue: 1,
+            targetValue: 10,
+            timeSpent: 10000,
+            achievedAt: timerDate,
+          },
+        });
+        const goalLogId = goalLog.id;
+
+        const startTime = new Date(now.getTime() - 5 * 60 * 1000);
+        await prisma.timerLog.create({
+          data: {
+            userId,
+            goalId,
+            timerDate,
+            startTime,
+            goalLogId,
+          },
+        });
+
+        const response = await request(app)
+          .post('/timers/end')
+          .set('Cookie', [`token=${token}`])
+          .send({
+            currentCompletedAmount: 13,
+          });
+
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              code: 'BAD_REQUEST',
+              message: '요청 형식이 올바르지 않습니다.',
+            }),
+          }),
+        );
+      });
+
+      it('goalId의 형식이 올바르지 않을 경우 반환한다', async () => {
+        const now = new Date();
+        const timerDate = getLocalMidnight(now);
+
+        const goalLog = await prisma.goalLog.create({
+          data: {
+            userId,
+            goalId,
+            actualValue: 1,
+            targetValue: 10,
+            timeSpent: 10000,
+            achievedAt: timerDate,
+          },
+        });
+        const goalLogId = goalLog.id;
+
+        const startTime = new Date(now.getTime() - 5 * 60 * 1000);
+        await prisma.timerLog.create({
+          data: {
+            userId,
+            goalId,
+            timerDate,
+            startTime,
+            goalLogId,
+          },
+        });
+
+        const response = await request(app)
+          .post('/timers/end')
+          .set('Cookie', [`token=${token}`])
+          .send({
+            goalId: 'goal_id',
+            currentCompletedAmount: 13,
+          });
+
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              code: 'BAD_REQUEST',
+              message: '요청 형식이 올바르지 않습니다.',
+            }),
+          }),
+        );
+      });
+
+      it('currentCompletedAmount가 없을 경우 반환한다', async () => {
+        const now = new Date();
+        const timerDate = getLocalMidnight(now);
+
+        const goalLog = await prisma.goalLog.create({
+          data: {
+            userId,
+            goalId,
+            actualValue: 1,
+            targetValue: 10,
+            timeSpent: 10000,
+            achievedAt: timerDate,
+          },
+        });
+        const goalLogId = goalLog.id;
+
+        const startTime = new Date(now.getTime() - 5 * 60 * 1000);
+        await prisma.timerLog.create({
+          data: {
+            userId,
+            goalId,
+            timerDate,
+            startTime,
+            goalLogId,
+          },
+        });
+
+        const response = await request(app)
+          .post('/timers/end')
+          .set('Cookie', [`token=${token}`])
+          .send({
+            goalId,
+          });
+
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              code: 'BAD_REQUEST',
+              message: '요청 형식이 올바르지 않습니다.',
+            }),
+          }),
+        );
+      });
+
+      it('currentCompletedAmount의 형식이 올바르지 않을 경우 반환한다', async () => {
+        const now = new Date();
+        const timerDate = getLocalMidnight(now);
+
+        const goalLog = await prisma.goalLog.create({
+          data: {
+            userId,
+            goalId,
+            actualValue: 1,
+            targetValue: 10,
+            timeSpent: 10000,
+            achievedAt: timerDate,
+          },
+        });
+        const goalLogId = goalLog.id;
+
+        const startTime = new Date(now.getTime() - 5 * 60 * 1000);
+        await prisma.timerLog.create({
+          data: {
+            userId,
+            goalId,
+            timerDate,
+            startTime,
+            goalLogId,
+          },
+        });
+
+        const response = await request(app)
+          .post('/timers/end')
+          .set('Cookie', [`token=${token}`])
+          .send({
+            goalId,
+            currentCompletedAmount: 'currentCompletedAmount',
+          });
+
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              code: 'BAD_REQUEST',
+              message: '요청 형식이 올바르지 않습니다.',
+            }),
+          }),
+        );
+      });
+
+      it('isPaused의 형식이 올바르지 않을 경우 반환한다', async () => {
+        const now = new Date();
+        const timerDate = getLocalMidnight(now);
+
+        const goalLog = await prisma.goalLog.create({
+          data: {
+            userId,
+            goalId,
+            actualValue: 1,
+            targetValue: 10,
+            timeSpent: 10000,
+            achievedAt: timerDate,
+          },
+        });
+        const goalLogId = goalLog.id;
+
+        const startTime = new Date(now.getTime() - 5 * 60 * 1000);
+        await prisma.timerLog.create({
+          data: {
+            userId,
+            goalId,
+            timerDate,
+            startTime,
+            goalLogId,
+          },
+        });
+
+        const response = await request(app)
+          .post('/timers/end')
+          .set('Cookie', [`token=${token}`])
+          .send({
+            goalId,
+            currentCompletedAmount: 13,
+            isPaused: 'Paused',
+          });
+
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              code: 'BAD_REQUEST',
+              message: '요청 형식이 올바르지 않습니다.',
+            }),
+          }),
+        );
+      });
+    });
+
     describe('401 - UNAUTHORIZED', () => {
       it('인증되지 않은 요청일 경우 반환한다', async () => {
         const now = new Date();
@@ -999,6 +1275,92 @@ describe('Timer API', () => {
 
         // 종료된 타이머 30분 + 실행 중 타이머 60분 = 90분 = 5,400,000ms 예상
         // expect(response.body.data.todayStudyDuration).toBe(5_400_000);
+      });
+    });
+
+    describe('400 - BAD_REQUEST', () => {
+      it('goalId가 없을 경우 반환한다', async () => {
+        await prisma.timerLog.create({
+          data: {
+            userId,
+            goalId,
+            timerDate: todayMidnight,
+            startTime: new Date('2026-03-30T08:00:00+09:00'),
+            endTime: new Date('2026-03-30T08:30:00+09:00'),
+            durationSec: 30 * 60 * 1000,
+            goalLogId,
+          },
+        });
+
+        await prisma.timerLog.create({
+          data: {
+            userId,
+            goalId,
+            timerDate: todayMidnight,
+            startTime: new Date('2026-03-30T09:00:00+09:00'),
+            endTime: null,
+            goalLogId,
+          },
+        });
+
+        const response = await request(app)
+          .get('/timers')
+          .send({})
+          .set('Cookie', [`token=${token}`]);
+
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              code: 'BAD_REQUEST',
+              message: '요청 형식이 올바르지 않습니다.',
+            }),
+          }),
+        );
+      });
+
+      it('goalId의 형식이 올바르지 않을 경우 반환한다', async () => {
+        await prisma.timerLog.create({
+          data: {
+            userId,
+            goalId,
+            timerDate: todayMidnight,
+            startTime: new Date('2026-03-30T08:00:00+09:00'),
+            endTime: new Date('2026-03-30T08:30:00+09:00'),
+            durationSec: 30 * 60 * 1000,
+            goalLogId,
+          },
+        });
+
+        await prisma.timerLog.create({
+          data: {
+            userId,
+            goalId,
+            timerDate: todayMidnight,
+            startTime: new Date('2026-03-30T09:00:00+09:00'),
+            endTime: null,
+            goalLogId,
+          },
+        });
+
+        const response = await request(app)
+          .get('/timers')
+          .send({
+            goalId: 'goal_id',
+          })
+          .set('Cookie', [`token=${token}`]);
+
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              code: 'BAD_REQUEST',
+              message: '요청 형식이 올바르지 않습니다.',
+            }),
+          }),
+        );
       });
     });
 
