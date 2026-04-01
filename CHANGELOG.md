@@ -235,3 +235,28 @@
   - 테스트 코드 작성 완료
 
 ---
+
+## 🏷️ [v0.6.0] - 2026-04-01
+
+### ✨ Added
+
+### 🛠 Changed
+- GET /timers (실행 중인 타이머 정보 조회)
+  - 요청값에서 `goalId` 제거
+  - `response data`에 `goalLogId` 추가
+  - `userId` 기준으로 실행 중인 타이머 조회
+
+- POST /timers/end (타이머 종료)
+  - 요청값에서 `goalId` 제거
+  - `response data`에 `goalLogId` 추가
+  - `userId` 기준으로 실행 중인 타이머 조회
+
+### 🐛 Fixed
+
+### 🔒 Security
+
+### 🧪 Test
+
+### 📄 Docs
+
+---
