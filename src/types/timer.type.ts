@@ -8,25 +8,26 @@ export interface StartTimerResponse {
 }
 
 export interface EndTimerRequest {
-  goalId: number;
   currentCompletedAmount: number;
   isPaused: boolean;
 }
 
 export interface EndTimerResponse {
   goalId: number;
+  goalLogId: number;
   isTimerRunning: boolean;
   goalDuration: number;
   goalProgressRate: number;
 }
 
-export interface RunningTimerRequest {
-  goalId: number;
-}
+// export interface RunningTimerRequest {
+//   goalId: number;
+// }
 
 export interface RunningTimerResponse {
   goalId: number;
   goalTitle: string;
+  goalLogId: number;
   todayStudyDuration: number;
   todayProgressRate: number;
   todayCompletedAmount: number;

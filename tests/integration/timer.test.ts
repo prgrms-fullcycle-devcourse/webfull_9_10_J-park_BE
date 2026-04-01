@@ -530,7 +530,6 @@ describe('Timer API', () => {
           .post('/timers/end')
           .set('Cookie', [`token=${token}`])
           .send({
-            goalId,
             currentCompletedAmount: 13,
           });
 
@@ -541,6 +540,7 @@ describe('Timer API', () => {
         expect(response.body.data).toEqual(
           expect.objectContaining({
             goalId,
+            goalLogId,
             isTimerRunning: false,
             goalDuration: expect.any(Number),
             goalProgressRate: expect.any(Number),
@@ -623,7 +623,6 @@ describe('Timer API', () => {
           .post('/timers/end')
           .set('Cookie', [`token=${token}`])
           .send({
-            goalId,
             currentCompletedAmount: 13,
             isPaused: true,
           });
@@ -639,99 +638,6 @@ describe('Timer API', () => {
     });
 
     describe('400 - BAD_REQUEST', () => {
-      it('goalId가 없을 경우 반환한다', async () => {
-        const now = new Date();
-        const timerDate = getLocalMidnight(now);
-
-        const goalLog = await prisma.goalLog.create({
-          data: {
-            userId,
-            goalId,
-            actualValue: 1,
-            targetValue: 10,
-            timeSpent: 10000,
-            achievedAt: timerDate,
-          },
-        });
-        const goalLogId = goalLog.id;
-
-        const startTime = new Date(now.getTime() - 5 * 60 * 1000);
-        await prisma.timerLog.create({
-          data: {
-            userId,
-            goalId,
-            timerDate,
-            startTime,
-            goalLogId,
-          },
-        });
-
-        const response = await request(app)
-          .post('/timers/end')
-          .set('Cookie', [`token=${token}`])
-          .send({
-            currentCompletedAmount: 13,
-          });
-
-        expect(response.status).toBe(400);
-        expect(response.body).toEqual(
-          expect.objectContaining({
-            success: false,
-            error: expect.objectContaining({
-              code: 'BAD_REQUEST',
-              message: '요청 형식이 올바르지 않습니다.',
-            }),
-          }),
-        );
-      });
-
-      it('goalId의 형식이 올바르지 않을 경우 반환한다', async () => {
-        const now = new Date();
-        const timerDate = getLocalMidnight(now);
-
-        const goalLog = await prisma.goalLog.create({
-          data: {
-            userId,
-            goalId,
-            actualValue: 1,
-            targetValue: 10,
-            timeSpent: 10000,
-            achievedAt: timerDate,
-          },
-        });
-        const goalLogId = goalLog.id;
-
-        const startTime = new Date(now.getTime() - 5 * 60 * 1000);
-        await prisma.timerLog.create({
-          data: {
-            userId,
-            goalId,
-            timerDate,
-            startTime,
-            goalLogId,
-          },
-        });
-
-        const response = await request(app)
-          .post('/timers/end')
-          .set('Cookie', [`token=${token}`])
-          .send({
-            goalId: 'goal_id',
-            currentCompletedAmount: 13,
-          });
-
-        expect(response.status).toBe(400);
-        expect(response.body).toEqual(
-          expect.objectContaining({
-            success: false,
-            error: expect.objectContaining({
-              code: 'BAD_REQUEST',
-              message: '요청 형식이 올바르지 않습니다.',
-            }),
-          }),
-        );
-      });
-
       it('currentCompletedAmount가 없을 경우 반환한다', async () => {
         const now = new Date();
         const timerDate = getLocalMidnight(now);
@@ -761,10 +667,7 @@ describe('Timer API', () => {
 
         const response = await request(app)
           .post('/timers/end')
-          .set('Cookie', [`token=${token}`])
-          .send({
-            goalId,
-          });
+          .set('Cookie', [`token=${token}`]);
 
         expect(response.status).toBe(400);
         expect(response.body).toEqual(
@@ -809,7 +712,6 @@ describe('Timer API', () => {
           .post('/timers/end')
           .set('Cookie', [`token=${token}`])
           .send({
-            goalId,
             currentCompletedAmount: 'currentCompletedAmount',
           });
 
@@ -856,7 +758,6 @@ describe('Timer API', () => {
           .post('/timers/end')
           .set('Cookie', [`token=${token}`])
           .send({
-            goalId,
             currentCompletedAmount: 13,
             isPaused: 'Paused',
           });
@@ -907,7 +808,6 @@ describe('Timer API', () => {
           .post('/timers/end')
           .set('Cookie', [`token=invalidToken`])
           .send({
-            goalId,
             currentCompletedAmount: 13,
           });
 
@@ -924,103 +824,12 @@ describe('Timer API', () => {
       });
     });
 
-    describe('404 - GOAL_NOT_FOUND', () => {
-      it('요청한 goal이 존재하지 않을 경우 반환한다', async () => {
-        const now = new Date();
-        const timerDate = getLocalMidnight(now);
-
-        const goalLog = await prisma.goalLog.create({
-          data: {
-            userId,
-            goalId,
-            actualValue: 1,
-            targetValue: 10,
-            timeSpent: 10000,
-            achievedAt: timerDate,
-          },
-        });
-        const goalLogId = goalLog.id;
-
-        // 5분 전 시작한 타이머 생성
-        const startTime = new Date(now.getTime() - 5 * 60 * 1000);
-        await prisma.timerLog.create({
-          data: {
-            userId,
-            goalId,
-            timerDate,
-            startTime,
-            goalLogId,
-          },
-        });
-
-        const invalidGoalId = goalId + 99999; // 존재하지 않는 goal id
-
-        const response = await request(app)
-          .post('/timers/end')
-          .set('Cookie', [`token=${token}`])
-          .send({
-            goalId: invalidGoalId,
-            currentCompletedAmount: 13,
-          });
-
-        expect(response.status).toBe(404);
-        expect(response.body).toEqual(
-          expect.objectContaining({
-            success: false,
-            error: expect.objectContaining({
-              code: 'GOAL_NOT_FOUND',
-              message: '목표를 찾을 수 없습니다.',
-            }),
-          }),
-        );
-      });
-
-      it('요청한 goal이 해당 사용자의 목표가 아닐 경우 반환한다', async () => {
-        // 다른 유저의 목표를 생성
-        const otherUser = await prisma.user.create({
-          data: {
-            nickname: `${TEST_PREFIX}_OTHER_USER`,
-          },
-        });
-        const otherGoal = await prisma.goal.create({
-          data: {
-            userId: otherUser.id,
-            categoryId,
-            title: `${TEST_PREFIX}_OTHER_GOAL`,
-            description: '다른 유저의 목표',
-            startDate: new Date('2026-03-01'),
-            endDate: new Date('2026-03-31'),
-            currentValue: 0,
-            targetValue: 100,
-            quota: 10,
-          },
-        });
-
-        const res = await request(app)
-          .post('/timers/start')
-          .set('Cookie', [`token=${token}`])
-          .send({ goalId: otherGoal.id }); // 다른 유저의 목표를 전달
-
-        expect(res.status).toBe(404);
-        expect(res.body).toEqual(
-          expect.objectContaining({
-            success: false,
-            error: expect.objectContaining({
-              code: 'GOAL_NOT_FOUND',
-              message: '목표를 찾을 수 없습니다.',
-            }),
-          }),
-        );
-      });
-    });
-
     describe('404 - RUNNING_TIMER_NOT_FOUND', () => {
       it('실행 중인 타이머가 없으면 반환한다', async () => {
         const response = await request(app)
           .post('/timers/end')
           .set('Cookie', [`token=${token}`])
           .send({
-            goalId,
             currentCompletedAmount: 13,
           });
 
@@ -1072,7 +881,6 @@ describe('Timer API', () => {
           .post('/timers/end')
           .set('Cookie', [`token=${token}`])
           .send({
-            goalId,
             currentCompletedAmount: 13,
           });
 
@@ -1252,7 +1060,6 @@ describe('Timer API', () => {
 
         const response = await request(app)
           .get('/timers')
-          .query({ goalId })
           .set('Cookie', [`token=${token}`]);
 
         expect(response.status).toBe(200);
@@ -1263,6 +1070,7 @@ describe('Timer API', () => {
           expect.objectContaining({
             goalId,
             goalTitle: `${TEST_PREFIX}_GOAL`,
+            goalLogId,
             todayCompletedAmount: 0,
             todayTargetAmount: 10,
             todayProgressRate: 0,
@@ -1278,97 +1086,10 @@ describe('Timer API', () => {
       });
     });
 
-    describe('400 - BAD_REQUEST', () => {
-      it('goalId가 없을 경우 반환한다', async () => {
-        await prisma.timerLog.create({
-          data: {
-            userId,
-            goalId,
-            timerDate: todayMidnight,
-            startTime: new Date('2026-03-30T08:00:00+09:00'),
-            endTime: new Date('2026-03-30T08:30:00+09:00'),
-            durationSec: 30 * 60 * 1000,
-            goalLogId,
-          },
-        });
-
-        await prisma.timerLog.create({
-          data: {
-            userId,
-            goalId,
-            timerDate: todayMidnight,
-            startTime: new Date('2026-03-30T09:00:00+09:00'),
-            endTime: null,
-            goalLogId,
-          },
-        });
-
-        const response = await request(app)
-          .get('/timers')
-          .send({})
-          .set('Cookie', [`token=${token}`]);
-
-        expect(response.status).toBe(400);
-        expect(response.body).toEqual(
-          expect.objectContaining({
-            success: false,
-            error: expect.objectContaining({
-              code: 'BAD_REQUEST',
-              message: '요청 형식이 올바르지 않습니다.',
-            }),
-          }),
-        );
-      });
-
-      it('goalId의 형식이 올바르지 않을 경우 반환한다', async () => {
-        await prisma.timerLog.create({
-          data: {
-            userId,
-            goalId,
-            timerDate: todayMidnight,
-            startTime: new Date('2026-03-30T08:00:00+09:00'),
-            endTime: new Date('2026-03-30T08:30:00+09:00'),
-            durationSec: 30 * 60 * 1000,
-            goalLogId,
-          },
-        });
-
-        await prisma.timerLog.create({
-          data: {
-            userId,
-            goalId,
-            timerDate: todayMidnight,
-            startTime: new Date('2026-03-30T09:00:00+09:00'),
-            endTime: null,
-            goalLogId,
-          },
-        });
-
-        const response = await request(app)
-          .get('/timers')
-          .send({
-            goalId: 'goal_id',
-          })
-          .set('Cookie', [`token=${token}`]);
-
-        expect(response.status).toBe(400);
-        expect(response.body).toEqual(
-          expect.objectContaining({
-            success: false,
-            error: expect.objectContaining({
-              code: 'BAD_REQUEST',
-              message: '요청 형식이 올바르지 않습니다.',
-            }),
-          }),
-        );
-      });
-    });
-
     describe('401 - UNAUTHORIZED', () => {
       it('인증되지 않은 요청일 경우 반환한다', async () => {
         const response = await request(app)
           .get('/timers')
-          .query({ goalId })
           .set('Cookie', ['token=invalid-token']);
 
         expect(response.status).toBe(401);
@@ -1382,64 +1103,8 @@ describe('Timer API', () => {
       });
     });
 
-    describe('404 - GOAL_NOT_FOUND', () => {
-      it('요청한 goal이 존재하지 않을 경우 반환한다', async () => {
-        const invalidGoalId = goalId + 999999;
-
-        const response = await request(app)
-          .get('/timers')
-          .query({ goalId: invalidGoalId })
-          .set('Cookie', [`token=${token}`]);
-
-        expect(response.status).toBe(404);
-        expect(response.body.success).toBe(false);
-        expect(response.body.error).toEqual(
-          expect.objectContaining({
-            code: 'GOAL_NOT_FOUND',
-            message: '목표를 찾을 수 없습니다.',
-          }),
-        );
-      });
-
-      it('요청한 goal이 해당 사용자의 목표가 아닐 경우 반환한다', async () => {
-        // 다른 유저의 목표를 생성
-        const otherUser = await prisma.user.create({
-          data: {
-            nickname: `${TEST_PREFIX}_OTHER_USER`,
-          },
-        });
-        const otherGoal = await prisma.goal.create({
-          data: {
-            userId: otherUser.id,
-            categoryId,
-            title: `${TEST_PREFIX}_OTHER_GOAL`,
-            description: '다른 유저의 목표',
-            startDate: new Date('2026-03-01'),
-            endDate: new Date('2026-03-31'),
-            currentValue: 0,
-            targetValue: 100,
-            quota: 10,
-          },
-        });
-
-        const response = await request(app)
-          .get('/timers')
-          .query({ goalId: otherGoal.id })
-          .set('Cookie', [`token=${token}`]);
-
-        expect(response.status).toBe(404);
-        expect(response.body.success).toBe(false);
-        expect(response.body.error).toEqual(
-          expect.objectContaining({
-            code: 'GOAL_NOT_FOUND',
-            message: '목표를 찾을 수 없습니다.',
-          }),
-        );
-      });
-    });
-
     describe('404 - RUNNING_TIMER_NOT_FOUND', () => {
-      it('목표는 존재하지만 실행 중인 타이머가 없을 경우 반환한다', async () => {
+      it('실행 중인 타이머가 없을 경우 반환한다', async () => {
         // 종료된 타이머만 존재
         await prisma.timerLog.create({
           data: {
@@ -1455,7 +1120,6 @@ describe('Timer API', () => {
 
         const response = await request(app)
           .get('/timers')
-          .query({ goalId })
           .set('Cookie', [`token=${token}`]);
 
         expect(response.status).toBe(404);
@@ -1477,8 +1141,7 @@ describe('Timer API', () => {
 
         const res = await request(app)
           .get('/timers')
-          .set('Cookie', [`token=${token}`])
-          .query({ goalId });
+          .set('Cookie', [`token=${token}`]);
 
         expect(res.status).toBe(500);
         expect(res.body).toEqual(

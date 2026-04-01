@@ -78,30 +78,13 @@ export const startTimerService = async (
 // 타이머 측정 종료
 export const endTimerService = async (
   userId: number,
-  goalId: number,
   currentCompletedAmount: number,
   isPaused: boolean = false,
 ): Promise<EndTimerResponse> => {
-  // goal 존재 여부 확인
-  const goal = await prisma.goal.findFirst({
-    where: {
-      id: goalId,
-      userId,
-    },
-    select: {
-      title: true,
-      currentValue: true,
-    },
-  });
-  if (!goal) {
-    throw new AppError('GOAL_NOT_FOUND');
-  }
-
   // 실행 중인 타이머 가져오기
   const runningTimers = await prisma.timerLog.findMany({
     where: {
       userId,
-      goalId,
       endTime: null,
     },
     select: {
@@ -109,6 +92,8 @@ export const endTimerService = async (
       timerDate: true,
       startTime: true,
       endTime: true,
+      goalId: true,
+      goalLogId: true,
     },
   });
 
@@ -123,12 +108,28 @@ export const endTimerService = async (
   }
 
   const runningTimer = runningTimers[0];
+  const { goalId, goalLogId } = runningTimer;
+
+  // 해당 타이머의 목표 정보 가져오기
+  const goal = await prisma.goal.findFirst({
+    where: {
+      id: goalId,
+      userId,
+    },
+    select: {
+      title: true,
+      currentValue: true,
+    },
+  });
+  if (!goal) {
+    throw new Error('가져온 목표가 없습니다.');
+  }
 
   const now = new Date();
 
   // timer_logs 업데이트
   const timeDuration = now.getTime() - runningTimer.startTime.getTime();
-  const timerLog = await prisma.timerLog.update({
+  await prisma.timerLog.update({
     where: { id: runningTimer.id },
     data: {
       endTime: now,
@@ -137,12 +138,11 @@ export const endTimerService = async (
   });
 
   // goal_logs 업데이트
-  // 주의: 유니크 값을 알 수 없어 updateMany 사용, 향수 수정이 필요
   const incrementValue = currentCompletedAmount - goal.currentValue; // 추가로 진행된 분량
 
   const goalLog = await prisma.goalLog.update({
     where: {
-      id: timerLog.goalLogId,
+      id: goalLogId,
     },
     data: {
       timeSpent: { increment: timeDuration },
@@ -171,6 +171,7 @@ export const endTimerService = async (
 
   const endTimer = {
     goalId,
+    goalLogId,
     isTimerRunning: false,
     goalDuration,
     goalProgressRate,
@@ -182,27 +183,11 @@ export const endTimerService = async (
 // 실행 중인 타이머 조회
 export const getRunningTimerService = async (
   userId: number,
-  goalId: number,
 ): Promise<RunningTimerResponse> => {
-  // goal 존재 여부 확인
-  const goal = await prisma.goal.findFirst({
-    where: {
-      id: goalId,
-      userId,
-    },
-    select: {
-      title: true,
-    },
-  });
-  if (!goal) {
-    throw new AppError('GOAL_NOT_FOUND');
-  }
-
   // 실행 중인 타이머 가져오기
   const runningTimers = await prisma.timerLog.findMany({
     where: {
       userId,
-      goalId,
       endTime: null,
     },
     include: {
@@ -221,11 +206,26 @@ export const getRunningTimerService = async (
   }
 
   const runningTimer = runningTimers[0];
+  const { goalId, goalLogId } = runningTimer;
+
+  // 해당 타이머의 목표 정보 가져오기
+  const goal = await prisma.goal.findFirst({
+    where: {
+      id: goalId,
+      userId,
+    },
+    select: {
+      title: true,
+    },
+  });
+  if (!goal) {
+    throw Error('가져온 목표가 없습니다.');
+  }
 
   // 해당 날짜의 goalId, userId에 해당하는 목표 측정 기록 가져오기
   const todayGoalLog = await prisma.goalLog.findUnique({
     where: {
-      id: runningTimer.goalLogId,
+      id: goalLogId,
     },
     select: {
       actualValue: true,
@@ -251,6 +251,7 @@ export const getRunningTimerService = async (
   return {
     goalId,
     goalTitle: goal.title,
+    goalLogId,
     todayStudyDuration: todayGoalLog.timeSpent ?? 0,
     todayProgressRate,
     todayCompletedAmount,
