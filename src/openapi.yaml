@@ -1535,7 +1535,7 @@ paths:
           description: 목표의 ID
           schema:
             type: integer
-            example: 1 
+            example: 1
       responses:
         '200':
           description: 실행 중인 타이머 정보 조회 성공
