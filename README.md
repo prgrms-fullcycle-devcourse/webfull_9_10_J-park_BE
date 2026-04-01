@@ -4,10 +4,10 @@ Team 제이팍 - 등불 프로젝트의 백엔드 작업 공간
 
 ## 현재 배포 상태
 
-- version: v0.4.0
-- deployedAt: 2026-03-31
+- version: v0.5.0
+- deployedAt: 2026-04-01
 
-상세 변경 사항은 [CHANGELOG.md](CHANGELOG.md#%EF%B8%8F-v040---2026-03-31) 참고
+상세 변경 사항은 [CHANGELOG.md](CHANGELOG.md#%EF%B8%8F-v050---2026-04-01) 참고
 
 ## 확인 방법
 
