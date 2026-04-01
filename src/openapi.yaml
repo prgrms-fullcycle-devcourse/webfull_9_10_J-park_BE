@@ -1528,14 +1528,6 @@ paths:
       description: 특정 목표의 실행 중인 타이머 정보를 조회합니다.
       security:
         - bearerAuth: []
-      parameters:
-        - name: goalId
-          in: query
-          required: true
-          description: 목표의 ID
-          schema:
-            type: integer
-            example: 1
       responses:
         '200':
           description: 실행 중인 타이머 정보 조회 성공
@@ -1555,12 +1547,16 @@ paths:
                     properties:
                       goalId:
                         type: integer
-                        description: 목표 ID
+                        description: 한 목표 자체에 대한 ID
                         example: 1
                       goalTitle:
                         type: string
                         description: 목표 이름
                         example: 자료구조 공부
+                      goalLogId:
+                        type: integer
+                        description: 오늘자 목표의 ID
+                        example: 4
                       todayStudyDuration:
                         type: number
                         description: 목표에 대한 오늘 공부 시간
@@ -1595,6 +1591,7 @@ paths:
                   data:
                     goalId: 1
                     goalTitle: 자료구조 공부
+                    goalLogId: 4
                     todayStudyDuration: 4815000
                     todayProgressRate: 65
                     todayCompletedAmount: 0
@@ -1905,13 +1902,8 @@ paths:
             schema:
               type: object
               required:
-                - goalId
                 - currentCompletedAmount
               properties:
-                goalId:
-                  type: integer
-                  description: 목표 ID
-                  example: 1
                 currentCompletedAmount:
                   type: integer
                   description: 현재 목표 진행 분량
@@ -1922,7 +1914,6 @@ paths:
                   default: false
                   example: false
             example:
-              goalId: 1
               currentCompletedAmount: 3
               isPaused: false
 
@@ -1945,8 +1936,12 @@ paths:
                     properties:
                       goalId:
                         type: integer
-                        description: 목표 ID
+                        description: 한 목표 자체에 대한 ID
                         example: 1
+                      goalLogId:
+                        type: integer
+                        description: 오늘자 목표의 ID
+                        example: 4
                       isTimerRunning:
                         type: boolean
                         description: '타이머 실행 상태 (false: 종료됨)'
@@ -1964,6 +1959,7 @@ paths:
                 message: 타이머 종료
                 data:
                   goalId: 1
+                  goalLogId: 4
                   isTimerRunning: false
                   goalDuration: 946834
                   goalProgressRate: 85
