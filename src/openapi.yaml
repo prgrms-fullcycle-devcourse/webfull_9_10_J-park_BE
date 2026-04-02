@@ -334,23 +334,12 @@ paths:
       description: |
         특정 목표의 상세 정보와 기간별 일자 진행 현황을 조회합니다.
         조회 기간은 목표 기간 내로 보정되며, 요청 범위가 목표 기간과 겹치지 않으면 dailyProgress는 빈 배열로 반환됩니다.
-        - 각 날짜 데이터는 goalLogId를 기준으로 식별합니다.
-        - goalLogId는 해당 날짜의 기록이 존재할 경우에만 내려옵니다. (없으면 null)
-
-        페이지 이동 방식 (쿼리 파라미터 사용)
-        /goals/{goalId}?goalLogId={goalLogId}
-
-        예시:
-        /goals/1?goalLogId=17
+        각 날짜 데이터에는 해당 날짜의 기록이 존재할 경우 goalLogId가 함께 내려갑니다.
+        goalLogId가 없으면 null로 반환됩니다.
 
         사용 방식
-        - goalId: 목표 자체 식별
-        - goalLogId: 특정 날짜(데일리 기록) 식별
-
-        주의사항
-        - goalLogId가 null인 경우:
-          → 아직 기록이 없는 날짜
-          → 생성 API 호출 후 이동하거나 생성 화면으로 분기 처리 필요
+        - goalId: 목표 자체를 식별하는 ID
+        - goalLogId: 특정 날짜의 GoalLog(데일리 기록)를 식별하는 ID
       security:
         - bearerAuth: []
 
@@ -1071,21 +1060,14 @@ paths:
         - 목표
       summary: 오늘 목표 리스트 조회
       description: |
-        오늘 기준으로 사용자의 목표 리스트를 조회합니다.
+        오늘 기준 사용자의 목표 리스트를 조회합니다.
 
-        프론트 라우팅 가이드
-        - 각 목표는 goalLogId를 포함합니다.
-        - goalLogId는 오늘 날짜 기준 기록 ID이며, 없을 경우 null입니다.
+        각 목표에는 해당 날짜의 GoalLog 식별 값(goalLogId)이 포함됩니다.
+        goalLogId는 오늘 날짜 기준의 기록 ID이며, 해당 날짜의 기록이 없는 경우 null로 반환됩니다.
 
-        페이지 이동
-         /goals/{goalId}?goalLogId={goalLogId}
-
-        예시:
-        /goals/{goalId}?goalLogId={goalLogId}
-
-        분기처리:
-        - goalLogId 존재 → 상세 조회 화면
-        - goalLogId null → 기록 생성 또는 초기 상태 화면
+        사용 방식:
+        - goalId: 목표 자체를 식별하는 ID
+        - goalLogId: 특정 날짜의 GoalLog(데일리 기록)를 식별하는 ID
       security:
         - bearerAuth: []
       responses:

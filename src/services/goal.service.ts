@@ -499,16 +499,21 @@ export const getGoalDetailService = async ({
  * 개별 목표 수정 서비스
  *
  * 흐름:
- * 1. 목표 존재 + 본인 소유 여부 확인
- * 2. 수정 값 유효성 검사
- * 3. DB 업데이트
- * 4. 최신 상태 조회 후 응답 반환
+ * 1. 목표 존재 여부 + 본인 소유 확인
+ * 2. 수정 요청값 유효성 검증
+ * 3. 실제 반영될 값 계산 (targetValue, endDate)
+ * 4. quota 재계산
+ * 5. DB 업데이트
+ * 6. 최신 상태 조회 후 응답 반환
  */
 export const updateGoalService = async (
   userId: number,
   goalId: number,
   payload: UpdateGoalRequest,
 ): Promise<UpdatedGoalResponse> => {
+  /**
+   * 1. 목표 존재 + 본인 소유 여부 확인
+   */
   const goal = await prisma.goal.findFirst({
     where: {
       id: goalId,
@@ -526,26 +531,32 @@ export const updateGoalService = async (
     throw new Error('GOAL_NOT_FOUND');
   }
 
-  const { targetValue, totalAmount, endDate } = payload;
+  const { totalAmount, endDate } = payload;
 
-  // 수정 API에서 targetValue / totalAmount 둘 다 허용
-  const resolvedTargetValue = targetValue ?? totalAmount;
-
-  // 수정값이 하나도 없으면 예외
-  if (resolvedTargetValue === undefined && endDate === undefined) {
+  /**
+   * 2. 수정값이 하나도 없는 경우 예외 처리
+   */
+  if (totalAmount === undefined && endDate === undefined) {
     throw new Error('EMPTY_UPDATE_DATA');
   }
 
-  // 목표 총량 검증
-  if (resolvedTargetValue !== undefined) {
-    if (!Number.isInteger(resolvedTargetValue) || resolvedTargetValue <= 0) {
+  /**
+   * 3. 목표 총량(totalAmount) 유효성 검증
+   * - 1 이상의 정수만 허용
+   */
+  if (totalAmount !== undefined) {
+    if (!Number.isInteger(totalAmount) || totalAmount <= 0) {
       throw new Error('INVALID_TARGET_VALUE');
     }
   }
 
   let parsedEndDate: Date | undefined;
 
-  // 종료일 검증
+  /**
+   * 4. 종료일(endDate) 유효성 검증
+   * - 날짜 형식 체크
+   * - 시작일보다 빠를 수 없음
+   */
   if (endDate !== undefined) {
     if (!isValidDateString(endDate)) {
       throw new Error('INVALID_DATE');
@@ -558,27 +569,38 @@ export const updateGoalService = async (
     }
   }
 
-  // 실제로 반영될 다음 목표 총량 / 종료일 계산
-  const nextTargetValue = resolvedTargetValue ?? goal.targetValue;
+  /**
+   * 5. 실제로 반영될 값 계산
+   * - totalAmount 없으면 기존 targetValue 유지
+   * - endDate 없으면 기존 값 유지
+   */
+  const nextTargetValue = totalAmount ?? goal.targetValue;
   const nextEndDate = parsedEndDate ?? goal.endDate;
 
-  // quota 재계산
-  // 시작일 ~ 종료일 포함 일수 기준
+  /**
+   * 6. quota 재계산
+   * - 시작일 ~ 종료일 포함 일수 기준
+   * - 하루 목표량 = 총 목표량 / 전체 일수 (올림 처리)
+   */
   const diffTime = nextEndDate.getTime() - goal.startDate.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
   const nextQuota = Math.ceil(nextTargetValue / diffDays);
 
+  /**
+   * 7. DB 업데이트
+   */
   await prisma.goal.update({
     where: { id: goalId },
     data: {
-      ...(resolvedTargetValue !== undefined
-        ? { targetValue: resolvedTargetValue }
-        : {}),
+      ...(totalAmount !== undefined ? { targetValue: totalAmount } : {}),
       ...(parsedEndDate ? { endDate: parsedEndDate } : {}),
       quota: nextQuota,
     },
   });
 
+  /**
+   * 8. 최신 상태 조회 후 응답 반환
+   */
   return buildUpdatedGoalResponse(userId, goalId);
 };
 

@@ -87,7 +87,6 @@ export interface GoalDetailResponse {
  * PATCH /goals/:goalId
  */
 export interface UpdateGoalRequest {
-  targetValue?: number;
   totalAmount?: number;
   endDate?: string;
 }
