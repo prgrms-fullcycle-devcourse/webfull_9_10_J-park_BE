@@ -41,11 +41,12 @@ export const authUser = async (
 
       //쿠키에 토큰 저장
       res.cookie('token', token, {
+        sameSite: 'none',
+        secure: false,
         httpOnly: true,
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
-      
       req.user = { userId: newUser.id };
       return next();
     }
