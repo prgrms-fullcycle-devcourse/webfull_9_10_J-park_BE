@@ -18,6 +18,7 @@ import {
   isValidDateString,
   toEndOfDay,
   toStartOfDay,
+  parseDateStringToKSTStart,
 } from '../utils/goal.util';
 
 /**
@@ -156,8 +157,10 @@ export const createGoalService = async (
     throw new Error('INVALID_DATE');
   }
 
-  const parsedStartDate = new Date(startDate);
-  const parsedEndDate = new Date(endDate);
+
+
+const parsedStartDate = parseDateStringToKSTStart(startDate);
+const parsedEndDate = parseDateStringToKSTStart(endDate);
 
   /**
    * 시작일이 종료일보다 늦은 경우 예외 처리
@@ -279,12 +282,20 @@ export const getGoalDetailService = async ({
   const defaultStartDate = addDays(today, -7);
   const defaultEndDate = addDays(today, 14);
 
+  if (startDate && !isValidDateString(startDate)) {
+    throw new Error('INVALID_DATE');
+  }
+
+  if (endDate && !isValidDateString(endDate)) {
+    throw new Error('INVALID_DATE');
+  }
+
   const queryStartDate = startDate
-    ? toStartOfDay(new Date(startDate))
+    ? toStartOfDay(parseDateStringToKSTStart(startDate))
     : defaultStartDate;
 
   const queryEndDate = endDate
-    ? toEndOfDay(new Date(endDate))
+    ? toEndOfDay(parseDateStringToKSTStart(endDate))
     : toEndOfDay(defaultEndDate);
 
   if (queryStartDate > queryEndDate) {
@@ -408,15 +419,14 @@ export const getGoalDetailService = async ({
    * - timerDate는 nullable이므로 null 데이터는 제외
    * - formatDate는 Date만 받기 때문에 사전 필터링 필요
    */
-  const timerLogMap = new Map(
+  const timerStudyTimeMap = new Map<string, number>();
     timerLogs
-      /**
-       * timerDate가 null인 데이터는 제외
-       * (formatDate는 Date만 받기 때문)
-       */
-      .filter((log) => log.timerDate !== null)
-      .map((log) => [formatDate(log.timerDate as Date), log]),
-  );
+    .filter((log) => log.timerDate !== null)
+    .forEach((log) => {
+      const key = formatDate(log.timerDate as Date);
+      const prev = timerStudyTimeMap.get(key) ?? 0;
+      timerStudyTimeMap.set(key, prev + log.durationSec);
+    });
   /**
    * 날짜 범위 배열 생성 후 일별 진행 현황 구성
    */
@@ -437,7 +447,6 @@ export const getGoalDetailService = async ({
      * 해당 날짜의 로그 조회 (없으면 undefined)
      */
     const goalLog = goalLogMap.get(dateKey);
-    const timerLog = timerLogMap.get(dateKey);
     /**
      * 목표량:
      * - 로그가 있으면 targetValue
@@ -465,7 +474,7 @@ export const getGoalDetailService = async ({
        * 공부 시간:
        * - timerLog 없으면 0
        */
-      studyTime: timerLog?.durationSec ?? 0,
+      studyTime: timerStudyTimeMap.get(dateKey) ?? 0,
       /**
        * 오늘 여부:
        * - UI에서 강조 표시용
@@ -562,7 +571,7 @@ export const updateGoalService = async (
       throw new Error('INVALID_DATE');
     }
 
-    parsedEndDate = new Date(endDate);
+    parsedEndDate = parseDateStringToKSTStart(endDate);
 
     if (goal.startDate > parsedEndDate) {
       throw new Error('INVALID_DATE_RANGE');
@@ -729,6 +738,8 @@ export const getTodayGoalsService = async (
       select: {
         id: true,
         goalId: true,
+        actualValue: true,
+        targetValue: true,
       },
     }),
 
@@ -780,7 +791,7 @@ export const getTodayGoalsService = async (
       currentAmount: goal.currentValue,
       unit: goal.category.unit,
       studyTime: studyTimeMap.get(goal.id) ?? 0,
-      completed: goal.currentValue >= goal.quota,
+      completed: (goalLog?.actualValue ?? 0) >= (goalLog?.targetValue ?? goal.quota),
       isTimerRunning: runningGoalSet.has(goal.id),
       progressRate: calculateProgressRate(goal.currentValue, goal.targetValue),
     };
@@ -800,31 +811,8 @@ export const getTodayGoalsService = async (
 /**
  * 오늘 목표 달성률 조회 서비스
  *
- * 역할:
- * - 오늘 기준 진행 중인 목표 조회
- * - 오늘 기록된 GoalLog / TimerLog 조회
- * - 완료 목표 수와 전체 공부 시간 계산
- *
- * 계산 기준:
- * - 날짜 범위는 로컬 시간 기준 "오늘 00:00 ~ 23:59:59.999"
- * - completedGoals:
- *   actualValue >= targetValue 인 목표 개수
- * - ratio:
- *   completedGoals / totalGoals * 100
- *
- * 주의:
- * - 현재 서비스는 한국에서만 사용하는 전제를 두고
- *   로컬 시간 기준으로 계산
- * - 서버/DB 시간대가 크게 달라지면 추후 timezone 보정 로직 추가 가능
  */
 export const getTodayGoalCompletionService = async (userId: number) => {
-  /**
-   * 오늘 시작 / 끝 시각 계산
-   *
-   * 기존 util(toStartOfDay / toEndOfDay)을 그대로 사용해서
-   * 최소 수정으로 현재 프로젝트 스타일 유지
-   */
-
   const today = new Date();
   const startOfDay = toStartOfDay(today);
   const endOfDay = toEndOfDay(today);
