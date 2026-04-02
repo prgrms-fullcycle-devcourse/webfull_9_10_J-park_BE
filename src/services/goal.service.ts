@@ -526,29 +526,26 @@ export const updateGoalService = async (
     throw new Error('GOAL_NOT_FOUND');
   }
 
-  const { targetValue, endDate } = payload;
+  const { targetValue, totalAmount, endDate } = payload;
 
-  /**
-   * 수정할 값이 하나도 없는 경우
-   */
-  if (targetValue === undefined && endDate === undefined) {
+  // 수정 API에서 targetValue / totalAmount 둘 다 허용
+  const resolvedTargetValue = targetValue ?? totalAmount;
+
+  // 수정값이 하나도 없으면 예외
+  if (resolvedTargetValue === undefined && endDate === undefined) {
     throw new Error('EMPTY_UPDATE_DATA');
   }
 
-  /**
-   * 목표값 검증
-   */
-  if (targetValue !== undefined) {
-    if (!Number.isInteger(targetValue) || targetValue <= 0) {
+  // 목표 총량 검증
+  if (resolvedTargetValue !== undefined) {
+    if (!Number.isInteger(resolvedTargetValue) || resolvedTargetValue <= 0) {
       throw new Error('INVALID_TARGET_VALUE');
     }
   }
 
-  /**
-   * 종료일 검증
-   */
   let parsedEndDate: Date | undefined;
 
+  // 종료일 검증
   if (endDate !== undefined) {
     if (!isValidDateString(endDate)) {
       throw new Error('INVALID_DATE');
@@ -561,29 +558,27 @@ export const updateGoalService = async (
     }
   }
 
-  /**
-   * 목표 수정
-   */
-  const nextTargetValue = targetValue ?? goal.targetValue;
+  // 실제로 반영될 다음 목표 총량 / 종료일 계산
+  const nextTargetValue = resolvedTargetValue ?? goal.targetValue;
   const nextEndDate = parsedEndDate ?? goal.endDate;
 
+  // quota 재계산
+  // 시작일 ~ 종료일 포함 일수 기준
   const diffTime = nextEndDate.getTime() - goal.startDate.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
   const nextQuota = Math.ceil(nextTargetValue / diffDays);
+
   await prisma.goal.update({
-    where: {
-      id: goalId,
-    },
+    where: { id: goalId },
     data: {
-      ...(targetValue !== undefined ? { targetValue } : {}),
+      ...(resolvedTargetValue !== undefined
+        ? { targetValue: resolvedTargetValue }
+        : {}),
       ...(parsedEndDate ? { endDate: parsedEndDate } : {}),
       quota: nextQuota,
     },
   });
 
-  /**
-   * 수정된 목표 상세 응답 반환
-   */
   return buildUpdatedGoalResponse(userId, goalId);
 };
 

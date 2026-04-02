@@ -316,9 +316,9 @@ export const getGoalDetailController = async (req: Request, res: Response) => {
       message: '개별 목표 상세 정보',
       data,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     //목표가 없을때
-    if (error.message === 'GOAL_NOT_FOUND') {
+    if (error instanceof Error && error.message === 'GOAL_NOT_FOUND') {
       return res.status(StatusCodes.NOT_FOUND).json({
         success: false,
         error: {
@@ -328,7 +328,7 @@ export const getGoalDetailController = async (req: Request, res: Response) => {
       });
     }
     // 날짜 범위 오류
-    if (error.message === 'INVALID_DATE_RANGE') {
+    if (error instanceof Error && error.message === 'INVALID_DATE_RANGE') {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         error: {
@@ -378,11 +378,18 @@ export const updateGoalController = async (req: Request, res: Response) => {
         },
       });
     }
+    // totalAmount도 받기 26-04-02
+    const { targetValue, totalAmount, endDate } = req.body as UpdateGoalRequest;
 
-    const { targetValue, endDate } = req.body as UpdateGoalRequest;
+    // 하나로 통합 26-04-02
+    const finalTargetValue = targetValue ?? totalAmount;
+
+    //console.log('PATCH payload:', req.body);
+    //console.log('finalTargetValue:', finalTargetValue);
 
     if (
-      (targetValue !== undefined && typeof targetValue !== 'number') ||
+      (finalTargetValue !== undefined &&
+        typeof finalTargetValue !== 'number') ||
       (endDate !== undefined && typeof endDate !== 'string')
     ) {
       return res.status(StatusCodes.BAD_REQUEST).json({
@@ -395,7 +402,7 @@ export const updateGoalController = async (req: Request, res: Response) => {
     }
 
     const result = await updateGoalService(user.userId, goalId, {
-      targetValue,
+      targetValue: finalTargetValue, // 26-04-02
       endDate,
     });
 

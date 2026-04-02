@@ -88,6 +88,7 @@ export interface GoalDetailResponse {
  */
 export interface UpdateGoalRequest {
   targetValue?: number;
+  totalAmount?: number;
   endDate?: string;
 }
 
