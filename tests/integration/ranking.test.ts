@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
+
 import app from '../../src/app';
 import prisma from '../../src/config/prisma';
 
@@ -101,106 +102,112 @@ describe('Ranking API', () => {
 
   // 전체 랭킹 조회
   describe('GET /rankings', () => {
-    it('실제 DB 데이터를 기준으로 랭킹 목록을 조회한다', async () => {
-      const res = await request(app)
-        .get('/rankings')
-        .set('Cookie', [`token=${authToken}`]);
+    describe('200 - OK', () => {
+      it('실제 DB 데이터를 기준으로 랭킹 목록을 조회한다', async () => {
+        const res = await request(app)
+          .get('/rankings')
+          .set('Cookie', [`token=${authToken}`]);
 
-      expect(res.status).toBe(200);
-      expect(res.body.success).toBe(true);
-      expect(res.body.message).toBe('전체 랭킹');
-      // console.log('res.body,...', res.body);
-      expect(res.body.data).toHaveProperty('ranks');
-      expect(Array.isArray(res.body.data.ranks)).toBe(true);
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.message).toBe('전체 랭킹');
+        // console.log('res.body,...', res.body);
+        expect(res.body.data).toHaveProperty('ranks');
+        expect(Array.isArray(res.body.data.ranks)).toBe(true);
 
-      expect(res.body.data.ranks.length).toBeGreaterThanOrEqual(3);
+        expect(res.body.data.ranks.length).toBeGreaterThanOrEqual(3);
 
-      expect(res.body.data.ranks).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            nickname: `${TEST_PREFIX}_USER_1`,
-            totalTime: 120000,
-          }),
+        expect(res.body.data.ranks).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              nickname: `${TEST_PREFIX}_USER_1`,
+              totalTime: 120000,
+            }),
+            expect.objectContaining({
+              nickname: `${TEST_PREFIX}_USER_2`,
+              totalTime: 300000,
+            }),
+            expect.objectContaining({
+              nickname: `${TEST_PREFIX}_USER_3`,
+              totalTime: 200000,
+            }),
+          ]),
+        );
+
+        const rankingUsers = res.body.data.ranks.filter(
+          (user: { nickname: string }) => user.nickname.startsWith(TEST_PREFIX),
+        );
+
+        expect(rankingUsers[0]).toEqual(
           expect.objectContaining({
             nickname: `${TEST_PREFIX}_USER_2`,
             totalTime: 300000,
           }),
+        );
+
+        expect(rankingUsers[1]).toEqual(
           expect.objectContaining({
             nickname: `${TEST_PREFIX}_USER_3`,
             totalTime: 200000,
           }),
-        ]),
-      );
+        );
 
-      const rankingUsers = res.body.data.ranks.filter(
-        (user: { nickname: string }) => user.nickname.startsWith(TEST_PREFIX),
-      );
-
-      expect(rankingUsers[0]).toEqual(
-        expect.objectContaining({
-          nickname: `${TEST_PREFIX}_USER_2`,
-          totalTime: 300000,
-        }),
-      );
-
-      expect(rankingUsers[1]).toEqual(
-        expect.objectContaining({
-          nickname: `${TEST_PREFIX}_USER_3`,
-          totalTime: 200000,
-        }),
-      );
-
-      expect(rankingUsers[2]).toEqual(
-        expect.objectContaining({
-          nickname: `${TEST_PREFIX}_USER_1`,
-          totalTime: 120000,
-        }),
-      );
+        expect(rankingUsers[2]).toEqual(
+          expect.objectContaining({
+            nickname: `${TEST_PREFIX}_USER_1`,
+            totalTime: 120000,
+          }),
+        );
+      });
     });
 
     // 401 - 잘못된 토큰일 경우, 인증 에러를 반환한다
-    it('토큰이 잘못된 경우 401 에러를 반환한다', async () => {
-      const invalidToken = jwt.sign({ id: 999999 }, process.env.JWT_SECRET!, {
-        expiresIn: '10m',
-      });
-      const res = await request(app)
-        .get('/rankings')
-        .set('Cookie', [`token=${invalidToken}`]);
+    describe('401 - UNAUTHORIZED', () => {
+      it('인증되지 않은 요청일 경우 반환한다', async () => {
+        const invalidToken = jwt.sign({ id: 999999 }, process.env.JWT_SECRET!, {
+          expiresIn: '10m',
+        });
+        const res = await request(app)
+          .get('/rankings')
+          .set('Cookie', [`token=${invalidToken}`]);
 
-      expect(res.status).toBe(401);
-      expect(res.body).toEqual(
-        expect.objectContaining({
-          success: false,
-          error: expect.objectContaining({
-            code: 'UNAUTHORIZED',
-            message: '유효하지 않은 토큰입니다.',
+        expect(res.status).toBe(401);
+        expect(res.body).toEqual(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              code: 'UNAUTHORIZED',
+              message: '유효하지 않은 토큰입니다.',
+            }),
           }),
-        }),
-      );
+        );
+      });
     });
 
     // 500 - 서버 오류 시 명세된 에러 형식으로 반환한다
-    it('서버 오류 시 500 에러를 반환한다', async () => {
-      const prismaSpy = jest
-        .spyOn(prisma.user, 'findMany')
-        .mockRejectedValue(new Error('DB Error'));
+    describe('500 - INTERNAL_SERVER_ERROR', () => {
+      it('서버 내부 예외가 발생할 경우 반환한다', async () => {
+        const prismaSpy = jest
+          .spyOn(prisma.user, 'findMany')
+          .mockRejectedValue(new Error('DB Error'));
 
-      const res = await request(app)
-        .get('/rankings')
-        .set('Cookie', [`token=${authToken}`]);
+        const res = await request(app)
+          .get('/rankings')
+          .set('Cookie', [`token=${authToken}`]);
 
-      expect(res.status).toBe(500);
-      expect(res.body).toEqual(
-        expect.objectContaining({
-          success: false,
-          error: expect.objectContaining({
-            code: 'INTERNAL_SERVER_ERROR',
-            message: '서버 오류가 발생했습니다.',
+        expect(res.status).toBe(500);
+        expect(res.body).toEqual(
+          expect.objectContaining({
+            success: false,
+            error: expect.objectContaining({
+              code: 'INTERNAL_SERVER_ERROR',
+              message: '서버 오류가 발생했습니다.',
+            }),
           }),
-        }),
-      );
+        );
 
-      prismaSpy.mockRestore();
+        prismaSpy.mockRestore();
+      });
     });
   });
 });
