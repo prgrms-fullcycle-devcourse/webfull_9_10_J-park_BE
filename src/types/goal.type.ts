@@ -51,6 +51,8 @@ export interface GetGoalDetailQuery {
 }
 
 export interface DailyProgressItem {
+  //1
+  goalLogId: number | null;
   date: string;
   targetAmount: number;
   completedAmount: number;
@@ -85,14 +87,8 @@ export interface GoalDetailResponse {
  * PATCH /goals/:goalId
  */
 export interface UpdateGoalRequest {
-  targetValue?: number;
+  totalAmount?: number;
   endDate?: string;
-}
-
-export interface UpdatedDailyProgressItem {
-  date: string;
-  quota: number;
-  isCompleted: boolean;
 }
 
 export interface UpdatedGoalResponse {
@@ -104,6 +100,7 @@ export interface UpdatedGoalResponse {
     rate: number;
     currentAmount: number;
     targetAmount: number;
+    totalStudyTime: number;
     unit: string | null;
   };
   period: {
@@ -111,7 +108,7 @@ export interface UpdatedGoalResponse {
     endDate: string;
     daysRemaining: number;
   };
-  dailyProgress: UpdatedDailyProgressItem[];
+  dailyProgress: DailyProgressItem[];
 }
 
 /**
@@ -132,10 +129,11 @@ export interface DeleteGoalResponse {
 
 /**
  * 데일리 목표 리스트
- * GET /goals/todat
+ * GET /goals/today
  */
 export interface TodayGoalItem {
   id: number;
+  goalLogId: number | null;
   title: string;
   targetAmount: number;
   currentAmount: number;
