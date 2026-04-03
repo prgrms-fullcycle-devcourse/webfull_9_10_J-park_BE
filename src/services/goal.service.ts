@@ -157,10 +157,8 @@ export const createGoalService = async (
     throw new Error('INVALID_DATE');
   }
 
-
-
-const parsedStartDate = parseDateStringToKSTStart(startDate);
-const parsedEndDate = parseDateStringToKSTStart(endDate);
+  const parsedStartDate = parseDateStringToKSTStart(startDate);
+  const parsedEndDate = parseDateStringToKSTStart(endDate);
 
   /**
    * 시작일이 종료일보다 늦은 경우 예외 처리
@@ -420,7 +418,7 @@ export const getGoalDetailService = async ({
    * - formatDate는 Date만 받기 때문에 사전 필터링 필요
    */
   const timerStudyTimeMap = new Map<string, number>();
-    timerLogs
+  timerLogs
     .filter((log) => log.timerDate !== null)
     .forEach((log) => {
       const key = formatDate(log.timerDate as Date);
@@ -791,7 +789,8 @@ export const getTodayGoalsService = async (
       currentAmount: goal.currentValue,
       unit: goal.category.unit,
       studyTime: studyTimeMap.get(goal.id) ?? 0,
-      completed: (goalLog?.actualValue ?? 0) >= (goalLog?.targetValue ?? goal.quota),
+      completed:
+        (goalLog?.actualValue ?? 0) >= (goalLog?.targetValue ?? goal.quota),
       isTimerRunning: runningGoalSet.has(goal.id),
       progressRate: calculateProgressRate(goal.currentValue, goal.targetValue),
     };
