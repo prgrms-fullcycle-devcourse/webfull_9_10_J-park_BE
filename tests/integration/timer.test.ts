@@ -190,7 +190,7 @@ describe('Timer API', () => {
       });
     });
 
-    describe('400 - BAD_REQUEST', () => {
+    describe('400 - INVALID_GOAL_ID', () => {
       it('goalId가 없을 경우 반환한다', async () => {
         const response = await request(app)
           .post('/timers/start')
@@ -202,8 +202,8 @@ describe('Timer API', () => {
           expect.objectContaining({
             success: false,
             error: expect.objectContaining({
-              code: 'BAD_REQUEST',
-              message: '요청 형식이 올바르지 않습니다.',
+              code: 'INVALID_GOAL_ID',
+              message: '유효하지 않은 goalId입니다.',
             }),
           }),
         );
@@ -222,8 +222,8 @@ describe('Timer API', () => {
           expect.objectContaining({
             success: false,
             error: expect.objectContaining({
-              code: 'BAD_REQUEST',
-              message: '요청 형식이 올바르지 않습니다.',
+              code: 'INVALID_GOAL_ID',
+              message: '유효하지 않은 goalId입니다.',
             }),
           }),
         );

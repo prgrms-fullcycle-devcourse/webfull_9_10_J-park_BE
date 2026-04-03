@@ -25,13 +25,17 @@ export const startTimerController = async (
   req: Request,
   res: Response<ApiResponse<StartTimerResponse>>,
 ) => {
-  const userId = req.user!.userId;
-  const { goalId } = req.body;
-
   try {
+    const userId = req.user!.userId;
+    const { goalId } = req.body;
+
+    if (!userId) {
+      throw new AppError('UNAUTHORIZED');
+    }
+
     // 유효성 검사
     if (!validatePositiveInt(goalId)) {
-      throw new AppError('BAD_REQUEST');
+      throw new AppError('INVALID_GOAL_ID');
     }
 
     const timer = await startTimerService(userId, Number(goalId));
@@ -43,22 +47,14 @@ export const startTimerController = async (
   } catch (err) {
     console.error(`startTimerController error: ${err}`);
 
-    // 커스텀 에러 발생 시
-    if (err instanceof AppError) {
-      return res.status(err.statusCode).json({
-        success: false,
-        error: {
-          code: err.code,
-          message: err.message,
-        },
-      });
-    }
+    const appError =
+      err instanceof AppError ? err : new AppError('INTERNAL_SERVER_ERROR');
 
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+    return res.status(appError.statusCode).json({
       success: false,
       error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        message: '서버 오류가 발생했습니다.',
+        code: appError.code,
+        message: appError.message,
       },
     });
   }
@@ -69,9 +65,12 @@ export const endTimerController = async (
   req: Request,
   res: Response<ApiResponse<EndTimerResponse>>,
 ) => {
-  const userId = req.user!.userId;
-
   try {
+    const userId = req.user!.userId;
+    if (!userId) {
+      throw new AppError('UNAUTHORIZED');
+    }
+
     if (!req.body) {
       throw new AppError('BAD_REQUEST');
     }
@@ -82,7 +81,7 @@ export const endTimerController = async (
     if (!validatePositiveInt(currentCompletedAmount)) {
       throw new AppError('BAD_REQUEST');
     }
-    if (isPaused && typeof isPaused !== 'boolean') {
+    if (isPaused !== undefined && typeof isPaused !== 'boolean') {
       throw new AppError('BAD_REQUEST');
     }
 
@@ -98,24 +97,16 @@ export const endTimerController = async (
       data: timer,
     });
   } catch (err) {
-    console.error(`startTimerController error: ${err}`);
+    console.error(`endTimerController error: ${err}`);
 
-    // 커스텀 에러 발생 시
-    if (err instanceof AppError) {
-      return res.status(err.statusCode).json({
-        success: false,
-        error: {
-          code: err.code,
-          message: err.message,
-        },
-      });
-    }
+    const appError =
+      err instanceof AppError ? err : new AppError('INTERNAL_SERVER_ERROR');
 
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+    return res.status(appError.statusCode).json({
       success: false,
       error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        message: '서버 오류가 발생했습니다.',
+        code: appError.code,
+        message: appError.message,
       },
     });
   }
@@ -126,19 +117,12 @@ export const runningTimerController = async (
   req: Request,
   res: Response<ApiResponse<RunningTimerResponse>>,
 ) => {
-  const userId = req.user!.userId;
-
-  if (!userId) {
-    return res.status(StatusCodes.UNAUTHORIZED).json({
-      success: false,
-      error: {
-        code: 'UNAUTHORIZED',
-        message: '유효하지 않은 토큰입니다.',
-      },
-    });
-  }
-
   try {
+    const userId = req.user!.userId;
+    if (!userId) {
+      throw new AppError('UNAUTHORIZED');
+    }
+
     const runningTimer = await getRunningTimerService(userId);
 
     return res.status(StatusCodes.OK).json({
@@ -147,24 +131,16 @@ export const runningTimerController = async (
       data: runningTimer,
     });
   } catch (err) {
-    // 커스텀 에러 발생 시
-    if (err instanceof AppError) {
-      return res.status(err.statusCode).json({
-        success: false,
-        error: {
-          code: err.code,
-          message: err.message,
-        },
-      });
-    }
-
     console.error(`runningTimerController error: ${err}`);
 
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+    const appError =
+      err instanceof AppError ? err : new AppError('INTERNAL_SERVER_ERROR');
+
+    return res.status(appError.statusCode).json({
       success: false,
       error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        message: '서버 오류가 발생했습니다.',
+        code: appError.code,
+        message: appError.message,
       },
     });
   }
