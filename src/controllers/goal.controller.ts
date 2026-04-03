@@ -273,7 +273,7 @@ export const getGoalDetailController = async (req: Request, res: Response) => {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         error: {
-          code: 'BAD_REQUEST',
+          code: 'BAD_REQUEST', // 애리: INVALID_GOAL_ID로 통일하겠습니다!
           message: '유효한 goalId가 필요합니다.',
         },
       });
@@ -286,7 +286,7 @@ export const getGoalDetailController = async (req: Request, res: Response) => {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         error: {
-          code: 'BAD_REQUEST',
+          code: 'BAD_REQUEST', // 애리: INVALID_DATE로 하셔도 될 듯해요!
           message: 'startDate 형식은 YYYY-MM-DD 이어야 합니다.',
         },
       });
@@ -296,7 +296,7 @@ export const getGoalDetailController = async (req: Request, res: Response) => {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         error: {
-          code: 'BAD_REQUEST',
+          code: 'BAD_REQUEST', // 애리: INVALID_DATE로 하셔도 될 듯해요!
           message: 'endDate 형식은 YYYY-MM-DD 이어야 합니다.',
         },
       });
@@ -332,7 +332,7 @@ export const getGoalDetailController = async (req: Request, res: Response) => {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         error: {
-          code: 'BAD_REQUEST',
+          code: 'BAD_REQUEST', // 애리: INVALID_DATE_RANGE로 가셔도 될 듯해요!
           message: 'startDate는 endDate보다 늦을 수 없습니다.',
         },
       });
@@ -352,9 +352,18 @@ export const getGoalDetailController = async (req: Request, res: Response) => {
 
 /**
  * 개별 목표 수정 컨트롤러
+ *
+ * 역할:
+ * - 인증 사용자 확인
+ * - 요청값 검증
+ * - 서비스 호출
+ * - 에러 처리 및 응답 반환
  */
 export const updateGoalController = async (req: Request, res: Response) => {
   try {
+    /**
+     * 1. 인증 사용자 확인
+     */
     const user = req.user;
 
     if (!user) {
@@ -367,6 +376,9 @@ export const updateGoalController = async (req: Request, res: Response) => {
       });
     }
 
+    /**
+     * 2. goalId 파라미터 검증
+     */
     const goalId = Number(req.params.goalId);
 
     if (!goalId || Number.isNaN(goalId)) {
@@ -379,10 +391,18 @@ export const updateGoalController = async (req: Request, res: Response) => {
       });
     }
 
-    const { targetValue, endDate } = req.body as UpdateGoalRequest;
+    /**
+     * 3. 요청 body 파싱
+     * - totalAmount: 수정할 총 목표량
+     * - endDate: 수정할 종료일
+     */
+    const { totalAmount, endDate } = req.body as UpdateGoalRequest;
 
+    /**
+     * 4. 요청값 타입 검증
+     */
     if (
-      (targetValue !== undefined && typeof targetValue !== 'number') ||
+      (totalAmount !== undefined && typeof totalAmount !== 'number') ||
       (endDate !== undefined && typeof endDate !== 'string')
     ) {
       return res.status(StatusCodes.BAD_REQUEST).json({
@@ -394,11 +414,17 @@ export const updateGoalController = async (req: Request, res: Response) => {
       });
     }
 
+    /**
+     * 5. 서비스 호출
+     */
     const result = await updateGoalService(user.userId, goalId, {
-      targetValue,
+      totalAmount,
       endDate,
     });
 
+    /**
+     * 6. 성공 응답 반환
+     */
     return res.status(StatusCodes.OK).json({
       success: true,
       message: '목표 수정 성공',
@@ -407,6 +433,9 @@ export const updateGoalController = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('updateGoalController error:', error);
 
+    /**
+     * 7. 비즈니스 에러 처리
+     */
     if (error instanceof Error) {
       if (error.message === 'GOAL_NOT_FOUND') {
         return res.status(StatusCodes.NOT_FOUND).json({
@@ -428,12 +457,13 @@ export const updateGoalController = async (req: Request, res: Response) => {
         });
       }
 
+      // 애리: 에러 코드는 target value 문제라고 하는데 메시지는 totalAmount가 잘못되었다고 하고 있네요. 오타면 수정해주시구 의도한 것이면 그냥 주석 지워주세요!
       if (error.message === 'INVALID_TARGET_VALUE') {
         return res.status(StatusCodes.BAD_REQUEST).json({
           success: false,
           error: {
             code: 'INVALID_TARGET_VALUE',
-            message: 'targetValue는 1 이상의 정수여야 합니다.',
+            message: 'totalAmount는 1 이상의 정수여야 합니다.',
           },
         });
       }
@@ -459,6 +489,9 @@ export const updateGoalController = async (req: Request, res: Response) => {
       }
     }
 
+    /**
+     * 8. 예상하지 못한 서버 에러
+     */
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       error: {
@@ -492,7 +525,7 @@ export const deleteGoalController = async (req: Request, res: Response) => {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         error: {
-          code: 'BAD_REQUEST',
+          code: 'BAD_REQUEST', // 애리: INVALID_GOAL_ID로 통일할게요!
           message: '유효한 goalId가 필요합니다.',
         },
       });

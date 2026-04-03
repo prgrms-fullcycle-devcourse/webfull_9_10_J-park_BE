@@ -331,7 +331,15 @@ paths:
       tags:
         - 목표
       summary: 개별 목표 상세 조회
-      description: '특정 목표의 상세 정보와 기간별 일자 진행 현황을 조회합니다. 조회 기간은 목표 기간 내로 보정되며, 요청 범위가 목표 기간과 겹치지 않으면 dailyProgress는 빈 배열로 반환됩니다.'
+      description: |
+        특정 목표의 상세 정보와 기간별 일자 진행 현황을 조회합니다.
+        조회 기간은 목표 기간 내로 보정되며, 요청 범위가 목표 기간과 겹치지 않으면 dailyProgress는 빈 배열로 반환됩니다.
+        각 날짜 데이터에는 해당 날짜의 기록이 존재할 경우 goalLogId가 함께 내려갑니다.
+        goalLogId가 없으면 null로 반환됩니다.
+
+        사용 방식
+        - goalId: 목표 자체를 식별하는 ID
+        - goalLogId: 특정 날짜의 GoalLog(데일리 기록)를 식별하는 ID
       security:
         - bearerAuth: []
 
@@ -442,39 +450,24 @@ paths:
 
                       dailyProgress:
                         type: array
-                        description: 목표 기간 내 날짜별 목표 진행 현황
                         items:
                           type: object
                           properties:
-                            dailyId:
+                            goalLogId:
                               type: integer
-                              description: 목표 시작일 기준 n일차
-                              example: 42
+                              nullable: true
                             date:
                               type: string
-                              format: date
-                              description: 날짜
-                              example: 2026-03-14
                             targetAmount:
                               type: integer
-                              description: 해당 일자의 목표 할당량
-                              example: 3
                             completedAmount:
                               type: integer
-                              description: 해당 일자의 실제 완료량
-                              example: 3
                             isCompleted:
                               type: boolean
-                              description: 해당 일자 목표 완료 여부
-                              example: true
                             studyTime:
                               type: integer
-                              description: 해당 일자의 해당 목표 공부 시간
-                              example: 39334748
                             isToday:
                               type: boolean
-                              description: 오늘 여부
-                              example: false
 
               example:
                 success: true
@@ -495,63 +488,63 @@ paths:
                     endDate: 2026-03-30
                     daysRemaining: 13
                   dailyProgress:
-                    - dailyId: 42
+                    - goalLogId: 17
                       date: 2026-03-14
                       targetAmount: 3
                       completedAmount: 3
                       isCompleted: true
                       studyTime: 39334748
                       isToday: false
-                    - dailyId: 43
+                    - goalLogId: 43
                       date: 2026-03-15
                       targetAmount: 4
                       completedAmount: 4
                       isCompleted: true
                       studyTime: 2733902
                       isToday: false
-                    - dailyId: 44
+                    - goalLogId: 44
                       date: 2026-03-16
                       targetAmount: 3
                       completedAmount: 3
                       isCompleted: true
                       studyTime: 2733902
                       isToday: false
-                    - dailyId: 45
+                    - goalLogId: 45
                       date: 2026-03-17
                       targetAmount: 5
                       completedAmount: 7
                       isCompleted: true
                       studyTime: 2836238
                       isToday: false
-                    - dailyId: 46
+                    - goalLogId: 46
                       date: 2026-03-18
                       targetAmount: 5
                       completedAmount: 3
                       isCompleted: false
                       studyTime: 2836238
                       isToday: false
-                    - dailyId: 47
+                    - goalLogId: 47
                       date: 2026-03-19
                       targetAmount: 3
                       completedAmount: 2
                       isCompleted: false
                       studyTime: 2836238
                       isToday: false
-                    - dailyId: 48
+                    - goalLogId: 48
                       date: 2026-03-20
                       targetAmount: 3
                       completedAmount: 3
                       isCompleted: true
                       studyTime: 2836238
                       isToday: false
-                    - dailyId: 49
+                    - goalLogId: 49
                       date: 2026-03-21
                       targetAmount: 3
                       completedAmount: 2
                       isCompleted: false
                       studyTime: 2836238
                       isToday: true
-                    - dailyId: 50
+                    - goalLogId: 50
                       date: 2026-03-22
                       targetAmount: 3
                       completedAmount: 0
@@ -755,16 +748,27 @@ paths:
                     rate: 78
                     currentAmount: 78
                     targetAmount: 100
+                    totalStudyTime: 876489473
                     unit: 페이지
                   period:
                     startDate: 2026-02-01
                     endDate: 2026-03-30
                     daysRemaining: 13
                   dailyProgress:
-                    - dailyId: 17
-                    - date: 2026-03-14
-                      quota: 3
+                    - goalLogId: 17
+                      date: 2026-03-14
+                      targetAmount: 3
+                      completedAmount: 3
                       isCompleted: true
+                      studyTime: 39334748
+                      isToday: false
+                    - goalLogId: 18
+                      date: 2026-03-15
+                      targetAmount: 4
+                      completedAmount: 4
+                      isCompleted: true
+                      studyTime: 2733902
+                      isToday: false
 
         '400':
           description: 잘못된 요청
@@ -1055,7 +1059,15 @@ paths:
       tags:
         - 목표
       summary: 오늘 목표 리스트 조회
-      description: 오늘 기준으로 사용자의 목표 리스트를 조회합니다.
+      description: |
+        오늘 기준 사용자의 목표 리스트를 조회합니다.
+
+        각 목표에는 해당 날짜의 GoalLog 식별 값(goalLogId)이 포함됩니다.
+        goalLogId는 오늘 날짜 기준의 기록 ID이며, 해당 날짜의 기록이 없는 경우 null로 반환됩니다.
+
+        사용 방식:
+        - goalId: 목표 자체를 식별하는 ID
+        - goalLogId: 특정 날짜의 GoalLog(데일리 기록)를 식별하는 ID
       security:
         - bearerAuth: []
       responses:
@@ -1089,10 +1101,11 @@ paths:
                               type: integer
                               description: 목표 ID
                               example: 1
-                            dailyId:
+                            goalLogId:
                               type: integer
-                              description: 목표 시작일 기준 n일차
-                              example: 5
+                              nullable: true
+                              description: 오늘 날짜의 GoalLog ID (없으면 null)
+                              example: 15
                             title:
                               type: string
                               description: 목표 이름
@@ -1107,6 +1120,7 @@ paths:
                               example: 10
                             unit:
                               type: string
+                              nullable: true
                               description: 단위 (페이지, 강 등)
                               example: 페이지
                             studyTime:
@@ -1132,7 +1146,7 @@ paths:
                   totalStudyTime: 9374836
                   todayGoals:
                     - id: 1
-                      dailyId: 5
+                      goalLogId: 15
                       title: 목표 1
                       targetAmount: 10
                       currentAmount: 10
@@ -1142,7 +1156,7 @@ paths:
                       isTimerRunning: false
                       progressRate: 100
                     - id: 2
-                      dailyId: 5
+                      goalLogId: null
                       title: 목표 2
                       targetAmount: 10
                       currentAmount: 10
@@ -1762,7 +1776,11 @@ paths:
                   timerRunning: true
 
         '400':
-          description: 잘못된 요청
+          description: |
+            잘못된 요청
+
+            - BAD_REQUEST | 요청 형식이 올바르지 않습니다.
+            - INVALID_GOAL_ID | 유효하지 않은 goalId입니다. (goalId가 없거나 유효하지 않은 경우)
           content:
             application/json:
               schema:

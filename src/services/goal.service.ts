@@ -18,6 +18,7 @@ import {
   isValidDateString,
   toEndOfDay,
   toStartOfDay,
+  parseDateStringToKSTStart,
 } from '../utils/goal.util';
 
 /**
@@ -56,12 +57,22 @@ const buildUpdatedGoalResponse = async (
           achievedAt: 'asc',
         },
       },
+      timerLogs: {
+        select: {
+          durationSec: true,
+        },
+      },
     },
   });
 
   if (!goal) {
     throw new Error('GOAL_NOT_FOUND');
   }
+
+  const totalStudyTime = goal.timerLogs.reduce(
+    (sum, log) => sum + log.durationSec,
+    0,
+  );
 
   return {
     id: goal.id,
@@ -73,6 +84,7 @@ const buildUpdatedGoalResponse = async (
       currentAmount: goal.currentValue,
       targetAmount: goal.targetValue,
       unit: goal.category.unit,
+      totalStudyTime,
     },
     period: {
       startDate: formatDate(goal.startDate),
@@ -80,30 +92,14 @@ const buildUpdatedGoalResponse = async (
       daysRemaining: calculateDaysRemaining(goal.endDate),
     },
     dailyProgress: goal.goalLogs.map((log) => {
-      const diff = Math.floor(
-        (toStartOfDay(log.achievedAt).getTime() -
-          toStartOfDay(goal.startDate).getTime()) /
-          86400000,
-      );
-
       return {
-        dailyId: diff + 1,
-        /**
-         * 날짜: 로그 생성일 기준 (YYYY-MM-DD)
-         */
+        goalLogId: log.id,
         date: formatDate(log.achievedAt),
-        /**
-         * quota:
-         * - 실제 수행량(actualValue)
-         * - null이면 0으로 보정 (응답 타입 number 유지)
-         */
-        quota: log.actualValue ?? 0,
-        /**
-         * 완료 여부:
-         * - actualValue >= targetValue
-         * - 둘 다 nullable이므로 안전하게 보정 후 비교
-         */
+        targetAmount: log.targetValue ?? 0,
+        completedAmount: log.actualValue ?? 0,
         isCompleted: (log.actualValue ?? 0) >= (log.targetValue ?? 0),
+        studyTime: log.timeSpent ?? 0,
+        isToday: formatDate(log.achievedAt) === formatDate(new Date()),
       };
     }),
   };
@@ -161,8 +157,8 @@ export const createGoalService = async (
     throw new Error('INVALID_DATE');
   }
 
-  const parsedStartDate = new Date(startDate);
-  const parsedEndDate = new Date(endDate);
+  const parsedStartDate = parseDateStringToKSTStart(startDate);
+  const parsedEndDate = parseDateStringToKSTStart(endDate);
 
   /**
    * 시작일이 종료일보다 늦은 경우 예외 처리
@@ -284,12 +280,20 @@ export const getGoalDetailService = async ({
   const defaultStartDate = addDays(today, -7);
   const defaultEndDate = addDays(today, 14);
 
+  if (startDate && !isValidDateString(startDate)) {
+    throw new Error('INVALID_DATE');
+  }
+
+  if (endDate && !isValidDateString(endDate)) {
+    throw new Error('INVALID_DATE');
+  }
+
   const queryStartDate = startDate
-    ? toStartOfDay(new Date(startDate))
+    ? toStartOfDay(parseDateStringToKSTStart(startDate))
     : defaultStartDate;
 
   const queryEndDate = endDate
-    ? toEndOfDay(new Date(endDate))
+    ? toEndOfDay(parseDateStringToKSTStart(endDate))
     : toEndOfDay(defaultEndDate);
 
   if (queryStartDate > queryEndDate) {
@@ -413,15 +417,14 @@ export const getGoalDetailService = async ({
    * - timerDate는 nullable이므로 null 데이터는 제외
    * - formatDate는 Date만 받기 때문에 사전 필터링 필요
    */
-  const timerLogMap = new Map(
-    timerLogs
-      /**
-       * timerDate가 null인 데이터는 제외
-       * (formatDate는 Date만 받기 때문)
-       */
-      .filter((log) => log.timerDate !== null)
-      .map((log) => [formatDate(log.timerDate as Date), log]),
-  );
+  const timerStudyTimeMap = new Map<string, number>();
+  timerLogs
+    .filter((log) => log.timerDate !== null)
+    .forEach((log) => {
+      const key = formatDate(log.timerDate as Date);
+      const prev = timerStudyTimeMap.get(key) ?? 0;
+      timerStudyTimeMap.set(key, prev + log.durationSec);
+    });
   /**
    * 날짜 범위 배열 생성 후 일별 진행 현황 구성
    */
@@ -442,7 +445,6 @@ export const getGoalDetailService = async ({
      * 해당 날짜의 로그 조회 (없으면 undefined)
      */
     const goalLog = goalLogMap.get(dateKey);
-    const timerLog = timerLogMap.get(dateKey);
     /**
      * 목표량:
      * - 로그가 있으면 targetValue
@@ -456,14 +458,8 @@ export const getGoalDetailService = async ({
      */
     const completedAmount = goalLog?.actualValue ?? 0;
 
-    // 26-03-30 dailyId 계산 추가
-    const diff = Math.floor(
-      (toStartOfDay(date).getTime() - toStartOfDay(goal.startDate).getTime()) /
-        86400000,
-    );
-
     return {
-      dailyId: diff + 1, // 추가
+      goalLogId: goalLog?.id ?? null,
       date: dateKey,
       targetAmount,
       completedAmount,
@@ -476,7 +472,7 @@ export const getGoalDetailService = async ({
        * 공부 시간:
        * - timerLog 없으면 0
        */
-      studyTime: timerLog?.durationSec ?? 0,
+      studyTime: timerStudyTimeMap.get(dateKey) ?? 0,
       /**
        * 오늘 여부:
        * - UI에서 강조 표시용
@@ -510,16 +506,21 @@ export const getGoalDetailService = async ({
  * 개별 목표 수정 서비스
  *
  * 흐름:
- * 1. 목표 존재 + 본인 소유 여부 확인
- * 2. 수정 값 유효성 검사
- * 3. DB 업데이트
- * 4. 최신 상태 조회 후 응답 반환
+ * 1. 목표 존재 여부 + 본인 소유 확인
+ * 2. 수정 요청값 유효성 검증
+ * 3. 실제 반영될 값 계산 (targetValue, endDate)
+ * 4. quota 재계산
+ * 5. DB 업데이트
+ * 6. 최신 상태 조회 후 응답 반환
  */
 export const updateGoalService = async (
   userId: number,
   goalId: number,
   payload: UpdateGoalRequest,
 ): Promise<UpdatedGoalResponse> => {
+  /**
+   * 1. 목표 존재 + 본인 소유 여부 확인
+   */
   const goal = await prisma.goal.findFirst({
     where: {
       id: goalId,
@@ -537,35 +538,38 @@ export const updateGoalService = async (
     throw new Error('GOAL_NOT_FOUND');
   }
 
-  const { targetValue, endDate } = payload;
+  const { totalAmount, endDate } = payload;
 
   /**
-   * 수정할 값이 하나도 없는 경우
+   * 2. 수정값이 하나도 없는 경우 예외 처리
    */
-  if (targetValue === undefined && endDate === undefined) {
+  if (totalAmount === undefined && endDate === undefined) {
     throw new Error('EMPTY_UPDATE_DATA');
   }
 
   /**
-   * 목표값 검증
+   * 3. 목표 총량(totalAmount) 유효성 검증
+   * - 1 이상의 정수만 허용
    */
-  if (targetValue !== undefined) {
-    if (!Number.isInteger(targetValue) || targetValue <= 0) {
+  if (totalAmount !== undefined) {
+    if (!Number.isInteger(totalAmount) || totalAmount <= 0) {
       throw new Error('INVALID_TARGET_VALUE');
     }
   }
 
-  /**
-   * 종료일 검증
-   */
   let parsedEndDate: Date | undefined;
 
+  /**
+   * 4. 종료일(endDate) 유효성 검증
+   * - 날짜 형식 체크
+   * - 시작일보다 빠를 수 없음
+   */
   if (endDate !== undefined) {
     if (!isValidDateString(endDate)) {
       throw new Error('INVALID_DATE');
     }
 
-    parsedEndDate = new Date(endDate);
+    parsedEndDate = parseDateStringToKSTStart(endDate);
 
     if (goal.startDate > parsedEndDate) {
       throw new Error('INVALID_DATE_RANGE');
@@ -573,27 +577,36 @@ export const updateGoalService = async (
   }
 
   /**
-   * 목표 수정
+   * 5. 실제로 반영될 값 계산
+   * - totalAmount 없으면 기존 targetValue 유지
+   * - endDate 없으면 기존 값 유지
    */
-  const nextTargetValue = targetValue ?? goal.targetValue;
+  const nextTargetValue = totalAmount ?? goal.targetValue;
   const nextEndDate = parsedEndDate ?? goal.endDate;
 
+  /**
+   * 6. quota 재계산
+   * - 시작일 ~ 종료일 포함 일수 기준
+   * - 하루 목표량 = 총 목표량 / 전체 일수 (올림 처리)
+   */
   const diffTime = nextEndDate.getTime() - goal.startDate.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
   const nextQuota = Math.ceil(nextTargetValue / diffDays);
+
+  /**
+   * 7. DB 업데이트
+   */
   await prisma.goal.update({
-    where: {
-      id: goalId,
-    },
+    where: { id: goalId },
     data: {
-      ...(targetValue !== undefined ? { targetValue } : {}),
+      ...(totalAmount !== undefined ? { targetValue: totalAmount } : {}),
       ...(parsedEndDate ? { endDate: parsedEndDate } : {}),
       quota: nextQuota,
     },
   });
 
   /**
-   * 수정된 목표 상세 응답 반환
+   * 8. 최신 상태 조회 후 응답 반환
    */
   return buildUpdatedGoalResponse(userId, goalId);
 };
@@ -688,7 +701,6 @@ export const getTodayGoalsService = async (
       currentValue: true,
       targetValue: true,
       quota: true,
-      startDate: true, // 26-03-30 추가
       category: {
         select: {
           unit: true,
@@ -704,34 +716,85 @@ export const getTodayGoalsService = async (
     };
   }
 
+  // 오늘 goalLog 없으면 생성
+  await Promise.all(
+    goals.map(async (goal) => {
+      const existingLog = await prisma.goalLog.findFirst({
+        where: {
+          goalId: goal.id,
+          userId,
+          achievedAt: {
+            gte: startOfToday,
+            lte: endOfToday,
+          },
+        },
+      });
+
+      if (!existingLog) {
+        await prisma.goalLog.create({
+          data: {
+            goalId: goal.id,
+            userId,
+            achievedAt: startOfToday,
+            targetValue: goal.quota,
+            actualValue: 0,
+            timeSpent: 0,
+          },
+        });
+      }
+    }),
+  );
+
   const goalIds = goals.map((goal) => goal.id);
 
   /**
    * 오늘의 타이머 로그 조회
    */
-  const timerLogs = await prisma.timerLog.findMany({
-    where: {
-      goalId: {
-        in: goalIds,
+  const [goalLogs, timerLogs] = await Promise.all([
+    prisma.goalLog.findMany({
+      where: {
+        userId,
+        goalId: {
+          in: goalIds,
+        },
+        achievedAt: {
+          gte: startOfToday,
+          lte: endOfToday,
+        },
       },
-      timerDate: {
-        gte: startOfToday,
-        lte: endOfToday,
+      select: {
+        id: true,
+        goalId: true,
+        actualValue: true,
+        targetValue: true,
       },
-    },
-    orderBy: {
-      timerDate: 'asc',
-    },
-    select: {
-      goalId: true,
-      durationSec: true,
-      endTime: true,
-    },
-  });
+    }),
+
+    prisma.timerLog.findMany({
+      where: {
+        goalId: {
+          in: goalIds,
+        },
+        timerDate: {
+          gte: startOfToday,
+          lte: endOfToday,
+        },
+      },
+      orderBy: {
+        timerDate: 'asc',
+      },
+      select: {
+        goalId: true,
+        durationSec: true,
+        endTime: true,
+      },
+    }),
+  ]);
 
   /**
    * 목표별 공부 시간 합계 / 실행 중 여부 계산
    */
+  const goalLogMap = new Map(goalLogs.map((log) => [log.goalId, log]));
   const studyTimeMap = new Map<number, number>();
   const runningGoalSet = new Set<number>();
 
@@ -744,22 +807,19 @@ export const getTodayGoalsService = async (
     }
   });
 
-  // 26-03-30 dailyId 추가
   const todayGoals = goals.map((goal) => {
-    const diff = Math.floor(
-      (toStartOfDay(today).getTime() - toStartOfDay(goal.startDate).getTime()) /
-        86400000,
-    );
+    const goalLog = goalLogMap.get(goal.id);
 
     return {
       id: goal.id,
-      dailyId: diff + 1, // 추가
+      goalLogId: goalLog?.id ?? null,
       title: goal.title,
       targetAmount: goal.quota,
       currentAmount: goal.currentValue,
       unit: goal.category.unit,
       studyTime: studyTimeMap.get(goal.id) ?? 0,
-      completed: goal.currentValue >= goal.quota,
+      completed:
+        (goalLog?.actualValue ?? 0) >= (goalLog?.targetValue ?? goal.quota),
       isTimerRunning: runningGoalSet.has(goal.id),
       progressRate: calculateProgressRate(goal.currentValue, goal.targetValue),
     };
@@ -779,31 +839,8 @@ export const getTodayGoalsService = async (
 /**
  * 오늘 목표 달성률 조회 서비스
  *
- * 역할:
- * - 오늘 기준 진행 중인 목표 조회
- * - 오늘 기록된 GoalLog / TimerLog 조회
- * - 완료 목표 수와 전체 공부 시간 계산
- *
- * 계산 기준:
- * - 날짜 범위는 로컬 시간 기준 "오늘 00:00 ~ 23:59:59.999"
- * - completedGoals:
- *   actualValue >= targetValue 인 목표 개수
- * - ratio:
- *   completedGoals / totalGoals * 100
- *
- * 주의:
- * - 현재 서비스는 한국에서만 사용하는 전제를 두고
- *   로컬 시간 기준으로 계산
- * - 서버/DB 시간대가 크게 달라지면 추후 timezone 보정 로직 추가 가능
  */
 export const getTodayGoalCompletionService = async (userId: number) => {
-  /**
-   * 오늘 시작 / 끝 시각 계산
-   *
-   * 기존 util(toStartOfDay / toEndOfDay)을 그대로 사용해서
-   * 최소 수정으로 현재 프로젝트 스타일 유지
-   */
-
   const today = new Date();
   const startOfDay = toStartOfDay(today);
   const endOfDay = toEndOfDay(today);
