@@ -251,11 +251,47 @@
   - `response data`에 `goalLogId` 추가
   - `userId` 기준으로 실행 중인 타이머 조회
 
+- PATCH /goals/:goalId (개별 목표 수정)
+  - [🚨 BREAKING] response field 삭제 (200)
+    - `dailyId`
+  - response field 추가 (200)
+    - `goalLogId`
+    - `totalAmount`
+    - `completedAmount`
+    - `studyTime`
+    - `isToday`
+
+- GET /goals/{goalId}/detail (개별 목표 상세 조회)
+  - [🚨 BREAKING] response field 삭제 (200)
+    - `dailyId`
+  - response field 추가 (200)
+    - `goalLogId`
+    - `totalStudyTime`
+    - `targetAmount`
+    - `completedAmount`
+    - `studyTime`
+    - `isToday`
+
+- GET /goals/today (오늘 목표 리스트 조회) 
+  - [🚨 BREAKING] response field 삭제 (200)
+    - `dailyId`
+  - response field 추가 (200)
+    - `goalLogId`
+
+- 날짜 유틸을 KST 기준으로 재구성
+
+- 랜덤 닉네임을 동물 -> 등불 관련 명사로 변경
+
 ### 🐛 Fixed
+- PATCH /goals/:goalId (개별 목표 수정)
+  -  총 목표량이 변경되지 않는 문제를 해결
 
 ### 🔒 Security
 
 ### 🧪 Test
+- 사용자 정보, 수정, 랭킹, 위험도 API에 대한 테스트 코드 형식 수정
+- 목표 API 수정 사항에 대한 테스트 코드 수정 및 테스트 완료
+- 목표 API 테스트 코드에 500 에러 케이스 추가
 
 ### 📄 Docs
 
