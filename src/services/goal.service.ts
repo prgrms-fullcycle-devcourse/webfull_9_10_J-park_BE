@@ -21,6 +21,9 @@ import {
   parseDateStringToKSTStart,
 } from '../utils/goal.util';
 
+import { invalidateGoalListCache } from './cache.service';
+import { getCache, setCache, buildCacheKey } from '../utils/cache.util';
+
 /**
  * 개별 목표 상세 조회 서비스 파라미터
  */
@@ -39,7 +42,7 @@ interface GetGoalDetailServiceParams {
  * - UpdatedGoalResponse 형태로 가공
  *
  * 주의:
- * - goalLogs의 actualValue / targetValue는 null 가능 → 기본값 처리 필요
+ * -  goalLogs의 actualValue / targetValue는 null 가능하므로 기본값 처리가 필요함
  */
 const buildUpdatedGoalResponse = async (
   userId: number,
@@ -137,7 +140,7 @@ export const createGoalService = async (
   }
 
   /**
-   * 카테고리 존재 여부 및 본인 소유 여부 확인
+   * 카테고리 존재 여부
    */
   const category = await prisma.category.findFirst({
     where: {
@@ -202,6 +205,9 @@ export const createGoalService = async (
     },
   });
 
+  // GET /goals 캐시 무효화
+  await invalidateGoalListCache(userId);
+
   /**
    * 생성된 목표 + 사용자 닉네임 반환
    */
@@ -222,6 +228,19 @@ export const createGoalService = async (
 export const getGoalListService = async (
   userId: number,
 ): Promise<GoalListResponse> => {
+  // cache key 생성
+  const cacheKey = buildCacheKey('lampfire', 'goals', 'list', userId);
+
+  // 캐시 조회
+  const cached = await getCache<GoalListResponse>(cacheKey);
+
+  if (cached) {
+    console.log('[CACHE HIT] GET /goals');
+    return cached;
+  }
+
+  console.log('[CACHE MISS] GET /goals');
+
   const goals = await prisma.goal.findMany({
     where: {
       userId,
@@ -239,7 +258,7 @@ export const getGoalListService = async (
     },
   });
 
-  return {
+  const result: GoalListResponse = {
     goals: goals.map((goal) => ({
       id: goal.id,
       title: goal.title,
@@ -248,6 +267,11 @@ export const getGoalListService = async (
       progressRate: calculateProgressRate(goal.currentValue, goal.targetValue),
     })),
   };
+
+  //  캐시에 저장
+  await setCache(cacheKey, result, 60);
+
+  return result;
 };
 
 /**
@@ -273,8 +297,8 @@ export const getGoalDetailService = async ({
    * - 프론트에서 startDate / endDate 주면 그 값 사용
    *
    * 주의:
-   * - startDate는 00:00 기준
-   * - endDate는 23:59:59 기준
+   * - startDate는 시작일 00:00 기준으로 처리
+   * - endDate는 종료일 23:59:59 기준으로 처리
    */
   const today = toStartOfDay(new Date());
   const defaultStartDate = addDays(today, -7);
@@ -318,7 +342,9 @@ export const getGoalDetailService = async ({
     throw new Error('GOAL_NOT_FOUND');
   }
 
-  //26-03-30 추가
+  /**
+   * 조회 기간을 목표 기간 안으로 보정
+   */
   const clampedStartDate =
     queryStartDate < toStartOfDay(goal.startDate)
       ? toStartOfDay(goal.startDate)
@@ -620,11 +646,7 @@ export const updateGoalService = async (
  * - 삭제 결과 반환
  *
  * 주의:
- * - goalLog, timerLog가 FK로 연결되어 있으면
- *   cascade 설정 없을 경우 삭제 실패 가능
- *
- * 해결 방법:
- * - transaction으로 로그 먼저 삭제 후 goal 삭제
+ * - 연관된 goalLog, timerLog는 FK cascade 설정에 따라 함께 삭제될 수 있음
  */
 export const deleteGoalService = async (
   userId: number,
@@ -645,10 +667,6 @@ export const deleteGoalService = async (
     throw new Error('GOAL_NOT_FOUND');
   }
 
-  /**
-   * 연관 로그가 FK로 묶여 있으면 아래 delete 하나로는 실패할 수 있음
-   * 그 경우 transaction으로 goalLog / timerLog를 먼저 삭제해야 함
-   */
   await prisma.goal.delete({
     where: {
       id: goalId,
@@ -666,7 +684,8 @@ export const deleteGoalService = async (
  *
  * 역할:
  * - 오늘 진행 중인 목표 조회
- * - 오늘의 TimerLog 조회
+ * - 오늘 날짜의 goalLog가 없으면 자동 생성
+ * - 오늘의 goalLog / TimerLog 조회
  * - 목표별 공부 시간 / 타이머 실행 여부 / 진행률 가공
  */
 export const getTodayGoalsService = async (
@@ -716,7 +735,9 @@ export const getTodayGoalsService = async (
     };
   }
 
-  // 오늘 goalLog 없으면 생성
+  /**
+   * 오늘 날짜 기준 goalLog가 없으면 자동 생성
+   */
   await Promise.all(
     goals.map(async (goal) => {
       const existingLog = await prisma.goalLog.findFirst({
@@ -748,7 +769,7 @@ export const getTodayGoalsService = async (
   const goalIds = goals.map((goal) => goal.id);
 
   /**
-   * 오늘의 타이머 로그 조회
+   * 오늘의 goalLog / TimerLog 조회
    */
   const [goalLogs, timerLogs] = await Promise.all([
     prisma.goalLog.findMany({
@@ -957,9 +978,7 @@ export const getTodayGoalCompletionService = async (userId: number) => {
   /**
    * 오늘 전체 공부 시간 계산
    *
-   * durationSec는 초 단위이므로
-   * 명세에 맞춰 밀리초(ms)로 변환
-   * 26-03-28 DB에 이미 변환된 초로 저장되어있어 수정
+   * 현재 DB에 저장된 durationSec 값을 그대로 합산
    */
   const totalTime = timerLogs.reduce((sum, log) => sum + log.durationSec, 0);
 
