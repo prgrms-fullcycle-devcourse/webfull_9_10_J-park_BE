@@ -676,10 +676,6 @@ export const getTodayGoalsService = async (
   const startOfToday = toStartOfDay(today);
   const endOfToday = toEndOfDay(today);
 
-  console.log('현재 시간:', new Date());
-  console.log('startOfDay:', startOfToday);
-  console.log('endOfDay:', endOfToday);
-
   /**
    * 오늘 기준 진행 중인 목표 조회
    * - startDate <= 오늘의 끝
