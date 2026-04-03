@@ -1776,7 +1776,7 @@ paths:
                   timerRunning: true
 
         '400':
-          description:  |
+          description: |
             잘못된 요청
 
             - BAD_REQUEST | 요청 형식이 올바르지 않습니다.
