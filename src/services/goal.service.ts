@@ -716,6 +716,35 @@ export const getTodayGoalsService = async (
     };
   }
 
+  // 오늘 goalLog 없으면 생성
+  await Promise.all(
+    goals.map(async (goal) => {
+      const existingLog = await prisma.goalLog.findFirst({
+        where: {
+          goalId: goal.id,
+          userId,
+          achievedAt: {
+            gte: startOfToday,
+            lte: endOfToday,
+          },
+        },
+      });
+
+      if (!existingLog) {
+        await prisma.goalLog.create({
+          data: {
+            goalId: goal.id,
+            userId,
+            achievedAt: startOfToday,
+            targetValue: goal.quota,
+            actualValue: 0,
+            timeSpent: 0,
+          },
+        });
+      }
+    }),
+  );
+
   const goalIds = goals.map((goal) => goal.id);
 
   /**
