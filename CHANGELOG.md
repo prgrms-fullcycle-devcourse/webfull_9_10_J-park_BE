@@ -241,6 +241,7 @@
 ### ✨ Added
 
 ### 🛠 Changed
+
 - GET /timers (실행 중인 타이머 정보 조회)
   - 요청값에서 `goalId` 제거
   - `response data`에 `goalLogId` 추가

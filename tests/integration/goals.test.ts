@@ -13,7 +13,6 @@ describe('Goal API Integration', () => {
   let categoryId: number;
   let goalId: number;
   let authToken: string;
-  // 1) 상단 변수 선언부에 추가
 
   let goalLogId1: number;
   let goalLogId2: number;
@@ -54,7 +53,7 @@ describe('Goal API Integration', () => {
 
     goalId = goal.id;
 
-    // 2) beforeEach 안에서 goalLog 생성 직후 추가
+    // beforeEach 안에서 goalLog 생성 직후 추가
     const goalLog1 = await prisma.goalLog.create({
       data: {
         goalId,
@@ -572,7 +571,7 @@ describe('Goal API Integration', () => {
         expect(res.body.error.code).toBe('GOAL_NOT_FOUND');
       });
     });
-    
+
     describe('500 - INTERNAL_SERVER_ERROR', () => {
       it('서버 내부 예외가 발생할 경우 반환한다', async () => {
         jest
@@ -808,6 +807,20 @@ describe('Goal API Integration', () => {
           .set('Cookie', ['token=invalid-token']);
 
         expect(res.status).toBe(401);
+      });
+    });
+    describe('500 - INTERNAL_SERVER_ERROR', () => {
+      it('서버 내부 예외가 발생할 경우 반환한다', async () => {
+        jest
+          .spyOn(goalService, 'getTodayGoalsService')
+          .mockRejectedValueOnce(new Error('DB error'));
+
+        const res = await request(app)
+          .get('/goals/today')
+          .set('Cookie', [`token=${authToken}`]);
+
+        expect(res.status).toBe(500);
+        expect(res.body.success).toBe(false);
       });
     });
   });

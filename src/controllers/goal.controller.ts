@@ -273,7 +273,7 @@ export const getGoalDetailController = async (req: Request, res: Response) => {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         error: {
-          code: 'BAD_REQUEST',
+          code: 'BAD_REQUEST', // 애리: INVALID_GOAL_ID로 통일하겠습니다!
           message: '유효한 goalId가 필요합니다.',
         },
       });
@@ -286,7 +286,7 @@ export const getGoalDetailController = async (req: Request, res: Response) => {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         error: {
-          code: 'BAD_REQUEST',
+          code: 'BAD_REQUEST', // 애리: INVALID_DATE로 하셔도 될 듯해요!
           message: 'startDate 형식은 YYYY-MM-DD 이어야 합니다.',
         },
       });
@@ -296,7 +296,7 @@ export const getGoalDetailController = async (req: Request, res: Response) => {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         error: {
-          code: 'BAD_REQUEST',
+          code: 'BAD_REQUEST', // 애리: INVALID_DATE로 하셔도 될 듯해요!
           message: 'endDate 형식은 YYYY-MM-DD 이어야 합니다.',
         },
       });
@@ -332,7 +332,7 @@ export const getGoalDetailController = async (req: Request, res: Response) => {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         error: {
-          code: 'BAD_REQUEST',
+          code: 'BAD_REQUEST', // 애리: INVALID_DATE_RANGE로 가셔도 될 듯해요!
           message: 'startDate는 endDate보다 늦을 수 없습니다.',
         },
       });
@@ -457,6 +457,7 @@ export const updateGoalController = async (req: Request, res: Response) => {
         });
       }
 
+      // 애리: 에러 코드는 target value 문제라고 하는데 메시지는 totalAmount가 잘못되었다고 하고 있네요. 오타면 수정해주시구 의도한 것이면 그냥 주석 지워주세요!
       if (error.message === 'INVALID_TARGET_VALUE') {
         return res.status(StatusCodes.BAD_REQUEST).json({
           success: false,
@@ -524,7 +525,7 @@ export const deleteGoalController = async (req: Request, res: Response) => {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         error: {
-          code: 'BAD_REQUEST',
+          code: 'BAD_REQUEST', // 애리: INVALID_GOAL_ID로 통일할게요!
           message: '유효한 goalId가 필요합니다.',
         },
       });
