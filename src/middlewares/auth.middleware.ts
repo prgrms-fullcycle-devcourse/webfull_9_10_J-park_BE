@@ -8,7 +8,7 @@ import { generateRandomUsername } from '../utils/nickname.util';
 
 const authCookieOptions: CookieOptions = {
   sameSite: 'none',
-  secure: false,
+  secure: true,
   httpOnly: true,
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
