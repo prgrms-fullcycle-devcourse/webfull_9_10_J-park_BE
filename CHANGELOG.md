@@ -295,7 +295,7 @@
 
 ---
 
-## 🏷️ [v0.7.0] - 2026-04-04
+## 🏷️ [v0.7.0] - 2026-04-05
 
 ### ✨ Added
 
@@ -313,6 +313,9 @@
     - goalCount: 5
     - goalLogCount: 10
     - timerLogCount: 3
+- 성능 테스트 코드 추가
+  - 캐시 효과 검증 로직 추가
+  - `first` / `second` / `third` 요청 시간 비교
 
 ### 🛠 Changed
 
@@ -324,6 +327,9 @@
 ### 🔒 Security
 
 ### 🧪 Test
+
+- GET /goals (전체 목표 리스트 조회)
+  - 성능 테스트 코드 작성
 
 ### 📄 Docs
 

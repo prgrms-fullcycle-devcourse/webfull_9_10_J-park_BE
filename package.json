@@ -20,7 +20,9 @@
     "db:format": "prisma format",
     "prepare": "husky",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "test:int": "jest tests/integration",
+    "test:perf": "jest tests/performance --runInBand"
   },
   "keywords": [],
   "author": "",
