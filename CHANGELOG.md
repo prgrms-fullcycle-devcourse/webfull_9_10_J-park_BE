@@ -271,7 +271,7 @@
     - `studyTime`
     - `isToday`
 
-- GET /goals/today (오늘 목표 리스트 조회) 
+- GET /goals/today (오늘 목표 리스트 조회)
   - [🚨 BREAKING] response field 삭제 (200)
     - `dailyId`
   - response field 추가 (200)
@@ -284,7 +284,7 @@
 ### 🐛 Fixed
 
 - PATCH /goals/:goalId (개별 목표 수정)
-  -  총 목표량이 변경되지 않는 문제를 해결
+  - 총 목표량이 변경되지 않는 문제를 해결
 
 ### 🧪 Test
 
@@ -292,5 +292,48 @@
 - 목표 API 수정 사항에 대한 테스트 코드 수정 및 테스트 완료
 - 목표 API 테스트 코드에 500 에러 케이스 추가
 - 에러 코드 통일
+
+---
+
+## 🏷️ [v0.7.0] - 2026-04-05
+
+### ✨ Added
+
+- 타이머 종료 시 사용자의 총 공부시간 갱신
+- 개발 환경 전용 테스트 데이터 생성 API 추가 (`POST /dev/test-data/generate`)
+  - 사용자 기준으로 goal, goal_log, timer_log 랜덤 데이터 생성 지원
+  - 생성 개수 옵션 추가:
+    - `goalCount`
+    - `goalLogCount`
+    - `timerLogCount`
+  - 각 옵션은 아래 두 가지 형태 지원:
+    - 정수: 고정 개수 생성
+    - 객체 `{ min, max }`: 범위 기반 랜덤 개수 생성
+  - 기본값 적용:
+    - goalCount: 5
+    - goalLogCount: 10
+    - timerLogCount: 3
+- 성능 테스트 코드 추가
+  - 캐시 효과 검증 로직 추가
+  - `first` / `second` / `third` 요청 시간 비교
+
+### 🛠 Changed
+
+### 🐛 Fixed
+
+- GET /rankings (전체 랭킹 조회)
+  - `totalTime`이 0으로 전달되는 오류 해결
+
+### 🔒 Security
+
+### 🧪 Test
+
+- GET /goals (전체 목표 리스트 조회)
+  - 성능 테스트 코드 작성
+
+### 📄 Docs
+
+- 테스트 데이터 생성 API Swagger 명세 추가
+  - `CountOption (number | { min, max })` 구조 문서화
 
 ---

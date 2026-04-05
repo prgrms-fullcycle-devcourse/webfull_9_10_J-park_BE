@@ -16,6 +16,7 @@ import rankRouter from './routes/ranking.route';
 import timerRoutes from './routes/timer.route';
 import userRouter from './routes/users.routes';
 import riskRouter from './routes/risk.route';
+import devRouter from './routes/dev.route';
 
 const app = express();
 
@@ -55,5 +56,6 @@ app.use('/categories', categoryRouter);
 app.use('/rankings', rankRouter);
 app.use('/timers', timerRoutes);
 app.use('/risks', riskRouter);
+app.use('/dev', devRouter);
 
 export default app;

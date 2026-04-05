@@ -2675,6 +2675,144 @@ paths:
                   code: INTERNAL_SERVER_ERROR
                   message: 서버 오류가 발생했습니다.
 
+  /dev/test-data:
+    post:
+      tags:
+        - 개발 전용
+      summary: 테스트용 랜덤 데이터 생성
+      description: |
+        개발 환경에서만 사용하는 테스트 데이터 생성 API입니다.
+
+        지정한 옵션에 따라 사용자별 goal, goal_log, timer_log 랜덤 데이터를 생성합니다.
+
+        각 count 옵션은 아래 두 형태 중 하나로 전달할 수 있습니다.
+        1. 정수: 해당 개수만큼 생성
+        2. 객체: min ~ max 사이의 랜덤 정수 개수 생성
+
+        하나의 goal에 대해 goalLogCount, timerLogCount값이 랜덤으로 지정될 수 있으므로, 현재는 최종 생성된 goalCount 값만 reponse data에 담고 있습니다.
+
+        기본값:
+        - goalCount: 5
+        - goalLogCount: 10
+        - timerLogCount: 3
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                goalCount:
+                  allOf:
+                    - $ref: '#/components/schemas/CountOption'
+                  default: 5
+                  description: 사용자당 생성할 goal 개수
+                goalLogCount:
+                  allOf:
+                    - $ref: '#/components/schemas/CountOption'
+                  default: 10
+                  description: goal 하나당 생성할 goal_log 개수
+                timerLogCount:
+                  allOf:
+                    - $ref: '#/components/schemas/CountOption'
+                  default: 3
+                  description: goal_log 하나당 생성할 timer_log 개수
+      responses:
+        '201':
+          description: 테스트 데이터 생성 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: 데이터 생성 결과
+                  data:
+                    type: object
+                    properties:
+                      goalResultCount:
+                        type: integer
+                        example: 10
+
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: BAD_REQUEST
+                      message:
+                        type: string
+                        example: 요청 형식이 올바르지 않습니다.
+              examples:
+                success: false
+                error:
+                  code: BAD_REQUEST
+                  message: 요청 형식이 올바르지 않습니다.
+
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: UNAUTHORIZED
+                      message:
+                        type: string
+                        example: 유효하지 않은 토큰입니다.
+              example:
+                success: false
+                error:
+                  code: UNAUTHORIZED
+                  message: 유효하지 않은 토큰입니다.
+
+        '500':
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: INTERNAL_SERVER_ERROR
+                      message:
+                        type: string
+                        example: 서버 오류가 발생했습니다.
+              example:
+                success: false
+                error:
+                  code: INTERNAL_SERVER_ERROR
+                  message: 서버 오류가 발생했습니다.
+
 components:
   securitySchemes:
     bearerAuth:
@@ -2706,3 +2844,24 @@ components:
           type: integer
           description: '총 공부 시간 (밀리초 단위)'
           example: 17010000
+    CountOption:
+      oneOf:
+        - type: integer
+          minimum: 1
+          example: 5
+        - type: object
+          required:
+            - min
+            - max
+          properties:
+            min:
+              type: integer
+              minimum: 1
+              example: 3
+            max:
+              type: integer
+              minimum: 1
+              example: 7
+          example:
+            min: 3
+            max: 7
