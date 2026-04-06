@@ -693,19 +693,19 @@ export const getTodayGoalsService = async (
 ): Promise<TodayGoalsResponse> => {
   const today = new Date();
   const startOfToday = toStartOfDay(today);
-  const endOfToday = toEndOfDay(today);
+  const nextStartOfToday = addDays(startOfToday, 1);
 
   /**
    * 오늘 기준 진행 중인 목표 조회
-   * - startDate <= 오늘의 끝
-   * - endDate >= 오늘의 시작
+   * - startDate < 내일 시작
+   * - endDate >= 오늘 시작
    */
   const goals = await prisma.goal.findMany({
     where: {
       userId,
       status: 'active',
       startDate: {
-        lte: endOfToday,
+        lt: nextStartOfToday,
       },
       endDate: {
         gte: startOfToday,
@@ -717,9 +717,8 @@ export const getTodayGoalsService = async (
     select: {
       id: true,
       title: true,
-      currentValue: true,
-      targetValue: true,
       quota: true,
+      targetValue: true,
       category: {
         select: {
           unit: true,
@@ -735,6 +734,8 @@ export const getTodayGoalsService = async (
     };
   }
 
+  const goalIds = goals.map((goal) => goal.id);
+
   /**
    * 오늘 날짜 기준 goalLog가 없으면 자동 생성
    */
@@ -746,8 +747,11 @@ export const getTodayGoalsService = async (
           userId,
           achievedAt: {
             gte: startOfToday,
-            lte: endOfToday,
+            lt: nextStartOfToday,
           },
+        },
+        select: {
+          id: true,
         },
       });
 
@@ -766,8 +770,6 @@ export const getTodayGoalsService = async (
     }),
   );
 
-  const goalIds = goals.map((goal) => goal.id);
-
   /**
    * 오늘의 goalLog / TimerLog 조회
    */
@@ -780,7 +782,7 @@ export const getTodayGoalsService = async (
         },
         achievedAt: {
           gte: startOfToday,
-          lte: endOfToday,
+          lt: nextStartOfToday,
         },
       },
       select: {
@@ -798,7 +800,7 @@ export const getTodayGoalsService = async (
         },
         timerDate: {
           gte: startOfToday,
-          lte: endOfToday,
+          lt: nextStartOfToday,
         },
       },
       orderBy: {
@@ -813,9 +815,13 @@ export const getTodayGoalsService = async (
   ]);
 
   /**
-   * 목표별 공부 시간 합계 / 실행 중 여부 계산
+   * 목표별 오늘 로그 맵
    */
   const goalLogMap = new Map(goalLogs.map((log) => [log.goalId, log]));
+
+  /**
+   * 목표별 오늘 공부 시간 / 실행 중 여부 계산
+   */
   const studyTimeMap = new Map<number, number>();
   const runningGoalSet = new Set<number>();
 
@@ -828,11 +834,15 @@ export const getTodayGoalsService = async (
     }
   });
 
+  /**
+   * 오늘 목표 응답 가공
+   */
   const todayGoals = goals.map((goal) => {
     const goalLog = goalLogMap.get(goal.id);
 
     const targetAmount = goalLog?.targetValue ?? goal.quota;
     const currentAmount = goalLog?.actualValue ?? 0;
+    const studyTime = studyTimeMap.get(goal.id) ?? 0;
 
     return {
       id: goal.id,
@@ -841,7 +851,7 @@ export const getTodayGoalsService = async (
       targetAmount,
       currentAmount,
       unit: goal.category.unit,
-      studyTime: studyTimeMap.get(goal.id) ?? 0,
+      studyTime,
       completed: currentAmount >= targetAmount,
       isTimerRunning: runningGoalSet.has(goal.id),
       progressRate: calculateProgressRate(currentAmount, targetAmount),
