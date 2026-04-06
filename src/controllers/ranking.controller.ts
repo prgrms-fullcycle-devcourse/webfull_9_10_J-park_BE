@@ -1,12 +1,14 @@
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
+import { AppError } from '../errors/app.error';
+import { ApiResponse } from '../types/response';
+
 import {
   getMyRank,
   getTopRanks,
   getUserRankings,
 } from '../services/ranking.service';
-import { ApiResponse } from '../types/response';
 import { RankResult } from '../types/ranking.type';
 
 export const getRanks = async (
@@ -35,11 +37,15 @@ export const getRanks = async (
     });
   } catch (err) {
     console.error(`Get Ranks Error: ${err}`);
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+
+    const appError =
+      err instanceof AppError ? err : new AppError('INTERNAL_SERVER_ERROR');
+
+    return res.status(appError.statusCode).json({
       success: false,
       error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        message: '서버 오류가 발생했습니다.',
+        code: appError.code,
+        message: appError.message,
       },
     });
   }

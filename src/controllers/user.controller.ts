@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
-import { getUserById, updateNickname } from '../services/user.service';
+import { AppError } from '../errors/app.error';
 import { ApiResponse } from '../types/response';
+
+import { getUserById, updateNickname } from '../services/user.service';
 import { UserProfileResponse } from '../types/user.type';
 
 export const getMe = async (
@@ -21,11 +23,15 @@ export const getMe = async (
     });
   } catch (err) {
     console.error(`getMe error: ${err}`);
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+
+    const appError =
+      err instanceof AppError ? err : new AppError('INTERNAL_SERVER_ERROR');
+
+    return res.status(appError.statusCode).json({
       success: false,
       error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        message: '서버 오류가 발생했습니다.',
+        code: appError.code,
+        message: appError.message,
       },
     });
   }
@@ -40,13 +46,7 @@ export const updateProfile = async (
     const { name } = req.body;
 
     if (!name) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        error: {
-          code: 'BAD_REQUEST',
-          message: '닉네임이 주어지지 않았습니다.',
-        },
-      });
+      throw new AppError('MISSING_NICKNAME');
     }
 
     const updatedUser = await updateNickname(userId, name);
@@ -58,11 +58,15 @@ export const updateProfile = async (
     });
   } catch (err) {
     console.error(`updateUser error: ${err}`);
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+
+    const appError =
+      err instanceof AppError ? err : new AppError('INTERNAL_SERVER_ERROR');
+
+    return res.status(appError.statusCode).json({
       success: false,
       error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        message: '서버 오류가 발생했습니다.',
+        code: appError.code,
+        message: appError.message,
       },
     });
   }
