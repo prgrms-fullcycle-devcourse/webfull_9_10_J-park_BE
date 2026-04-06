@@ -4,6 +4,7 @@ import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import helmet from 'helmet';
 import { StatusCodes } from 'http-status-codes';
+import morgan from 'morgan';
 
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
@@ -23,6 +24,7 @@ const app = express();
 // 미들웨어 설정
 app.use(helmet());
 app.use(cookieParser());
+app.use(morgan(':method :url :status - :response-time ms'));
 app.use(express.json());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
