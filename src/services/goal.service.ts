@@ -235,11 +235,11 @@ export const getGoalListService = async (
   const cached = await getCache<GoalListResponse>(cacheKey);
 
   if (cached) {
-    console.log('[CACHE HIT] GET /goals');
+    //console.log('[CACHE HIT] GET /goals');
     return cached;
   }
 
-  console.log('[CACHE MISS] GET /goals');
+  //console.log('[CACHE MISS] GET /goals');
 
   const goals = await prisma.goal.findMany({
     where: {
@@ -831,18 +831,20 @@ export const getTodayGoalsService = async (
   const todayGoals = goals.map((goal) => {
     const goalLog = goalLogMap.get(goal.id);
 
+    const targetAmount = goalLog?.targetValue ?? goal.quota;
+    const currentAmount = goalLog?.actualValue ?? 0;
+
     return {
       id: goal.id,
       goalLogId: goalLog?.id ?? null,
       title: goal.title,
-      targetAmount: goal.quota,
-      currentAmount: goal.currentValue,
+      targetAmount,
+      currentAmount,
       unit: goal.category.unit,
       studyTime: studyTimeMap.get(goal.id) ?? 0,
-      completed:
-        (goalLog?.actualValue ?? 0) >= (goalLog?.targetValue ?? goal.quota),
+      completed: currentAmount >= targetAmount,
       isTimerRunning: runningGoalSet.has(goal.id),
-      progressRate: calculateProgressRate(goal.currentValue, goal.targetValue),
+      progressRate: calculateProgressRate(currentAmount, targetAmount),
     };
   });
 
