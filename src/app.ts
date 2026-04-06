@@ -4,6 +4,7 @@ import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import helmet from 'helmet';
 import { StatusCodes } from 'http-status-codes';
+import morgan from 'morgan';
 
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
@@ -16,12 +17,14 @@ import rankRouter from './routes/ranking.route';
 import timerRoutes from './routes/timer.route';
 import userRouter from './routes/users.routes';
 import riskRouter from './routes/risk.route';
+import devRouter from './routes/dev.route';
 
 const app = express();
 
 // 미들웨어 설정
 app.use(helmet());
 app.use(cookieParser());
+app.use(morgan(':method :url :status - :response-time ms'));
 app.use(express.json());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
@@ -55,5 +58,6 @@ app.use('/categories', categoryRouter);
 app.use('/rankings', rankRouter);
 app.use('/timers', timerRoutes);
 app.use('/risks', riskRouter);
+app.use('/dev', devRouter);
 
 export default app;
