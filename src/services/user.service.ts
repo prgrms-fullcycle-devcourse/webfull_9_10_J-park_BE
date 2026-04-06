@@ -1,4 +1,7 @@
 import prisma from '../config/prisma';
+
+import { AppError } from '../errors/app.error';
+
 import { User, UserProfileResponse } from '../types/user.type';
 import { formatDateString } from '../utils/time.util';
 
@@ -40,7 +43,7 @@ export const getUserById = async (
   });
 
   if (!user) {
-    throw new Error('USER_NOT_FOUND');
+    throw new AppError('USER_NOT_FOUND');
   }
 
   const userResponse = mapToUserResponse(user);

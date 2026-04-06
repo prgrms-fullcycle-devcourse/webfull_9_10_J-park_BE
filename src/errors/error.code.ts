@@ -32,6 +32,11 @@ export const ERROR_CODES = {
     code: 'EMPTY_UPDATE_DATA',
     message: '수정할 값이 없습니다.',
   },
+  MISSING_NICKNAME: {
+    statusCode: StatusCodes.BAD_REQUEST,
+    code: 'MISSING_NICKNAME',
+    message: '닉네임이 주어지지 않았습니다.',
+  },
 
   // 401
   UNAUTHORIZED: {
