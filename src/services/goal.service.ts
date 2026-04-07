@@ -240,11 +240,11 @@ export const getGoalListService = async (
   const cached = await getCache<GoalListResponse>(cacheKey);
 
   if (cached) {
-    console.log('[CACHE HIT] GET /goals');
+    //console.log('[CACHE HIT] GET /goals');
     return cached;
   }
 
-  console.log('[CACHE MISS] GET /goals');
+  //console.log('[CACHE MISS] GET /goals');
 
   const goals = await prisma.goal.findMany({
     where: {
@@ -306,11 +306,11 @@ export const getGoalDetailService = async ({
 
   const cached = await getCache<GoalDetailResponse>(cacheKey);
   if (cached) {
-    console.log('[CACHE HIT] GET /goals/:goalId/detail');
+    //console.log('[CACHE HIT] GET /goals/:goalId/detail');
     return cached;
   }
 
-  console.log('[CACHE MISS] GET /goals/:goalId/detail');
+  //console.log('[CACHE MISS] GET /goals/:goalId/detail');
 
   /**
    * 조회 기간 설정
@@ -888,11 +888,11 @@ export const getTodayGoalCompletionService = async (userId: number) => {
   }>(cacheKey);
 
   if (cached) {
-    console.log('[CACHE HIT] GET /goals/today/complete');
+    //console.log('[CACHE HIT] GET /goals/today/complete');
     return cached;
   }
 
-  console.log('[CACHE MISS] GET /goals/today/complete');
+  //console.log('[CACHE MISS] GET /goals/today/complete');
 
   const startOfDay = toStartOfDay(today);
   const endOfDay = toEndOfDay(today);
