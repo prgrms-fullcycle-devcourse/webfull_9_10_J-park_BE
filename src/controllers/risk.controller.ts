@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
-import { getRiskByUserId } from '../services/risk.service';
+import { AppError } from '../errors/app.error';
 import { ApiResponse } from '../types/response';
+
+import { getRiskByUserId } from '../services/risk.service';
 import { RiskInfo } from '../types/risk.type';
 
 export const getMyRisk = async (
@@ -24,11 +26,15 @@ export const getMyRisk = async (
     });
   } catch (err) {
     console.error(`Get My Risk Error: ${err}`);
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+
+    const appError =
+      err instanceof AppError ? err : new AppError('INTERNAL_SERVER_ERROR');
+
+    return res.status(appError.statusCode).json({
       success: false,
       error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        message: '서버 오류가 발생했습니다.',
+        code: appError.code,
+        message: appError.message,
       },
     });
   }

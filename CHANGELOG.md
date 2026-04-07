@@ -299,7 +299,7 @@
 
 ### ✨ Added
 
-- GET /goals (전체 목표 리스트 조회) 
+- GET /goals (전체 목표 리스트 조회)
   - #78
   - `Redis` 캐싱으로 조회 성능 개선
   - 목표 생성 시 캐시 무효화로 데이터 정합성 유지
@@ -321,17 +321,14 @@
   - 캐시 효과 검증 로직 추가
   - `first` / `second` / `third` 요청 시간 비교
 - HTTP 로깅 추가
-  - `morgan` 미들웨어로  요청의 메소드, 엔드포인트, 상태코드, 응답시간 출력
-
-### 🛠 Changed
+  - `morgan` 미들웨어로 요청의 메소드, 엔드포인트, 상태코드, 응답시간 출력
 
 ### 🐛 Fixed
+
 - 타이머 종료 시 랭킹에 업데이트 되지 않는 오류 해결
   - 타이머 종료 시 사용자의 총 공부시간 갱신
 - GET /rankings (전체 랭킹 조회)
   - `totalTime`이 0으로 전달되는 오류 해결
-
-### 🔒 Security
 
 ### 🧪 Test
 
@@ -343,5 +340,42 @@
 
 - 테스트 데이터 생성 API Swagger 명세 추가
   - `CountOption (number | { min, max })` 구조 문서화
+
+---
+
+## 🏷️ [v0.8.0] - 2026-04-07
+
+### ✨ Added
+
+- GOAL API 캐싱으로 조회 성능 개선
+  - 이하의 API에 대한 캐싱을 진행
+    - GET /goals (전체 목표 리스트 조회)
+    - GET /goals/:goalId/detail (개별 목표 상세 조회)
+    - GET /goals/today/complete (오늘 목표 달성률 조회)
+  - 이하의 API 요청 시 상술한 캐시를 무효화
+    - DELETE /goals/{goalId} (목표 삭제)
+    - PATCH /goals/{goalId} (개별 목표 수정)
+    - POST /timers/start (타이머 시작)
+    - POST /timers/end (타이머 종료)
+
+- GET /timers (실행 중 타이머 조회)
+  - 캐싱으로 조회 성능 개선
+  - 이하의 API 요청 시 해당 캐시를 무효화
+    - POST /timers/start (타이머 시작)
+    - POST /timers/end (타이머 종료)
+
+### 🛠 Changed
+
+- GET /goals/today (오늘 목표 리스트 조회)
+  - 응답 데이터의 기준을 누적치 -> 오늘로 변경
+
+- USER API의 에러 코드 통일 리팩토링
+  - 응답 데이터에 닉네임이 없을 경우 `MISSING_NICKNAME` 반환
+
+### 🐛 Fixed
+
+- GET /goals/today (오늘 목표 리스트 조회)
+  - 날짜 경계값 오류 수정
+    - `lte endOfToday` -> `lt nextStartOfToday`
 
 ---
