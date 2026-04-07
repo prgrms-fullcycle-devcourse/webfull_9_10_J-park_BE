@@ -7,6 +7,14 @@ import {
   RunningTimerResponse,
 } from '../types/timer.type';
 
+// 이정현 작업 1
+import {
+  buildCacheKey,
+  delCache,
+  invalidateGoalDetailCache,
+} from '../utils/cache.util';
+import { formatDate } from '../utils/goal.util';
+
 // 타이머 측정 시작
 export const startTimerService = async (
   userId: number,
@@ -69,12 +77,32 @@ export const startTimerService = async (
     },
   });
 
+  //이정현 작업 2
+  await delCache([
+    buildCacheKey('lampfire', 'timers', 'running', userId),
+    buildCacheKey('lampfire', 'goals', 'today', userId),
+  ]);
+
   return {
     goalId,
     timerRunning: true,
   };
 };
 
+/**
+ * 이정현 작업 3
+ *
+ * 타이머 측정 종료
+ *
+ * 1. runningTimer 조회
+ * 2. 종료 시간 / duration 계산
+ * 3. timerLog 업데이트
+ * 4. goalLog 업데이트
+ * 5. goal 업데이트
+ * 6. 응답용 데이터 정리
+ * 7. 관련 캐시 무효화 // 이정현 추가
+ * 8. return
+ */
 // 타이머 측정 종료
 export const endTimerService = async (
   userId: number,
@@ -176,6 +204,21 @@ export const endTimerService = async (
     goalDuration,
     goalProgressRate,
   };
+
+  // 이정현 작업 4
+
+  // 목표 상세 캐시 무효화
+  await invalidateGoalDetailCache(userId, goalId);
+
+  // 오늘 날짜 기준 캐시 키
+  const todayKey = formatDate(new Date());
+
+  // 오늘 목표 / 오늘 목표 달성률 / 실행 중 타이머 캐시 무효화
+  await delCache([
+    buildCacheKey('lampfire', 'goals', 'today', userId),
+    buildCacheKey('lampfire', 'goals', 'today', 'complete', userId, todayKey),
+    buildCacheKey('lampfire', 'timers', 'running', userId),
+  ]);
 
   return endTimer;
 };
