@@ -1,8 +1,14 @@
 import redisClient from '../config/redis';
 
-export const buildCacheKey = (...parts: (string | number | null | undefined)[]) => {
+export const buildCacheKey = (
+  ...parts: (string | number | null | undefined)[]
+) => {
   return parts
-    .map((part) => (part === null || part === undefined || part === '' ? 'empty' : String(part)))
+    .map((part) =>
+      part === null || part === undefined || part === ''
+        ? 'empty'
+        : String(part),
+    )
     .join(':');
 };
 
@@ -86,7 +92,9 @@ export const delCacheByPattern = async (pattern: string): Promise<void> => {
   }
 };
 
-export const invalidateGoalListCache = async (userId: number): Promise<void> => {
+export const invalidateGoalListCache = async (
+  userId: number,
+): Promise<void> => {
   const key = buildCacheKey('lampfire', 'goals', 'list', userId);
   await delCache([key]);
 };
@@ -99,6 +107,13 @@ export const invalidateGoalDetailCache = async (
   userId: number,
   goalId: number,
 ): Promise<void> => {
-  const pattern = buildCacheKey('lampfire', 'goals', 'detail', userId, goalId, '*');
+  const pattern = buildCacheKey(
+    'lampfire',
+    'goals',
+    'detail',
+    userId,
+    goalId,
+    '*',
+  );
   await delCacheByPattern(pattern);
 };
