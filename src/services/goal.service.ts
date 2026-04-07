@@ -306,11 +306,11 @@ export const getGoalDetailService = async ({
 
   const cached = await getCache<GoalDetailResponse>(cacheKey);
   if (cached) {
-     console.log('[CACHE HIT] GET /goals/:goalId/detail');
+    console.log('[CACHE HIT] GET /goals/:goalId/detail');
     return cached;
   }
 
-   console.log('[CACHE MISS] GET /goals/:goalId/detail');
+  console.log('[CACHE MISS] GET /goals/:goalId/detail');
 
   /**
    * 조회 기간 설정
@@ -865,8 +865,35 @@ export const getTodayGoalsService = async (
  * 오늘 목표 달성률 조회 서비스
  *
  */
+const TODAY_COMPLETE_CACHE_TTL = 10; // 초 (짧게!)
+
 export const getTodayGoalCompletionService = async (userId: number) => {
   const today = new Date();
+  const todayKey = formatDate(today);
+
+  const cacheKey = buildCacheKey(
+    'lampfire',
+    'goals',
+    'today',
+    'complete',
+    userId,
+    todayKey,
+  );
+
+  const cached = await getCache<{
+    totalTime: number;
+    totalGoals: number;
+    completedGoals: number;
+    ratio: number;
+  }>(cacheKey);
+
+  if (cached) {
+    console.log('[CACHE HIT] GET /goals/today/complete');
+    return cached;
+  }
+
+  console.log('[CACHE MISS] GET /goals/today/complete');
+
   const startOfDay = toStartOfDay(today);
   const endOfDay = toEndOfDay(today);
 
@@ -902,12 +929,15 @@ export const getTodayGoalCompletionService = async (userId: number) => {
    * 기본값 반환
    */
   if (goalIds.length === 0) {
-    return {
+    const emptyResult = {
       totalTime: 0,
       totalGoals: 0,
       completedGoals: 0,
       ratio: 0,
     };
+
+    await setCache(cacheKey, emptyResult, TODAY_COMPLETE_CACHE_TTL);
+    return emptyResult;
   }
 
   /**
@@ -999,10 +1029,14 @@ export const getTodayGoalCompletionService = async (userId: number) => {
   const ratio =
     totalGoals === 0 ? 0 : Math.floor((completedGoals / totalGoals) * 100);
 
-  return {
+  const result = {
     totalTime,
     totalGoals,
     completedGoals,
     ratio,
   };
+
+  await setCache(cacheKey, result, TODAY_COMPLETE_CACHE_TTL);
+
+  return result;
 };
