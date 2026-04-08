@@ -3,19 +3,22 @@ import prisma from '../config/prisma';
 import { AppError } from '../errors/app.error';
 
 import { User, UserProfileResponse } from '../types/user.type';
+import { getQuotasByUser } from '../utils/quota.util';
 import { formatDateString } from '../utils/time.util';
 
-const mapToUserResponse = (user: User) => {
+const mapToUserResponse = async (user: User) => {
   const dateString = formatDateString(user.createdAt);
+  const quotaMap = await getQuotasByUser(user.id);
 
   return {
     userId: user.id,
     nickname: user.nickname,
     profileImageUrl: user.profileImageUrl,
     totalTime: user.totalTime,
-    goals: user.goals.map(({ quota, ...rest }) => ({
+    goals: user.goals.map(({ id, quota, ...rest }) => ({
       ...rest,
-      todayQuota: quota,
+      id,
+      todayQuota: quotaMap.get(id) ?? quota,
     })),
     createdAt: dateString,
   };

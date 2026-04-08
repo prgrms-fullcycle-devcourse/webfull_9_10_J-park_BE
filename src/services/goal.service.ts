@@ -23,6 +23,7 @@ import {
 
 import { invalidateGoalListCache } from './cache.service';
 import { getCache, setCache, buildCacheKey } from '../utils/cache.util';
+import { getQuotaByGoal } from '../utils/quota.util';
 
 /**
  * 개별 목표 상세 조회 서비스 파라미터
@@ -756,12 +757,15 @@ export const getTodayGoalsService = async (
       });
 
       if (!existingLog) {
+        // 할당량 추천 추천 로직 수행
+        const quotaMap = await getQuotaByGoal(userId, goal.id, startOfToday);
+
         await prisma.goalLog.create({
           data: {
             goalId: goal.id,
             userId,
             achievedAt: startOfToday,
-            targetValue: goal.quota,
+            targetValue: quotaMap.get(goal.id) ?? goal.quota,
             actualValue: 0,
             timeSpent: 0,
           },

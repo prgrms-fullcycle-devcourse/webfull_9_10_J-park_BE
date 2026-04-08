@@ -6,6 +6,7 @@ import {
   EndTimerResponse,
   RunningTimerResponse,
 } from '../types/timer.type';
+import { getQuotaByGoal } from '../utils/quota.util';
 
 // 타이머 측정 시작
 export const startTimerService = async (
@@ -40,22 +41,29 @@ export const startTimerService = async (
   const timerDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   // 오늘자 goalLog 데이터가 없을 경우생성, 있으면 그대로 사용
-  const goalLog = await prisma.goalLog.upsert({
-    where: {
-      goalId_achievedAt: {
-        goalId,
-        achievedAt: timerDate,
+  const goalLog = await prisma.$transaction(async (tx) => {
+    const existing = await tx.goalLog.findUnique({
+      where: {
+        goalId_achievedAt: {
+          goalId,
+          achievedAt: timerDate,
+        },
       },
-    },
-    update: {},
-    create: {
-      achievedAt: timerDate,
-      actualValue: 0,
-      goalId,
-      targetValue: goal.quota,
-      timeSpent: 0,
-      userId,
-    },
+    });
+
+    if (existing) return existing;
+    const quotaMap = await getQuotaByGoal(userId, goalId, timerDate);
+
+    return tx.goalLog.create({
+      data: {
+        achievedAt: timerDate,
+        actualValue: 0,
+        goalId,
+        targetValue: quotaMap.get(goalId) ?? goal.quota,
+        timeSpent: 0,
+        userId,
+      },
+    });
   });
 
   // timerLog 데이터 추가

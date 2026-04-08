@@ -12,6 +12,11 @@ datasource db {
   provider = "postgresql"
 }
 
+enum RecommendationStatus {
+  OPEN
+  CLOSED
+}
+
 model User {
   id              Int     @id @default(autoincrement())
   nickname        String
@@ -27,6 +32,8 @@ model User {
   categories Category[]
   goalLogs   GoalLog[]
   timerLogs  TimerLog[]
+  userQuotaProfile UserQuotaProfile[]
+  quotaRecommendation QuotaRecommendation[]
 
   @@index([totalTime(sort: Desc)]) // 랭킹 조회용
   @@map("users")
@@ -70,6 +77,7 @@ model Goal {
   category  Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   goalLogs  GoalLog[]
   timerLogs TimerLog[]
+  quotaRecommendation QuotaRecommendation[]
 
   @@map("goals")
 }
@@ -113,4 +121,61 @@ model TimerLog {
 
   @@index([userId, goalId, endTime]) // 실행중 타이머 빠른 조회용
   @@map("timer_logs")
+}
+
+// 유저의 할당량 관련 파라미터를 저장
+model UserQuotaProfile {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  baseBias  Float    @default(0)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_quota_profiles")
+}
+
+// 추천 내역에 대한 로그를 저장
+model QuotaRecommendation {
+  id                   Int      @id @default(autoincrement())
+  userId               Int
+  goalId               Int
+  recommendationDate   DateTime @db.Timestamptz(3)
+
+  remainingUnits       Int
+  remainingDays        Int
+
+  baseQuota            Int 
+  baseBiasSnapshot     Float    @default(0)
+  recommendedQuota     Int
+
+  status   RecommendationStatus  @default(OPEN)
+
+  createdAt            DateTime @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  feedback QuotaFeedback?
+
+  @@unique([goalId, recommendationDate])
+  @@index([userId, recommendationDate])
+  @@map("quota_recommendations")
+}
+
+// 추천한 할당량이 잘 수행되었는지를 기록
+model QuotaFeedback {
+  id                 Int      @id @default(autoincrement())
+  recommendationId   Int      @unique
+
+  actualCompleted    Int
+  completionRate     Float
+  finalReward        Float
+
+  createdAt          DateTime @default(now()) @db.Timestamptz(3)
+
+  recommendation QuotaRecommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+
+  @@map("quota_feedbacks")
 }
