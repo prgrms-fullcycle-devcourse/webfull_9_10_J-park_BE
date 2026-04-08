@@ -54,6 +54,19 @@ export const getUserById = async (
   return userResponse;
 };
 
+export const getUserByEmail = async (email: string) => {
+  const user = await prisma.user.findFirst({
+    where: {
+      email,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  return user;
+};
+
 export const updateNickname = async (userId: number, newNickname: string) => {
   const user = await prisma.user.update({
     where: { id: userId },
