@@ -5,8 +5,16 @@ import jwt from 'jsonwebtoken';
 import { AppError } from '../errors/app.error';
 import { ApiResponse } from '../types/response';
 
-import prisma from '../config/prisma';
-import { getUserById, updateNickname } from '../services/user.service';
+import {
+  createKakaoUser,
+  deleteAnonymousUser,
+  getKakaoAuthInfo,
+  getKakaoAuthToken,
+  getKakaoEmail,
+  getUserByEmail,
+  getUserById,
+  updateNickname,
+} from '../services/user.service';
 import { UserProfileResponse } from '../types/user.type';
 
 export const getMe = async (
@@ -75,8 +83,7 @@ export const updateProfile = async (
 };
 
 export const startKakaoLogin = (req: Request, res: Response) => {
-  const baseUrl = 'https://kauth.kakao.com/oauth/authorize';
-  const state = Math.random().toString(36).substring(2, 15);
+  const { state, url } = getKakaoAuthInfo();
 
   res.cookie('kakao_state', state, {
     // sameSite: 'none',
@@ -84,16 +91,6 @@ export const startKakaoLogin = (req: Request, res: Response) => {
     // httpOnly: true,
     maxAge: 5 * 60 * 1000,
   });
-
-  const config = {
-    client_id: process.env.KT_CLIENT!,
-    redirect_uri: 'http://localhost:3000/users/kakao/finish',
-    response_type: 'code',
-    scope: 'profile_nickname,account_email',
-    state,
-  };
-  const params = new URLSearchParams(config).toString();
-  const url = `${baseUrl}?${params}`;
 
   return res.redirect(url);
 };
@@ -108,48 +105,12 @@ export const finishKakaoLogin = async (req: Request, res: Response) => {
   }
   res.clearCookie('kakao_state');
 
-  const baseUrl = 'https://kauth.kakao.com/oauth/token';
-  const config = {
-    grant_type: 'authorization_code',
-    client_id: process.env.KT_CLIENT!,
-    client_secret: process.env.KT_CLIENT_SECRET!,
-    redirect_uri: 'http://localhost:3000/users/kakao/finish',
-    code: code as string,
-  };
-  const params = new URLSearchParams(config).toString();
-  const url = `${baseUrl}?${params}`;
-
   try {
-    // Access Token 요청
-    const tokenRequest = await (
-      await fetch(url, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json;charset=UTF-8',
-        },
-      })
-    ).json();
+    const tokenRequest = await getKakaoAuthToken(code as string);
 
     if ('access_token' in tokenRequest) {
-      const { access_token: accessToken } = tokenRequest;
-      const apiUrl = 'https://kapi.kakao.com/v2/user/me';
+      const email = await getKakaoEmail(tokenRequest);
 
-      // 사용자 정보 요청
-      const userData = await (
-        await fetch(apiUrl, {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
-          },
-        })
-      ).json();
-
-      const email =
-        userData.kakao_account.is_email_valid &&
-        userData.kakao_account.is_email_verified
-          ? userData.kakao_account.email
-          : undefined;
       if (!email) {
         // 이메일 권한이 없거나 선택하지 않은 경우
         return res.status(StatusCodes.UNAUTHORIZED).json({});
@@ -157,39 +118,18 @@ export const finishKakaoLogin = async (req: Request, res: Response) => {
 
       // 사용자 확인 및 생성
       const anonymousId = req.user?.userId;
-      let user = await prisma.user.findUnique({
-        where: { email },
-        select: { id: true },
-      });
+      let user = await getUserByEmail(email);
       if (!user) {
         if (!anonymousId) {
           throw new AppError('INTERNAL_SERVER_ERROR'); // ANONYMOUS ID NOT FOUND
         }
 
-        // create an account with KakaoTalk info
-        user = await prisma.user.update({
-          where: { id: anonymousId },
-          data: {
-            email,
-            //nickname: userData.kakao_account.profile['nickname'],
-            password: null,
-            // socialLogin: true,
-          },
-          select: { id: true },
-        });
+        user = await createKakaoUser(email, anonymousId);
       } else {
         // 익명 사용자의 데이터는? 추가(갱신), 삭제
 
         // 이미 기존에 로그인했던 사용자라면 익명 사용자 삭제
-        if (anonymousId && anonymousId != user.id) {
-          await prisma.user
-            .delete({
-              where: { id: anonymousId },
-            })
-            .catch(() => {
-              console.error('Failed to delete anonymous user');
-            });
-        }
+        await deleteAnonymousUser(anonymousId as number, user.id);
       }
 
       const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET!, {
