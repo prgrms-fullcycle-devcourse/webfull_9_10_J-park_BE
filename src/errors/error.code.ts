@@ -71,6 +71,11 @@ export const ERROR_CODES = {
     code: 'RUNNING_TIMER_NOT_FOUND',
     message: '실행 중인 타이머가 없습니다.',
   },
+  QUOTA_RECOMMENDATION_NOT_FOUND: {
+    statusCode: StatusCodes.NOT_FOUND,
+    code: 'QUOTA_RECOMMENDATION_NOT_FOUND',
+    message: '추천 할당량을 찾을 수 없습니다.',
+  },
 
   // 409
   TIMER_ALREADY_RUNNING: {
