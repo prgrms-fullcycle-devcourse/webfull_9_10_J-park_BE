@@ -28,11 +28,11 @@ model User {
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
-  goals      Goal[]
-  categories Category[]
-  goalLogs   GoalLog[]
-  timerLogs  TimerLog[]
-  userQuotaProfile UserQuotaProfile[]
+  goals               Goal[]
+  categories          Category[]
+  goalLogs            GoalLog[]
+  timerLogs           TimerLog[]
+  userQuotaProfile    UserQuotaProfile[]
   quotaRecommendation QuotaRecommendation[]
 
   @@index([totalTime(sort: Desc)]) // 랭킹 조회용
@@ -73,10 +73,10 @@ model Goal {
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category  Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  goalLogs  GoalLog[]
-  timerLogs TimerLog[]
+  user                User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category            Category              @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  goalLogs            GoalLog[]
+  timerLogs           TimerLog[]
   quotaRecommendation QuotaRecommendation[]
 
   @@map("goals")
@@ -125,9 +125,16 @@ model TimerLog {
 
 // 유저의 할당량 관련 파라미터를 저장
 model UserQuotaProfile {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @unique
-  baseBias  Float    @default(0)
+  id     Int @id @default(autoincrement())
+  userId Int @unique
+
+  // 전반적인 보정값
+  baseBias Float @default(0)
+
+  // 피로도 보정값
+  fatigueBaseline Float @default(60)
+  fatigueWeight   Float @default(1.5)
+
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
@@ -138,21 +145,27 @@ model UserQuotaProfile {
 
 // 추천 내역에 대한 로그를 저장
 model QuotaRecommendation {
-  id                   Int      @id @default(autoincrement())
-  userId               Int
-  goalId               Int
-  recommendationDate   DateTime @db.Timestamptz(3)
+  id                 Int      @id @default(autoincrement())
+  userId             Int
+  goalId             Int
+  recommendationDate DateTime @db.Timestamptz(3)
 
-  remainingUnits       Int
-  remainingDays        Int
+  remainingUnits Int
+  remainingDays  Int
 
-  baseQuota            Int 
-  baseBiasSnapshot     Float    @default(0)
-  recommendedQuota     Int
+  baseQuota        Int
+  baseBiasSnapshot Float @default(0)
 
-  status   RecommendationStatus  @default(OPEN)
+  recentAvg               Float @default(0)
+  fatigueBaselineSnapshot Float @default(60)
+  fatigueWeightSnapshot   Float @default(1.5)
+  fatigueBiasSnapshot     Float @default(0)
 
-  createdAt            DateTime @default(now()) @db.Timestamptz(3)
+  recommendedQuota Int
+
+  status RecommendationStatus @default(OPEN)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
@@ -166,14 +179,16 @@ model QuotaRecommendation {
 
 // 추천한 할당량이 잘 수행되었는지를 기록
 model QuotaFeedback {
-  id                 Int      @id @default(autoincrement())
-  recommendationId   Int      @unique
+  id               Int @id @default(autoincrement())
+  recommendationId Int @unique
 
-  actualCompleted    Int
-  completionRate     Float
-  finalReward        Float
+  actualCompleted Int
+  actualStudyTime Int
 
-  createdAt          DateTime @default(now()) @db.Timestamptz(3)
+  completionRate Float
+  finalReward    Float
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
 
   recommendation QuotaRecommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
 

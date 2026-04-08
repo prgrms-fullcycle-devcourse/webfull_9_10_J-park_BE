@@ -48,20 +48,35 @@ const getTodayGoals = async (
   return goals;
 };
 
-/**
- * 사용자 quota profile 조회
- * 없으면 baseBias = 0 으로 생성
- */
-const getOrCreateUserQuotaProfile = async (userId: number) => {
-  return prisma.userQuotaProfile.upsert({
+export const getOrCreateUserQuotaProfile = async (userId: number) => {
+  const existingProfile = await prisma.userQuotaProfile.findUnique({
     where: { userId },
-    update: {},
-    create: {
-      userId,
-      baseBias: 0,
-      updatedAt: new Date(),
-    },
   });
+
+  if (existingProfile) {
+    return existingProfile;
+  }
+
+  try {
+    return await prisma.userQuotaProfile.create({
+      data: {
+        userId,
+        baseBias: 0,
+        updatedAt: new Date(),
+      },
+    });
+  } catch (error: unknown) {
+    // 동시에 다른 요청이 먼저 생성한 경우를 대비
+    const createdProfile = await prisma.userQuotaProfile.findUnique({
+      where: { userId },
+    });
+
+    if (createdProfile) {
+      return createdProfile;
+    }
+
+    throw error;
+  }
 };
 
 /**
@@ -95,13 +110,68 @@ const buildBaseQuotaContext = (goal: GoalForRecommendation) => {
 };
 
 /**
+ * 최근 7일 평균 공부 시간(분) 계산
+ */
+const getRecentAvgStudyTime = async (
+  userId: number,
+  goalId: number,
+): Promise<number> => {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startDate = new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000);
+
+  const goalLogs = await prisma.goalLog.findMany({
+    where: {
+      goalId,
+      achievedAt: {
+        gte: startDate,
+        lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
+      },
+    },
+    select: {
+      timeSpent: true,
+    },
+  });
+
+  const totalDurationMs = goalLogs.reduce((sum, log) => sum + log.timeSpent, 0);
+
+  // 7일 평균 공부시간(ms) 반환
+  return totalDurationMs / 7;
+};
+
+/**
+ * 최근 평균 공부 시간과 개인 피로 기준선을 바탕으로 fatigueBias 계산
+ *
+ * fatigueScore = recentAvg / fatigueBaseline
+ * fatigueBias = (fatigueScore - 1) * fatigueWeight
+ *
+ * fatigueScore이 1보다 크다 == 최근 공부량이 기준보다 많다 → quota 감소
+ * fatigueScore이 1보다 작다 == 최근 공부량이 기준보다 적다 → quota 증가
+ */
+const calculateFatigueBias = (
+  recentAvg: number,
+  fatigueBaseline: number,
+  fatigueWeight: number,
+): number => {
+  if (fatigueBaseline <= 0) {
+    return 0;
+  }
+
+  const fatigueScore = recentAvg / fatigueBaseline;
+  const fatigueBias = (fatigueScore - 1) * fatigueWeight;
+
+  return clamp(fatigueBias, -2, 2);
+};
+
+/**
  * 각 Bias를 반영한 추천 quota 계산
  */
 const calculateRecommendedQuota = (
   baseQuota: number,
   baseBias: number,
+  fatigueBias: number,
 ): number => {
-  const recommendQuota = Math.round(baseQuota + baseBias);
+  const recommendQuota = Math.round(baseQuota + baseBias - fatigueBias);
 
   return Math.max(1, recommendQuota);
 };
@@ -136,18 +206,18 @@ const recommendQuota = async (
           },
           select: {
             actualValue: true,
+            timeSpent: true,
           },
         });
 
-        if (!goalLog) {
-          throw new Error('goalLog를 찾을 수 없습니다.');
-        }
-        const actualValue = goalLog.actualValue ?? 0;
+        const actualValue = goalLog?.actualValue ?? 0;
+        const actualStudyTime = goalLog?.timeSpent ?? 0;
 
         await updateQuotaFeedbackService(
           userId,
           recommendation.id,
           actualValue,
+          actualStudyTime,
         );
       }),
     );
@@ -162,9 +232,19 @@ const recommendQuota = async (
     Math.ceil(context.remainingUnits / Math.max(context.remainingDays, 1)),
   );
 
+  // 피로도 보정값 계산
+
+  const recentAvg = await getRecentAvgStudyTime(userId, goal.id);
+  const fatigueBias = calculateFatigueBias(
+    recentAvg,
+    profile.fatigueBaseline,
+    profile.fatigueWeight,
+  );
+
   const recommendedQuota = calculateRecommendedQuota(
     baseQuota,
     profile.baseBias,
+    fatigueBias,
   );
 
   // 추천 결과 저장
@@ -173,10 +253,18 @@ const recommendQuota = async (
       userId,
       goalId: goal.id,
       recommendationDate,
+
       remainingUnits: context.remainingUnits,
       remainingDays: context.remainingDays,
+
       baseQuota,
       baseBiasSnapshot: profile.baseBias,
+
+      recentAvg,
+      fatigueBaselineSnapshot: profile.fatigueBaseline,
+      fatigueWeightSnapshot: profile.fatigueWeight,
+      fatigueBiasSnapshot: fatigueBias,
+
       recommendedQuota,
     },
   });
@@ -186,7 +274,11 @@ const recommendQuota = async (
     remainingUnits: context.remainingUnits,
     remainingDays: context.remainingDays,
     baseQuota,
-    baseBias: profile.baseBias,
+    baseBiasSnapshot: profile.baseBias,
+    recentAvg,
+    fatigueBaselineSnapshot: profile.fatigueBaseline,
+    fatigueWeightSnapshot: profile.fatigueWeight,
+    fatigueBiasSnapshot: fatigueBias,
     recommendedQuota,
   };
 };
@@ -199,6 +291,7 @@ const updateQuotaFeedbackService = async (
   userId: number,
   recommendationId: number,
   actualCompleted: number,
+  actualStudyTime: number,
 ): Promise<BaseQuotaFeedbackResult> => {
   const recommendation = await prisma.quotaRecommendation.findUnique({
     where: {
@@ -230,29 +323,36 @@ const updateQuotaFeedbackService = async (
 
   const finalReward = clamp(completionRate, 0, 1.2);
 
-  await prisma.$transaction([
+  // await prisma.$transaction([
+
+  // ]);
+
+  try {
     // 피드백 결과 저장
-    prisma.quotaFeedback.create({
+    await prisma.quotaFeedback.create({
       data: {
         recommendationId,
         actualCompleted,
+        actualStudyTime,
         completionRate,
         finalReward,
       },
-    }),
+    });
+  } catch (error: unknown) {
+    console.error(error);
+  }
 
-    // 유저의 baseBias 업데이트
-    prisma.userQuotaProfile.update({
-      where: { userId },
-      data: { baseBias: updatedBaseBias },
-    }),
+  // 유저의 baseBias 업데이트
+  await prisma.userQuotaProfile.update({
+    where: { userId },
+    data: { baseBias: updatedBaseBias },
+  });
 
-    // quotaRecommendation의 피드백 상태를 완료로 변경
-    prisma.quotaRecommendation.update({
-      where: { id: recommendationId },
-      data: { status: 'CLOSED' },
-    }),
-  ]);
+  // quotaRecommendation의 피드백 상태를 완료로 변경
+  await prisma.quotaRecommendation.update({
+    where: { id: recommendationId },
+    data: { status: 'CLOSED' },
+  });
 
   return {
     recommendationId,
