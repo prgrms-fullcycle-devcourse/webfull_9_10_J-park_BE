@@ -21,8 +21,13 @@ import {
   parseDateStringToKSTStart,
 } from '../utils/goal.util';
 
-import { invalidateGoalListCache } from './cache.service';
-import { getCache, setCache, buildCacheKey } from '../utils/cache.util';
+import {
+  getCache,
+  setCache,
+  buildCacheKey,
+  invalidateGoalListCache,
+  invalidateGoalDetailCache,
+} from '../utils/cache.util';
 import { getQuotaByGoal } from '../utils/quota.util';
 
 /**
@@ -290,6 +295,24 @@ export const getGoalDetailService = async ({
   startDate,
   endDate,
 }: GetGoalDetailServiceParams): Promise<GoalDetailResponse> => {
+  const cacheKey = buildCacheKey(
+    'lampfire',
+    'goals',
+    'detail',
+    userId,
+    goalId,
+    startDate ?? 'no-start',
+    endDate ?? 'no-end',
+  );
+
+  const cached = await getCache<GoalDetailResponse>(cacheKey);
+  if (cached) {
+    //console.log('[CACHE HIT] GET /goals/:goalId/detail');
+    return cached;
+  }
+
+  //console.log('[CACHE MISS] GET /goals/:goalId/detail');
+
   /**
    * 조회 기간 설정
    *
@@ -357,7 +380,7 @@ export const getGoalDetailService = async ({
       : queryEndDate;
 
   if (clampedStartDate > clampedEndDate) {
-    return {
+    const emptyResult: GoalDetailResponse = {
       id: goal.id,
       title: goal.title,
       description: goal.description,
@@ -376,7 +399,11 @@ export const getGoalDetailService = async ({
       },
       dailyProgress: [],
     };
+
+    await setCache(cacheKey, emptyResult, 60);
+    return emptyResult;
   }
+
   /**
    * 기간 내 GoalLog / TimerLog 병렬 조회
    */
@@ -417,33 +444,16 @@ export const getGoalDetailService = async ({
       },
     }),
   ]);
+
   /**
    * 누적 공부 시간
    */
   const totalStudyTime = totalTimerAggregate._sum.durationSec ?? 0;
-  /**
-   * 날짜별 GoalLog / TimerLog 빠른 조회를 위한 Map 생성
-   *
-   * 왜 Map을 쓰는가?
-   * - 특정 날짜의 로그를 O(1)로 조회하기 위해
-   * - 배열 탐색 (O(n)) 대신 Map 사용
-   *
-   * key: YYYY-MM-DD 문자열
-   * value: 해당 날짜의 로그
-   */
+
   const goalLogMap = new Map(
     goalLogs.map((log) => [formatDate(log.achievedAt), log]),
   );
-  /**
-   * 날짜별 TimerLog 빠른 조회를 위한 Map 생성
-   *
-   * key: 'YYYY-MM-DD'
-   * value: timerLog 객체
-   *
-   * 주의:
-   * - timerDate는 nullable이므로 null 데이터는 제외
-   * - formatDate는 Date만 받기 때문에 사전 필터링 필요
-   */
+
   const timerStudyTimeMap = new Map<string, number>();
   timerLogs
     .filter((log) => log.timerDate !== null)
@@ -452,37 +462,17 @@ export const getGoalDetailService = async ({
       const prev = timerStudyTimeMap.get(key) ?? 0;
       timerStudyTimeMap.set(key, prev + log.durationSec);
     });
-  /**
-   * 날짜 범위 배열 생성 후 일별 진행 현황 구성
-   */
+
   const dateRange = getDateRange(
     clampedStartDate,
     toStartOfDay(clampedEndDate),
   );
-  /**
-   * 날짜 범위 기준으로 일별 진행 데이터 생성
-   *
-   * 핵심 개념:
-   * - 날짜 배열(dateRange)을 기준으로 하나씩 매핑
-   * - 해당 날짜의 goalLog / timerLog를 Map에서 꺼내 사용
-   */
+
   const dailyProgress = dateRange.map((date) => {
     const dateKey = formatDate(date);
-    /**
-     * 해당 날짜의 로그 조회 (없으면 undefined)
-     */
     const goalLog = goalLogMap.get(dateKey);
-    /**
-     * 목표량:
-     * - 로그가 있으면 targetValue
-     * - 없으면 기본 quota 사용
-     * - null 방지 위해 최종 fallback 필요하면 ?? 0 추가 가능
-     */
+
     const targetAmount = goalLog?.targetValue ?? goal.quota;
-    /**
-     * 실제 수행량:
-     * - 로그 없으면 0
-     */
     const completedAmount = goalLog?.actualValue ?? 0;
 
     return {
@@ -490,25 +480,13 @@ export const getGoalDetailService = async ({
       date: dateKey,
       targetAmount,
       completedAmount,
-      /**
-       * 완료 여부:
-       * - 보정된 값 기준 비교
-       */
       isCompleted: completedAmount >= targetAmount,
-      /**
-       * 공부 시간:
-       * - timerLog 없으면 0
-       */
       studyTime: timerStudyTimeMap.get(dateKey) ?? 0,
-      /**
-       * 오늘 여부:
-       * - UI에서 강조 표시용
-       */
       isToday: dateKey === formatDate(today),
     };
   });
 
-  return {
+  const result: GoalDetailResponse = {
     id: goal.id,
     title: goal.title,
     description: goal.description,
@@ -527,6 +505,10 @@ export const getGoalDetailService = async ({
     },
     dailyProgress,
   };
+
+  await setCache(cacheKey, result, 60);
+
+  return result;
 };
 
 /**
@@ -632,6 +614,11 @@ export const updateGoalService = async (
     },
   });
 
+  await Promise.all([
+    invalidateGoalListCache(userId),
+    invalidateGoalDetailCache(userId, goalId),
+  ]);
+
   /**
    * 8. 최신 상태 조회 후 응답 반환
    */
@@ -673,6 +660,11 @@ export const deleteGoalService = async (
       id: goalId,
     },
   });
+
+  await Promise.all([
+    invalidateGoalListCache(userId),
+    invalidateGoalDetailCache(userId, goalId),
+  ]);
 
   return {
     id: goal.id,
@@ -877,8 +869,35 @@ export const getTodayGoalsService = async (
  * 오늘 목표 달성률 조회 서비스
  *
  */
+const TODAY_COMPLETE_CACHE_TTL = 10; // 초 (짧게!)
+
 export const getTodayGoalCompletionService = async (userId: number) => {
   const today = new Date();
+  const todayKey = formatDate(today);
+
+  const cacheKey = buildCacheKey(
+    'lampfire',
+    'goals',
+    'today',
+    'complete',
+    userId,
+    todayKey,
+  );
+
+  const cached = await getCache<{
+    totalTime: number;
+    totalGoals: number;
+    completedGoals: number;
+    ratio: number;
+  }>(cacheKey);
+
+  if (cached) {
+    //console.log('[CACHE HIT] GET /goals/today/complete');
+    return cached;
+  }
+
+  //console.log('[CACHE MISS] GET /goals/today/complete');
+
   const startOfDay = toStartOfDay(today);
   const endOfDay = toEndOfDay(today);
 
@@ -914,12 +933,15 @@ export const getTodayGoalCompletionService = async (userId: number) => {
    * 기본값 반환
    */
   if (goalIds.length === 0) {
-    return {
+    const emptyResult = {
       totalTime: 0,
       totalGoals: 0,
       completedGoals: 0,
       ratio: 0,
     };
+
+    await setCache(cacheKey, emptyResult, TODAY_COMPLETE_CACHE_TTL);
+    return emptyResult;
   }
 
   /**
@@ -1011,10 +1033,14 @@ export const getTodayGoalCompletionService = async (userId: number) => {
   const ratio =
     totalGoals === 0 ? 0 : Math.floor((completedGoals / totalGoals) * 100);
 
-  return {
+  const result = {
     totalTime,
     totalGoals,
     completedGoals,
     ratio,
   };
+
+  await setCache(cacheKey, result, TODAY_COMPLETE_CACHE_TTL);
+
+  return result;
 };

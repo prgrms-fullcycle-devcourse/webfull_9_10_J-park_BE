@@ -8,6 +8,19 @@ import {
 } from '../types/timer.type';
 import { getQuotaByGoal } from '../utils/quota.util';
 
+// 이정현 작업 1  [cache] timer 관련 캐시 유틸 import 추가
+import {
+  getCache,
+  setCache,
+  buildCacheKey,
+  delCache,
+  invalidateGoalDetailCache,
+} from '../utils/cache.util';
+
+import { formatDate, toStartOfDay } from '../utils/goal.util';
+
+const RUNNING_TIMER_CACHE_TTL = 3;
+
 // 타이머 측정 시작
 export const startTimerService = async (
   userId: number,
@@ -38,7 +51,8 @@ export const startTimerService = async (
 
   // 현재 시간 (timerDate는 시작시간 기준으로)
   const now = new Date();
-  const timerDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const timerDate = toStartOfDay(now);
+  //const timerDate = new Date(now.getFullYear(), now.getMonth(), now.getDate()); 이정현 작업 2 [cache] timerDate 기준일 계산 보정
 
   // 오늘자 goalLog 데이터가 없을 경우생성, 있으면 그대로 사용
   const goalLog = await prisma.$transaction(async (tx) => {
@@ -77,12 +91,32 @@ export const startTimerService = async (
     },
   });
 
+  // 이정현 작업 3 [cache] 타이머 시작 시 running / today 캐시 무효화
+  await delCache([
+    buildCacheKey('lampfire', 'timers', 'running', userId),
+    buildCacheKey('lampfire', 'goals', 'today', userId),
+  ]);
+
   return {
     goalId,
     timerRunning: true,
   };
 };
 
+/**
+ * 이정현 작업 4
+ *
+ * 타이머 측정 종료
+ *
+ * 1. runningTimer 조회
+ * 2. 종료 시간 / duration 계산
+ * 3. timerLog 업데이트
+ * 4. goalLog 업데이트
+ * 5. goal 업데이트
+ * 6. 응답용 데이터 정리
+ * 7. 관련 캐시 무효화 // 이정현 추가
+ * 8. return
+ */
 // 타이머 측정 종료
 export const endTimerService = async (
   userId: number,
@@ -169,7 +203,9 @@ export const endTimerService = async (
 
   // 오늘 누적 공부 시간
   const goalDuration = goalLog.timeSpent;
-  if (!goalDuration) {
+  // 이정현 작업 5 [cache] null 체크 보완
+  // if (!goalDuration) {
+  if (goalDuration === null || goalDuration === undefined) {
     throw Error('todayGoalLog.timeSpent가 존재하지 않습니다.');
   }
 
@@ -185,6 +221,21 @@ export const endTimerService = async (
     goalProgressRate,
   };
 
+  // 이정현 작업 6 [cache] 타이머 종료 시 detail / today / complete / running 캐시 무효화
+
+  // 목표 상세 캐시 무효화
+  await invalidateGoalDetailCache(userId, goalId);
+
+  // 오늘 날짜 기준 캐시 키
+  const todayKey = formatDate(toStartOfDay(now));
+
+  // 오늘 목표 / 오늘 목표 달성률 / 실행 중 타이머 캐시 무효화
+  await delCache([
+    buildCacheKey('lampfire', 'goals', 'today', userId),
+    buildCacheKey('lampfire', 'goals', 'today', 'complete', userId, todayKey),
+    buildCacheKey('lampfire', 'timers', 'running', userId),
+  ]);
+
   return endTimer;
 };
 
@@ -192,6 +243,16 @@ export const endTimerService = async (
 export const getRunningTimerService = async (
   userId: number,
 ): Promise<RunningTimerResponse> => {
+  const cacheKey = buildCacheKey('lampfire', 'timers', 'running', userId);
+
+  // 캐시 조회
+  const cached = await getCache<RunningTimerResponse>(cacheKey);
+  if (cached) {
+    console.log('[CACHE HIT]', cacheKey);
+    return cached;
+  }
+  console.log('[CACHE MISS]', cacheKey);
+
   // 실행 중인 타이머 가져오기
   const runningTimers = await prisma.timerLog.findMany({
     where: {
@@ -256,7 +317,8 @@ export const getRunningTimerService = async (
     (todayCompletedAmount / todayTargetAmount) * 100,
   );
 
-  return {
+  // 이정현 작업 6 [cache] running timer 조회 캐시 적용
+  const response = {
     goalId,
     goalTitle: goal.title,
     goalLogId,
@@ -269,4 +331,8 @@ export const getRunningTimerService = async (
       startedAt: runningTimer.startTime,
     },
   };
+
+  await setCache(cacheKey, response, RUNNING_TIMER_CACHE_TTL);
+
+  return response;
 };

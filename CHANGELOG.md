@@ -297,6 +297,8 @@
 
 ## 🏷️ [v0.7.0] - 2026-04-06
 
+### ✨ Added
+
 - GET /goals (전체 목표 리스트 조회)
   - #78
   - `Redis` 캐싱으로 조회 성능 개선
@@ -345,6 +347,23 @@
 
 ### ✨ Added
 
+- GOAL API 캐싱으로 조회 성능 개선
+  - 이하의 API에 대한 캐싱을 진행
+    - GET /goals (전체 목표 리스트 조회)
+    - GET /goals/:goalId/detail (개별 목표 상세 조회)
+    - GET /goals/today/complete (오늘 목표 달성률 조회)
+  - 이하의 API 요청 시 상술한 캐시를 무효화
+    - DELETE /goals/{goalId} (목표 삭제)
+    - PATCH /goals/{goalId} (개별 목표 수정)
+    - POST /timers/start (타이머 시작)
+    - POST /timers/end (타이머 종료)
+
+- GET /timers (실행 중 타이머 조회)
+  - 캐싱으로 조회 성능 개선
+  - 이하의 API 요청 시 해당 캐시를 무효화
+    - POST /timers/start (타이머 시작)
+    - POST /timers/end (타이머 종료)
+
 ### 🛠 Changed
 
 - GET /goals/today (오늘 목표 리스트 조회)
@@ -358,11 +377,5 @@
 - GET /goals/today (오늘 목표 리스트 조회)
   - 날짜 경계값 오류 수정
     - `lte endOfToday` -> `lt nextStartOfToday`
-
-### 🔒 Security
-
-### 🧪 Test
-
-### 📄 Docs
 
 ---
