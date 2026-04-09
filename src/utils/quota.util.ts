@@ -366,8 +366,9 @@ const updateQuotaFeedbackService = async (
 export const getQuotaByGoal = async (
   userId: number,
   goalId: number,
-  recommendationDate: Date = new Date(),
+  _recommendationDate: Date = new Date(),
 ): Promise<QuotaRecommendationResult> => {
+  const recommendationDate = new Date(_recommendationDate);
   recommendationDate.setHours(0, 0, 0, 0);
 
   // 오늘 날짜에 대한 할당량을 가져오고 반환
@@ -423,8 +424,9 @@ export const getQuotaByGoal = async (
  */
 export const getQuotasByUser = async (
   userId: number,
-  recommendationDate: Date = new Date(),
+  _recommendationDate: Date = new Date(),
 ): Promise<QuotaRecommendationResult> => {
+  const recommendationDate = new Date(_recommendationDate);
   recommendationDate.setHours(0, 0, 0, 0);
 
   // userId에 해당하는 오늘자 목표 리스트를 가져옴
