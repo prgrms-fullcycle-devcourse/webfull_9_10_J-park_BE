@@ -2,7 +2,7 @@ import prisma from '../../src/config/prisma';
 import { AppError } from '../errors/app.error';
 import { CountOption } from '../types/dev.type';
 
-export const GOAL_TITLES = [
+const GOAL_TITLES = [
   '알고리즘 문제 풀이',
   '코딩 테스트 준비',
   '자료구조 복습',
@@ -33,6 +33,39 @@ export const GOAL_TITLES = [
   '오답 노트 정리',
   '문제 풀이 복습',
   '개발 블로그 작성',
+];
+
+const GOAL_DETAILS = [
+  '하루에 한 문제라도 꾸준히 풀자… 감 안 떨어지게',
+  '코테 망하지 않게 감 잡기...',
+  '헷갈리는 자료구조 다시 잡아보는 중',
+  'CS 기초 다시 깔끔하게 정리하기',
+  '운영체제… 이해될 때까지 간다 진짜',
+  '네트워크 개념 제대로 좀 알아보기',
+  'DB 쿼리랑 구조 제대로 이해해보자',
+  '대규모 서비스 어떻게 돌아가는지 감 잡기',
+  '백엔드 기본기 탄탄하게 만들기 프로젝트',
+  '프론트 감각 좀 살려보자… UI 감각 키우기',
+  'React 좀 자연스럽게 쓰고 싶다 이제',
+  'Node.js 비동기 지옥 탈출하기',
+  '타입스크립트 적응 중… 쉽지 않네',
+  'JS 동작 원리 제대로 이해해보자',
+  'Spring으로 서버 제대로 한번 만들어보자',
+  'API 설계 좀 사람답게 하자 제발',
+  '코드 더럽게 짜지 말자… 클린코드 연습',
+  '예전에 짠 코드 다시 보면 부끄러워서 리팩토링 중',
+  '공식 문서 읽는 습관 좀 들이자',
+  '개발 책 좀 읽자… 블로그 말고',
+  '강의 밀린 거 처리하기',
+  '배운 거 그냥 넘기지 말고 직접 만들어보기',
+  '사이드 프로젝트… 이번엔 끝까지 간다',
+  '포폴 이제 좀 사람답게 정리하자',
+  '이력서 더 이상 미루지 말고 완성하기',
+  '면접에서 말 막히지 않게 준비하기!!',
+  '기술 질문 대비… 아는 척이라도 하게',
+  '틀린 문제 다시 안 틀리려고 정리 중',
+  '풀었던 문제 다시 보니까 왜 틀렸는지 보이네',
+  '블로그 좀 써라… 기억 다 날아간다',
 ];
 
 // conut 변환
@@ -92,7 +125,9 @@ export const createRandomGoals = async (
   const cnt = resolveCount(goalCount);
   const goalData = Array.from({ length: cnt }, (_) => {
     // 목표 이름, 카테고리 랜덤 생성
-    const title = GOAL_TITLES[Math.floor(Math.random() * GOAL_TITLES.length)];
+    const randomIdx = Math.floor(Math.random() * GOAL_TITLES.length);
+    const title = GOAL_TITLES[randomIdx];
+    const description = GOAL_DETAILS[randomIdx];
     const randomCategory = getRandomItem(categories);
 
     // 목표 시작/종료일 랜덤 생성
@@ -112,6 +147,7 @@ export const createRandomGoals = async (
       userId,
       categoryId: randomCategory.id,
       title,
+      description,
       startDate,
       endDate,
       quota,
