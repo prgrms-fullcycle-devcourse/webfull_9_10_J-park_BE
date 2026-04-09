@@ -2,6 +2,7 @@ import prisma from '../config/prisma';
 
 import { AppError } from '../errors/app.error';
 
+import { KakaoTokenResponse, KakaoUserResponse } from '../types/auth.type';
 import { User, UserProfileResponse } from '../types/user.type';
 import { getQuotasByUser } from '../utils/quota.util';
 import { formatDateString } from '../utils/time.util';
@@ -109,7 +110,9 @@ export const getKakaoAuthInfo = () => {
   return { state, url };
 };
 
-export const getKakaoAuthToken = async (code: string) => {
+export const getKakaoAuthToken = async (
+  code: string,
+): Promise<KakaoTokenResponse> => {
   const baseUrl = 'https://kauth.kakao.com/oauth/token';
   const config = {
     grant_type: 'authorization_code',
@@ -139,13 +142,13 @@ export const getKakaoAuthToken = async (code: string) => {
 };
 
 export const getKakaoEmail = async (
-  tokenRequest: any,
+  tokenRequest: KakaoTokenResponse,
 ): Promise<string | undefined> => {
   const { access_token: accessToken } = tokenRequest;
   const apiUrl = 'https://kapi.kakao.com/v2/user/me';
 
   // 사용자 정보 요청
-  const userData = await (
+  const userData: KakaoUserResponse = await (
     await fetch(apiUrl, {
       method: 'GET',
       headers: {
@@ -170,7 +173,7 @@ export const createKakaoUser = async (email: string, anonymousId: number) => {
     where: { id: anonymousId },
     data: {
       email,
-      //nickname: userData.kakao_account.profile['nickname'],
+      // nickname: userData.kakao_account.profile['nickname'],
       password: null,
       // socialLogin: true,
     },

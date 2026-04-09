@@ -113,7 +113,7 @@ export const finishKakaoLogin = async (req: Request, res: Response) => {
 
       if (!email) {
         // 이메일 권한이 없거나 선택하지 않은 경우
-        return res.status(StatusCodes.UNAUTHORIZED).json({});
+        throw new AppError('EMAIL_REQUIRED');
       }
 
       // 사용자 확인 및 생성
@@ -121,13 +121,12 @@ export const finishKakaoLogin = async (req: Request, res: Response) => {
       let user = await getUserByEmail(email);
       if (!user) {
         if (!anonymousId) {
-          throw new AppError('INTERNAL_SERVER_ERROR'); // ANONYMOUS ID NOT FOUND
+          throw new AppError('USER_NOT_FOUND'); // ANONYMOUS ID NOT FOUND
         }
 
         user = await createKakaoUser(email, anonymousId);
       } else {
         // 익명 사용자의 데이터는? 추가(갱신), 삭제
-
         // 이미 기존에 로그인했던 사용자라면 익명 사용자 삭제
         await deleteAnonymousUser(anonymousId as number, user.id);
       }
@@ -150,10 +149,20 @@ export const finishKakaoLogin = async (req: Request, res: Response) => {
       return res.redirect(`${process.env.ALLOWED_ORIGINS as string}/`);
     } else {
       // 카카오 API에서 토큰 요청 실패
-      throw new AppError('INTERNAL_SERVER_ERROR'); // KAKAO_API_ERROR
+      throw new AppError('KAKAO_SERVER_ERROR'); // KAKAO_API_ERROR
     }
   } catch (err) {
     console.error('KAKAO LOGIN ERR: ', err);
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({});
+
+    const appError =
+      err instanceof AppError ? err : new AppError('INTERNAL_SERVER_ERROR');
+
+    return res.status(appError.statusCode).json({
+      success: false,
+      error: {
+        code: appError.code,
+        message: appError.message,
+      },
+    });
   }
 };
