@@ -45,6 +45,13 @@ export const ERROR_CODES = {
     message: '유효하지 않은 토큰입니다.',
   },
 
+  // 403
+  EMAIL_REQUIRED: {
+    statusCode: StatusCodes.FORBIDDEN,
+    code: 'KAKAO_EMAIL_REQUIRED',
+    message: '카카오 이메일 동의가 필요합니다.',
+  },
+
   // 404
   NOT_FOUND: {
     statusCode: StatusCodes.NOT_FOUND,
@@ -89,6 +96,13 @@ export const ERROR_CODES = {
     statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
     code: 'INTERNAL_SERVER_ERROR',
     message: '서버 오류가 발생했습니다.',
+  },
+
+  // 502
+  KAKAO_SERVER_ERROR: {
+    statusCode: StatusCodes.BAD_GATEWAY,
+    code: 'KAKAO_SERVER_ERROR',
+    message: '카카오 API 오류가 발생했습니다.',
   },
 };
 
