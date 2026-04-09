@@ -379,3 +379,21 @@
     - `lte endOfToday` -> `lt nextStartOfToday`
 
 ---
+
+## 🏷️ [v0.9.0] - 2026-04-09
+
+### ✨ Added
+
+- 개인 맞춤형 할당량 추천 모델 구현
+  - 할당량 관련 응답에 추천 할당량 반환 로직 추가
+  - `goalLog` 생성 시 추천된 할당량을 함께 저장하도록 수정
+  - 새로운 할당량을 추천 전, 이전 추천 할당량에 대한 피드백(평가) 처리 로직 추가
+  - `quota` 보정값: `basebias`(기본 보정값), `fatigueBias`(피로도 기반 보정값)
+  - 추천 기능 관련 테이블 추가: `UserQuotaProfile`, `QuotaRecommendation`, `QuotaFeedback`
+
+### 🐛 Fixed
+
+- POST /dev/test-data
+  - 랜덤 데이터 생성 시 description(목표 설명)도 함께 생성
+
+---
