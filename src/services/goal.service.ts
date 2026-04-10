@@ -734,35 +734,25 @@ export const getTodayGoalsService = async (
    */
   await Promise.all(
     goals.map(async (goal) => {
-      const existingLog = await prisma.goalLog.findFirst({
+      const quotaMap = await getQuotaByGoal(userId, goal.id, startOfToday);
+
+      await prisma.goalLog.upsert({
         where: {
+          goalId_achievedAt: {
+            goalId: goal.id,
+            achievedAt: startOfToday,
+          },
+        },
+        update: {},
+        create: {
           goalId: goal.id,
           userId,
-          achievedAt: {
-            gte: startOfToday,
-            lt: nextStartOfToday,
-          },
-        },
-        select: {
-          id: true,
+          achievedAt: startOfToday,
+          targetValue: quotaMap.get(goal.id) ?? goal.quota,
+          actualValue: 0,
+          timeSpent: 0,
         },
       });
-
-      if (!existingLog) {
-        // 할당량 추천 추천 로직 수행
-        const quotaMap = await getQuotaByGoal(userId, goal.id, startOfToday);
-
-        await prisma.goalLog.create({
-          data: {
-            goalId: goal.id,
-            userId,
-            achievedAt: startOfToday,
-            targetValue: quotaMap.get(goal.id) ?? goal.quota,
-            actualValue: 0,
-            timeSpent: 0,
-          },
-        });
-      }
     }),
   );
 
