@@ -99,7 +99,7 @@ export const getKakaoAuthInfo = () => {
 
   const config = {
     client_id: process.env.KT_CLIENT!,
-    redirect_uri: 'http://localhost:3000/users/kakao/finish',
+    redirect_uri: `${process.env.URL}/users/kakao/finish`,
     response_type: 'code',
     scope: 'profile_nickname,account_email',
     state,
@@ -118,7 +118,7 @@ export const getKakaoAuthToken = async (
     grant_type: 'authorization_code',
     client_id: process.env.KT_CLIENT!,
     client_secret: process.env.KT_CLIENT_SECRET!,
-    redirect_uri: 'http://localhost:3000/users/kakao/finish',
+    redirect_uri: `${process.env.URL}/users/kakao/finish`,
     code: code as string,
   };
   const params = new URLSearchParams(config).toString();
