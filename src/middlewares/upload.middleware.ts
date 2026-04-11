@@ -3,6 +3,8 @@ import multerS3 from 'multer-s3';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
+import { AppError } from '../errors/app.error';
+
 import { s3 } from '../config/s3Storage';
 
 export const upload = multer({
@@ -17,4 +19,18 @@ export const upload = multer({
     },
   }),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB 미만
+  fileFilter: (_req, file, cb) => {
+    const allowedExtensions = ['.png', '.jpg', '.jpeg'];
+    const ext = path.extname(file.originalname).toLowerCase();
+
+    // 확장자 검사
+    const isAllowedExt = allowedExtensions.includes(ext);
+    const isAllowedMime = file.mimetype.startsWith('image/');
+
+    if (isAllowedExt && isAllowedMime) {
+      cb(null, true);
+    } else {
+      cb(new AppError('INVALID_FILE_EXT'));
+    }
+  },
 });
