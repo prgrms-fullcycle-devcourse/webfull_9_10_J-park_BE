@@ -47,7 +47,7 @@ export const getMe = async (
   }
 };
 
-export const updateProfile = async (
+export const updateProfileNickname = async (
   req: Request,
   res: Response<ApiResponse<UserProfileResponse>>,
 ) => {

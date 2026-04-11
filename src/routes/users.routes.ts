@@ -4,13 +4,13 @@ import {
   finishKakaoLogin,
   getMe,
   startKakaoLogin,
-  updateProfile,
+  updateProfileNickname,
 } from '../controllers/user.controller';
 import { authUser } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-router.route('/').patch(authUser, updateProfile);
+router.patch('/', authUser, updateProfileNickname);
 router.get('/me', authUser, getMe);
 
 // 카카오톡 OAuth 로그인
