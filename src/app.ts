@@ -26,6 +26,7 @@ app.use(helmet());
 app.use(cookieParser());
 app.use(morgan(':method :url :status - :response-time ms'));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // cors 설정 추가

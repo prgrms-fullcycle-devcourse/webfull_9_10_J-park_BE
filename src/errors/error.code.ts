@@ -37,6 +37,16 @@ export const ERROR_CODES = {
     code: 'MISSING_NICKNAME',
     message: '닉네임이 주어지지 않았습니다.',
   },
+  MISSING_FILE: {
+    statusCode: StatusCodes.BAD_REQUEST,
+    code: 'MISSING_FILE',
+    message: '파일이 존재하지 않습니다.',
+  },
+  INVALID_FILE_EXT: {
+    statusCode: StatusCodes.BAD_REQUEST,
+    code: 'INVALID_FILE_EXT',
+    message: '허용되지 않는 파일 형식입니다.',
+  },
 
   // 401
   UNAUTHORIZED: {
@@ -96,6 +106,11 @@ export const ERROR_CODES = {
     statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
     code: 'INTERNAL_SERVER_ERROR',
     message: '서버 오류가 발생했습니다.',
+  },
+  S3_SERVER_ERROR: {
+    statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+    code: 'S3_SERVER_ERROR',
+    message: 'AWS S3 서버 오류가 발생했습니다.',
   },
 
   // 502
