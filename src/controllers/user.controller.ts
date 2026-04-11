@@ -51,14 +51,17 @@ export const updateProfileNickname = async (
   req: Request,
   res: Response<ApiResponse<UserProfileResponse>>,
 ) => {
-  try {
     const { userId } = req.user!;
-    const { name } = req.body;
+  if (!req.body) {
+    throw new AppError('BAD_REQUEST');
+  }
 
+    const { name } = req.body;
     if (!name) {
       throw new AppError('MISSING_NICKNAME');
     }
 
+  try {
     const updatedUser = await updateNickname(userId, name);
 
     return res.status(StatusCodes.OK).json({
