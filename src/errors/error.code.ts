@@ -47,6 +47,16 @@ export const ERROR_CODES = {
     code: 'INVALID_FILE_EXT',
     message: '허용되지 않는 파일 형식입니다.',
   },
+  FILE_TOO_LARGE: {
+    statusCode: StatusCodes.BAD_REQUEST,
+    code: 'FILE_TOO_LARGE',
+    message: '파일 용량이 너무 큽니다.',
+  },
+  UPLOAD_ERROR: {
+    statusCode: StatusCodes.BAD_REQUEST,
+    code: 'UPLOAD_ERROR',
+    message: '파일 업로드 오류가 발생했습니다.',
+  },
 
   // 401
   UNAUTHORIZED: {

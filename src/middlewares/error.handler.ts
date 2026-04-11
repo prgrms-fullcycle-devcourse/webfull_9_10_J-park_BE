@@ -1,20 +1,25 @@
-// src/middlewares/error.handler.ts
 import { Request, Response, NextFunction } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
+import { AppError } from '../errors/app.error';
+
 export const errorHandler = (
-  err: any,
+  err: AppError,
   req: Request,
   res: Response,
   _next: NextFunction,
 ) => {
   console.error(' [Error Log]:', err.stack); // 에러 로그 확인용
 
-  const statusCode = err.status || StatusCodes.INTERNAL_SERVER_ERROR;
+  const statusCode = err.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
+  const code = err.code || 'INTERNAL_SERVER_ERROR';
   const message = err.message || '서버 내부에서 에러가 발생했습니다.';
 
-  res.status(statusCode).json({
+  return res.status(statusCode).json({
     success: false,
-    message: message,
+    error: {
+      code,
+      message,
+    },
   });
 };

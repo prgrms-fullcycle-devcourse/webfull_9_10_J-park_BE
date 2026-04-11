@@ -93,9 +93,6 @@ export const updateProfileImage = async (
   try {
     const { userId } = req.user!;
     const file = req.file as Express.MulterS3.File;
-    if (!file) {
-      throw new AppError('MISSING_FILE');
-    }
 
     const newImageUrl = file.location;
 

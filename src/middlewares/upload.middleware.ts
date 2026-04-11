@@ -1,3 +1,4 @@
+import { NextFunction, Request, Response } from 'express';
 import multer from 'multer';
 import multerS3 from 'multer-s3';
 import path from 'path';
@@ -7,7 +8,7 @@ import { AppError } from '../errors/app.error';
 
 import { s3 } from '../config/s3Storage';
 
-export const upload = multer({
+const upload = multer({
   storage: multerS3({
     s3,
     bucket: process.env.S3_BUCKET_NAME as string,
@@ -34,3 +35,29 @@ export const upload = multer({
     }
   },
 });
+
+export const uploadImage = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  upload.single('image')(req, res, (err: any) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return next(new AppError('FILE_TOO_LARGE'));
+      }
+
+      if (err instanceof AppError) {
+        return next(err);
+      }
+
+      return next(new AppError('UPLOAD_ERROR'));
+    }
+
+    if (!req.file) {
+      return next(new AppError('MISSING_FILE'));
+    }
+
+    next();
+  });
+};
