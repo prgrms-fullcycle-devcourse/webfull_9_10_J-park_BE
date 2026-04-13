@@ -5,6 +5,7 @@ import { AppError } from '../errors/app.error';
 import { KakaoTokenResponse, KakaoUserResponse } from '../types/auth.type';
 import { User, UserProfileResponse } from '../types/user.type';
 import { getQuotasByUser } from '../utils/quota.util';
+import { deleteFileFromS3 } from '../utils/s3.util';
 import { formatDateString } from '../utils/time.util';
 
 const mapToUserResponse = async (user: User) => {
@@ -89,6 +90,44 @@ export const updateNickname = async (userId: number, newNickname: string) => {
   });
 
   const userResponse = mapToUserResponse(user);
+
+  return userResponse;
+};
+
+export const updateProfileImageUrl = async (
+  userId: number,
+  newImageUrl: string,
+) => {
+  const user = await getUserById(userId);
+  if (user.profileImageUrl) {
+    // 기존 이미지 S3에서 삭제
+    await deleteFileFromS3(user.profileImageUrl);
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      profileImageUrl: newImageUrl,
+    },
+    select: {
+      id: true,
+      nickname: true,
+      profileImageUrl: true,
+      totalTime: true,
+      goals: {
+        select: {
+          id: true,
+          title: true,
+          quota: true,
+        },
+      },
+      createdAt: true,
+    },
+  });
+
+  const userResponse = mapToUserResponse(updatedUser);
 
   return userResponse;
 };
