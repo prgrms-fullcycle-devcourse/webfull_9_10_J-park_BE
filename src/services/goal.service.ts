@@ -78,6 +78,8 @@ const buildUpdatedGoalResponse = async (
     throw new Error('GOAL_NOT_FOUND');
   }
 
+  const today = toStartOfDay(new Date());
+
   const totalStudyTime = goal.timerLogs.reduce(
     (sum, log) => sum + log.durationSec,
     0,
@@ -108,7 +110,7 @@ const buildUpdatedGoalResponse = async (
         completedAmount: log.actualValue ?? 0,
         isCompleted: (log.actualValue ?? 0) >= (log.targetValue ?? 0),
         studyTime: log.timeSpent ?? 0,
-        isToday: formatDate(log.achievedAt) === formatDate(new Date()),
+        isToday: formatDate(log.achievedAt) === formatDate(today),
       };
     }),
   };
@@ -730,10 +732,43 @@ export const getTodayGoalsService = async (
   const goalIds = goals.map((goal) => goal.id);
 
   /**
-   * 오늘 날짜 기준 goalLog가 없으면 자동 생성
+   * 오늘 날짜 기준 기존 goalLog 먼저 조회
+   */
+  const existingGoalLogs = await prisma.goalLog.findMany({
+    where: {
+      userId,
+      goalId: {
+        in: goalIds,
+      },
+      achievedAt: {
+        gte: startOfToday,
+        lt: nextStartOfToday,
+      },
+    },
+    select: {
+      id: true,
+      goalId: true,
+      actualValue: true,
+      targetValue: true,
+    },
+  });
+
+  const existingGoalLogGoalIdSet = new Set(
+    existingGoalLogs.map((log) => log.goalId),
+  );
+
+  /**
+   * 오늘 goalLog가 없는 목표만 필터링
+   */
+  const goalsToCreateLog = goals.filter(
+    (goal) => !existingGoalLogGoalIdSet.has(goal.id),
+  );
+
+  /**
+   * 오늘 날짜 기준 goalLog가 없는 경우에만 생성
    */
   await Promise.all(
-    goals.map(async (goal) => {
+    goalsToCreateLog.map(async (goal) => {
       const quotaMap = await getQuotaByGoal(userId, goal.id, startOfToday);
 
       await prisma.goalLog.upsert({
@@ -757,7 +792,7 @@ export const getTodayGoalsService = async (
   );
 
   /**
-   * 오늘의 goalLog / TimerLog 조회
+   * 생성 반영 후 오늘의 goalLog / TimerLog 조회
    */
   const [goalLogs, timerLogs] = await Promise.all([
     prisma.goalLog.findMany({
