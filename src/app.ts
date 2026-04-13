@@ -11,13 +11,14 @@ import { swaggerSpec } from './config/swagger';
 
 import { ApiResponse } from './types/response';
 
+import { errorHandler } from './middlewares/error.handler';
 import categoryRouter from './routes/category.route';
+import devRouter from './routes/dev.route';
 import goalRoutes from './routes/goal.routes';
 import rankRouter from './routes/ranking.route';
+import riskRouter from './routes/risk.route';
 import timerRoutes from './routes/timer.route';
 import userRouter from './routes/users.routes';
-import riskRouter from './routes/risk.route';
-import devRouter from './routes/dev.route';
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use(helmet());
 app.use(cookieParser());
 app.use(morgan(':method :url :status - :response-time ms'));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // cors 설정 추가
@@ -59,5 +61,8 @@ app.use('/rankings', rankRouter);
 app.use('/timers', timerRoutes);
 app.use('/risks', riskRouter);
 app.use('/dev', devRouter);
+
+// 에러 핸들러
+app.use(errorHandler);
 
 export default app;

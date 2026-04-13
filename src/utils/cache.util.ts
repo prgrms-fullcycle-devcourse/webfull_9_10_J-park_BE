@@ -52,13 +52,41 @@ export const safeParse = <T>(value: string | null): T | null => {
  * - 조회 실패 시에도 null 반환하여 서비스 로직이 DB fallback 하도록 함
  */
 export const getCache = async <T>(key: string): Promise<T | null> => {
+  const startedAt = Date.now();
+
   try {
-    if (!redisClient?.isOpen) return null;
+    if (!redisClient) {
+      console.warn('[Cache] GET skipped - redis disabled', { key });
+      return null;
+    }
+
+    if (!redisClient.isOpen) {
+      console.warn('[Cache] GET skipped - redis not connected', { key });
+      return null;
+    }
 
     const cached = await redisClient.get(key);
+
+    if (!cached) {
+      console.log('[Cache] GET MISS', {
+        key,
+        elapsedMs: Date.now() - startedAt,
+      });
+      return null;
+    }
+
+    console.log('[Cache] GET HIT', {
+      key,
+      elapsedMs: Date.now() - startedAt,
+    });
+
     return safeParse<T>(cached);
   } catch (error) {
-    console.error(`[Cache] GET failed: ${key}`, error);
+    console.error('[Cache] GET failed', {
+      key,
+      elapsedMs: Date.now() - startedAt,
+      error,
+    });
     return null;
   }
 };
@@ -73,17 +101,51 @@ export const setCache = async (
   value: unknown,
   ttlSeconds: number,
 ): Promise<void> => {
+  const startedAt = Date.now();
+
   try {
-    if (!redisClient?.isOpen) return;
+    if (!redisClient) {
+      console.warn('[Cache] SET skipped - redis disabled', {
+        key,
+        ttlSeconds,
+      });
+      return;
+    }
+
+    if (!redisClient.isOpen) {
+      console.warn('[Cache] SET skipped - redis not connected', {
+        key,
+        ttlSeconds,
+      });
+      return;
+    }
 
     const serialized = safeStringify(value);
-    if (!serialized) return;
+
+    if (!serialized) {
+      console.warn('[Cache] SET skipped - stringify failed', {
+        key,
+        ttlSeconds,
+      });
+      return;
+    }
 
     await redisClient.set(key, serialized, {
       EX: ttlSeconds,
     });
+
+    console.log('[Cache] SET OK', {
+      key,
+      ttlSeconds,
+      elapsedMs: Date.now() - startedAt,
+    });
   } catch (error) {
-    console.error(`[Cache] SET failed: ${key}`, error);
+    console.error('[Cache] SET failed', {
+      key,
+      ttlSeconds,
+      elapsedMs: Date.now() - startedAt,
+      error,
+    });
   }
 };
 
@@ -95,12 +157,32 @@ export const setCache = async (
 export const delCache = async (keys: string[]): Promise<void> => {
   if (keys.length === 0) return;
 
-  try {
-    if (!redisClient?.isOpen) return;
+  const startedAt = Date.now();
 
-    await redisClient.del(keys);
+  try {
+    if (!redisClient) {
+      console.warn('[Cache] DEL skipped - redis disabled', { keys });
+      return;
+    }
+
+    if (!redisClient.isOpen) {
+      console.warn('[Cache] DEL skipped - redis not connected', { keys });
+      return;
+    }
+
+    const deletedCount = await redisClient.del(keys);
+
+    console.log('[Cache] DEL OK', {
+      keys,
+      deletedCount,
+      elapsedMs: Date.now() - startedAt,
+    });
   } catch (error) {
-    console.error(`[Cache] DEL failed: ${keys.join(', ')}`, error);
+    console.error('[Cache] DEL failed', {
+      keys,
+      elapsedMs: Date.now() - startedAt,
+      error,
+    });
   }
 };
 
@@ -112,8 +194,20 @@ export const delCache = async (keys: string[]): Promise<void> => {
  * - Redis가 비활성화 상태이거나 연결되지 않은 경우 삭제하지 않음
  */
 export const delCacheByPattern = async (pattern: string): Promise<void> => {
+  const startedAt = Date.now();
+
   try {
-    if (!redisClient?.isOpen) return;
+    if (!redisClient) {
+      console.warn('[Cache] DEL PATTERN skipped - redis disabled', { pattern });
+      return;
+    }
+
+    if (!redisClient.isOpen) {
+      console.warn('[Cache] DEL PATTERN skipped - redis not connected', {
+        pattern,
+      });
+      return;
+    }
 
     const keys: string[] = [];
 
@@ -124,11 +218,28 @@ export const delCacheByPattern = async (pattern: string): Promise<void> => {
       keys.push(String(key));
     }
 
-    if (keys.length === 0) return;
+    if (keys.length === 0) {
+      console.log('[Cache] DEL PATTERN no keys', {
+        pattern,
+        elapsedMs: Date.now() - startedAt,
+      });
+      return;
+    }
 
-    await redisClient.del(keys);
+    const deletedCount = await redisClient.del(keys);
+
+    console.log('[Cache] DEL PATTERN OK', {
+      pattern,
+      keys,
+      deletedCount,
+      elapsedMs: Date.now() - startedAt,
+    });
   } catch (error) {
-    console.error(`[Cache] DEL PATTERN failed: ${pattern}`, error);
+    console.error('[Cache] DEL PATTERN failed', {
+      pattern,
+      elapsedMs: Date.now() - startedAt,
+      error,
+    });
   }
 };
 
@@ -140,6 +251,12 @@ export const invalidateGoalListCache = async (
   userId: number,
 ): Promise<void> => {
   const key = buildCacheKey('lampfire', 'goals', 'list', userId);
+
+  console.log('[Cache] invalidate goal list', {
+    userId,
+    key,
+  });
+
   await delCache([key]);
 };
 
@@ -160,5 +277,12 @@ export const invalidateGoalDetailCache = async (
     goalId,
     '*',
   );
+
+  console.log('[Cache] invalidate goal detail', {
+    userId,
+    goalId,
+    pattern,
+  });
+
   await delCacheByPattern(pattern);
 };
