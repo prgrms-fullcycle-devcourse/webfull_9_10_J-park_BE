@@ -8,8 +8,17 @@ const redisClient = redisUrl
       socket: {
         connectTimeout: 5000,
         reconnectStrategy: (retries) => {
-          if (retries >= 5) return false;
-          return Math.min(retries * 500, 3000);
+          const delay = Math.min(retries * 500, 3000);
+
+          if (retries >= 5) {
+            console.error('[Redis] Reconnect retries exceeded. Stop reconnecting.');
+            return false;
+          }
+
+          console.warn(
+            `[Redis] Reconnecting... retry=${retries}, delay=${delay}ms`,
+          );
+          return delay;
         },
       },
     })
@@ -20,11 +29,19 @@ redisClient?.on('error', (error) => {
 });
 
 redisClient?.on('connect', () => {
-  console.log('[Redis] Connected');
+  console.log('[Redis] Connect event');
+});
+
+redisClient?.on('ready', () => {
+  console.log('[Redis] Ready');
 });
 
 redisClient?.on('reconnecting', () => {
-  console.warn('[Redis] Reconnecting...');
+  console.warn('[Redis] Reconnecting event...');
+});
+
+redisClient?.on('end', () => {
+  console.warn('[Redis] Connection closed');
 });
 
 export const connectRedis = async () => {
@@ -34,9 +51,13 @@ export const connectRedis = async () => {
       return;
     }
 
-    if (!redisClient.isOpen) {
-      await redisClient.connect();
+    if (redisClient.isOpen) {
+      console.log('[Redis] Already connected');
+      return;
     }
+
+    await redisClient.connect();
+    console.log('[Redis] Connected');
   } catch (error) {
     console.error('[Redis] Failed to connect:', error);
   }
@@ -44,9 +65,18 @@ export const connectRedis = async () => {
 
 export const disconnectRedis = async () => {
   try {
-    if (redisClient?.isOpen) {
-      await redisClient.quit();
+    if (!redisClient) {
+      console.warn('[Redis] Disconnect skipped - redis disabled');
+      return;
     }
+
+    if (redisClient.isOpen) {
+      await redisClient.quit();
+      console.log('[Redis] Disconnected');
+      return;
+    }
+
+    console.warn('[Redis] Disconnect skipped - redis not connected');
   } catch (error) {
     console.error('[Redis] Failed to disconnect:', error);
   }
