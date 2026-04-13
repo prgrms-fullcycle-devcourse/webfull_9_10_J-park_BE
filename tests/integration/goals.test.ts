@@ -6,6 +6,8 @@ import prisma from '../../src/config/prisma';
 // 필요하면 실제 service import 경로에 맞게 수정
 import * as goalService from '../../src/services/goal.service';
 
+import { toStartOfDay } from '../../src/utils/goal.util';
+
 describe('Goal API Integration', () => {
   const TEST_PREFIX = `TEST_GOALS_${Date.now()}`;
 
@@ -670,8 +672,8 @@ describe('Goal API Integration', () => {
   describe('GET /goals/today', () => {
     describe('200 - OK', () => {
       it('오늘 목표 리스트 각 객체에 goalLogId를 포함해 반환한다', async () => {
-        const today = new Date();
-        const todayStr = today.toISOString().slice(0, 10);
+        const now = new Date();
+        const startOfToday = toStartOfDay(now);
 
         const activeGoal = await prisma.goal.create({
           data: {
@@ -679,8 +681,8 @@ describe('Goal API Integration', () => {
             description: '오늘 목표 테스트',
             targetValue: 50,
             quota: 5,
-            startDate: new Date(todayStr),
-            endDate: new Date(todayStr),
+            startDate: startOfToday,
+            endDate: startOfToday,
             userId,
             categoryId,
             status: 'active',
@@ -692,7 +694,7 @@ describe('Goal API Integration', () => {
           data: {
             goalId: activeGoal.id,
             userId,
-            achievedAt: new Date(todayStr),
+            achievedAt: startOfToday,
             targetValue: 5,
             actualValue: 3,
             timeSpent: 1200,
@@ -743,8 +745,8 @@ describe('Goal API Integration', () => {
       });
 
       it('실행 중인 타이머가 있으면 isTimerRunning이 true다', async () => {
-        const today = new Date();
-        const todayStr = today.toISOString().slice(0, 10);
+        const now = new Date();
+        const startOfToday = toStartOfDay(now);
 
         const runningGoal = await prisma.goal.create({
           data: {
@@ -752,8 +754,8 @@ describe('Goal API Integration', () => {
             description: '실행 중 타이머 테스트',
             targetValue: 20,
             quota: 5,
-            startDate: new Date(todayStr),
-            endDate: new Date(todayStr),
+            startDate: startOfToday,
+            endDate: startOfToday,
             userId,
             categoryId,
             status: 'active',
@@ -765,7 +767,7 @@ describe('Goal API Integration', () => {
           data: {
             goalId: runningGoal.id,
             userId,
-            achievedAt: new Date(todayStr),
+            achievedAt: startOfToday,
             targetValue: 5,
             actualValue: 2,
             timeSpent: 1200,
@@ -777,8 +779,8 @@ describe('Goal API Integration', () => {
             goalId: runningGoal.id,
             userId,
             goalLogId: runningGoalLog.id,
-            timerDate: new Date(todayStr),
-            startTime: new Date(`${todayStr}T10:00:00`),
+            timerDate: startOfToday,
+            startTime: new Date(startOfToday.getTime() + 10 * 60 * 60 * 1000),
             endTime: null,
             durationSec: 1200,
           },
@@ -828,8 +830,8 @@ describe('Goal API Integration', () => {
   describe('GET /goals/today/complete', () => {
     describe('200 - OK', () => {
       it('오늘 목표 달성률을 조회한다', async () => {
-        const today = new Date();
-        const todayStr = today.toISOString().slice(0, 10);
+        const now = new Date();
+        const startOfToday = toStartOfDay(now);
 
         const goalA = await prisma.goal.create({
           data: {
@@ -837,8 +839,8 @@ describe('Goal API Integration', () => {
             description: '달성률 테스트 A',
             targetValue: 100,
             quota: 10,
-            startDate: new Date(todayStr),
-            endDate: new Date(todayStr),
+            startDate: startOfToday,
+            endDate: startOfToday,
             userId,
             categoryId,
             status: 'active',
@@ -852,8 +854,8 @@ describe('Goal API Integration', () => {
             description: '달성률 테스트 B',
             targetValue: 100,
             quota: 10,
-            startDate: new Date(todayStr),
-            endDate: new Date(todayStr),
+            startDate: startOfToday,
+            endDate: startOfToday,
             userId,
             categoryId,
             status: 'active',
@@ -865,7 +867,7 @@ describe('Goal API Integration', () => {
           data: {
             goalId: goalA.id,
             userId,
-            achievedAt: new Date(todayStr),
+            achievedAt: startOfToday,
             targetValue: 10,
             actualValue: 10,
             timeSpent: 1800,
@@ -876,7 +878,7 @@ describe('Goal API Integration', () => {
           data: {
             goalId: goalB.id,
             userId,
-            achievedAt: new Date(todayStr),
+            achievedAt: startOfToday,
             targetValue: 10,
             actualValue: 5,
             timeSpent: 1200,
@@ -889,18 +891,20 @@ describe('Goal API Integration', () => {
               goalId: goalA.id,
               userId,
               goalLogId: goalLogA.id,
-              timerDate: new Date(todayStr),
-              startTime: new Date(`${todayStr}T09:00:00`),
-              endTime: new Date(`${todayStr}T09:30:00`),
+              timerDate: startOfToday,
+              startTime: new Date(startOfToday.getTime() + 9 * 60 * 60 * 1000),
+              endTime: new Date(startOfToday.getTime() + 9.5 * 60 * 60 * 1000),
               durationSec: 1800,
             },
             {
               goalId: goalB.id,
               userId,
               goalLogId: goalLogB.id,
-              timerDate: new Date(todayStr),
-              startTime: new Date(`${todayStr}T10:00:00`),
-              endTime: new Date(`${todayStr}T10:20:00`),
+              timerDate: startOfToday,
+              startTime: new Date(startOfToday.getTime() + 10 * 60 * 60 * 1000),
+              endTime: new Date(
+                startOfToday.getTime() + 10 * 60 * 60 * 1000 + 20 * 60 * 1000,
+              ),
               durationSec: 1200,
             },
           ],
@@ -959,7 +963,6 @@ describe('Goal API Integration', () => {
       });
     });
 
-    // describe('500 - INTERNAL_SERVER_ERROR', () => { ... });
     describe('500 - INTERNAL_SERVER_ERROR', () => {
       it('서버 내부 예외가 발생할 경우 반환한다', async () => {
         jest
