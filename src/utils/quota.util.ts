@@ -339,7 +339,15 @@ const updateQuotaFeedbackService = async (
       },
     });
   } catch (error: unknown) {
-    console.error(error);
+    console.error('[QuotaFeedback CREATE FAILED]', {
+      recommendationId,
+      userId,
+      actualCompleted,
+      actualStudyTime,
+      completionRate,
+      finalReward,
+      error,
+    });
   }
 
   // 유저의 baseBias 업데이트
