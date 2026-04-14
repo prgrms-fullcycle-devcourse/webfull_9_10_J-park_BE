@@ -328,18 +328,26 @@ const updateQuotaFeedbackService = async (
   // ]);
 
   try {
-    // 피드백 결과 저장
-    await prisma.quotaFeedback.create({
-      data: {
-        recommendationId,
-        actualCompleted,
-        actualStudyTime,
-        completionRate,
-        finalReward,
+  // 피드백 결과 저장
+  await prisma.quotaFeedback.create({
+    data: {
+      recommendationId,
+      actualCompleted,
+      actualStudyTime,
+      completionRate,
+      finalReward,
       },
     });
   } catch (error: unknown) {
-    console.error(error);
+    console.error('[QuotaFeedback CREATE FAILED]', {
+      recommendationId,
+      userId,
+      actualCompleted,
+      actualStudyTime,
+      completionRate,
+      finalReward,
+      error,
+    });
   }
 
   // 유저의 baseBias 업데이트
