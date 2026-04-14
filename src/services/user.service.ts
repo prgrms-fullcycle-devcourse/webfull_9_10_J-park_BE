@@ -8,6 +8,18 @@ import { getQuotasByUser } from '../utils/quota.util';
 import { deleteFileFromS3 } from '../utils/s3.util';
 import { formatDateString } from '../utils/time.util';
 
+import {
+  getCache,
+  setCache,
+  buildCacheKey,
+  delCache,
+} from '../utils/cache.util';
+
+/**
+ * 사용자 응답 데이터 매핑 함수
+ * - createdAt → YYYY-MM-DD 문자열 변환
+ * - goals의 quota → 오늘 기준 quota로 변환
+ */
 const mapToUserResponse = async (user: User) => {
   const dateString = formatDateString(user.createdAt);
   const quotaMap = await getQuotasByUser(user.id);
@@ -26,9 +38,35 @@ const mapToUserResponse = async (user: User) => {
   };
 };
 
+/**
+ * 사용자 프로필 캐시 TTL
+ * - 너무 길면 데이터 stale 발생
+ * - 너무 짧으면 캐시 의미 없음
+ * → 10초로 설정 (적절한 타협)
+ */
+const USER_PROFILE_CACHE_TTL = 10;
+
+/**
+ * 사용자 프로필 조회
+ *
+ * 흐름:
+ * 1. 캐시 조회
+ * 2. 캐시 없으면 DB 조회
+ * 3. 응답 가공 (quota 포함)
+ * 4. 캐시 저장
+ */
 export const getUserById = async (
   userId: number,
 ): Promise<UserProfileResponse> => {
+  const cacheKey = buildCacheKey('lampfire', 'users', 'profile', userId);
+
+  // 1. 캐시 조회
+  const cached = await getCache<UserProfileResponse>(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  // 2. DB 조회
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
@@ -51,11 +89,19 @@ export const getUserById = async (
     throw new AppError('USER_NOT_FOUND');
   }
 
-  const userResponse = mapToUserResponse(user);
+  // 3. 응답 가공
+  const userResponse = await mapToUserResponse(user);
+
+  // 4. 캐시 저장
+  await setCache(cacheKey, userResponse, USER_PROFILE_CACHE_TTL);
 
   return userResponse;
 };
 
+/**
+ * 이메일로 사용자 조회
+ * - 로그인 시 사용
+ */
 export const getUserByEmail = async (email: string) => {
   const user = await prisma.user.findUnique({
     where: {
@@ -69,6 +115,14 @@ export const getUserByEmail = async (email: string) => {
   return user;
 };
 
+/**
+ * 닉네임 수정
+ *
+ * 흐름:
+ * 1. DB 업데이트
+ * 2. 응답 가공
+ * 3. 캐시 무효화
+ */
 export const updateNickname = async (userId: number, newNickname: string) => {
   const user = await prisma.user.update({
     where: { id: userId },
@@ -89,21 +143,37 @@ export const updateNickname = async (userId: number, newNickname: string) => {
     },
   });
 
-  const userResponse = mapToUserResponse(user);
+  const userResponse = await mapToUserResponse(user);
+
+  // 캐시 무효화
+  await delCache([buildCacheKey('lampfire', 'users', 'profile', userId)]);
 
   return userResponse;
 };
 
+/**
+ * 프로필 이미지 수정
+ *
+ * 흐름:
+ * 1. 기존 이미지 조회 (S3 삭제용)
+ * 2. 기존 이미지 삭제
+ * 3. DB 업데이트
+ * 4. 응답 가공
+ * 5. 캐시 무효화
+ */
 export const updateProfileImageUrl = async (
   userId: number,
   newImageUrl: string,
 ) => {
+  // 기존 이미지 확인
   const user = await getUserById(userId);
+
   if (user.profileImageUrl) {
     // 기존 이미지 S3에서 삭제
     await deleteFileFromS3(user.profileImageUrl);
   }
 
+  // DB 업데이트
   const updatedUser = await prisma.user.update({
     where: {
       id: userId,
@@ -127,11 +197,17 @@ export const updateProfileImageUrl = async (
     },
   });
 
-  const userResponse = mapToUserResponse(updatedUser);
+  const userResponse = await mapToUserResponse(updatedUser);
+
+  // 캐시 무효화
+  await delCache([buildCacheKey('lampfire', 'users', 'profile', userId)]);
 
   return userResponse;
 };
 
+/**
+ * 카카오 로그인 URL 생성
+ */
 export const getKakaoAuthInfo = () => {
   const baseUrl = 'https://kauth.kakao.com/oauth/authorize';
   const state = Math.random().toString(36).substring(2, 15);
@@ -143,16 +219,21 @@ export const getKakaoAuthInfo = () => {
     scope: 'profile_nickname,account_email',
     state,
   };
+
   const params = new URLSearchParams(config).toString();
   const url = `${baseUrl}?${params}`;
 
   return { state, url };
 };
 
+/**
+ * 카카오 토큰 요청
+ */
 export const getKakaoAuthToken = async (
   code: string,
 ): Promise<KakaoTokenResponse> => {
   const baseUrl = 'https://kauth.kakao.com/oauth/token';
+
   const config = {
     grant_type: 'authorization_code',
     client_id: process.env.KT_CLIENT!,
@@ -160,11 +241,11 @@ export const getKakaoAuthToken = async (
     redirect_uri: `${process.env.URL}/users/kakao/finish`,
     code: code as string,
   };
+
   const params = new URLSearchParams(config).toString();
   const url = `${baseUrl}?${params}`;
 
   try {
-    // Access Token 요청
     const tokenRequest = await (
       await fetch(url, {
         method: 'POST',
@@ -173,20 +254,23 @@ export const getKakaoAuthToken = async (
         },
       })
     ).json();
+
     return tokenRequest;
   } catch (err) {
     console.error(`Kakao Auth Token Err: ${err}`);
-    throw new AppError('INTERNAL_SERVER_ERROR'); // KAKAO ERROR
+    throw new AppError('INTERNAL_SERVER_ERROR');
   }
 };
 
+/**
+ * 카카오 이메일 조회
+ */
 export const getKakaoEmail = async (
   tokenRequest: KakaoTokenResponse,
 ): Promise<string | undefined> => {
   const { access_token: accessToken } = tokenRequest;
   const apiUrl = 'https://kapi.kakao.com/v2/user/me';
 
-  // 사용자 정보 요청
   const userData: KakaoUserResponse = await (
     await fetch(apiUrl, {
       method: 'GET',
@@ -206,15 +290,15 @@ export const getKakaoEmail = async (
   return email;
 };
 
+/**
+ * 카카오 유저 생성
+ */
 export const createKakaoUser = async (email: string, anonymousId: number) => {
-  // create an account with KakaoTalk info
   const user = await prisma.user.update({
     where: { id: anonymousId },
     data: {
       email,
-      // nickname: userData.kakao_account.profile['nickname'],
       password: null,
-      // socialLogin: true,
     },
     select: { id: true },
   });
@@ -222,11 +306,14 @@ export const createKakaoUser = async (email: string, anonymousId: number) => {
   return user;
 };
 
+/**
+ * 익명 유저 삭제
+ */
 export const deleteAnonymousUser = async (
   anonymousId: number,
   userId: number,
 ) => {
-  if (anonymousId && anonymousId != userId) {
+  if (anonymousId && anonymousId !== userId) {
     await prisma.user
       .delete({
         where: { id: anonymousId },
