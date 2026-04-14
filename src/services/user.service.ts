@@ -258,7 +258,7 @@ export const getKakaoAuthToken = async (
     return tokenRequest;
   } catch (err) {
     console.error(`Kakao Auth Token Err: ${err}`);
-    throw new AppError('INTERNAL_SERVER_ERROR');
+    throw new AppError('INTERNAL_SERVER_ERROR'); // KAKAO ERROR
   }
 };
 
@@ -294,11 +294,14 @@ export const getKakaoEmail = async (
  * 카카오 유저 생성
  */
 export const createKakaoUser = async (email: string, anonymousId: number) => {
+  // create an account with KakaoTalk info
   const user = await prisma.user.update({
     where: { id: anonymousId },
     data: {
       email,
+      // nickname: userData.kakao_account.profile['nickname'],
       password: null,
+      // socialLogin: true,
     },
     select: { id: true },
   });
