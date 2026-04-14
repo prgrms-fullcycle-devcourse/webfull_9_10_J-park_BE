@@ -328,14 +328,14 @@ const updateQuotaFeedbackService = async (
   // ]);
 
   try {
-  // 피드백 결과 저장
-  await prisma.quotaFeedback.create({
-    data: {
-      recommendationId,
-      actualCompleted,
-      actualStudyTime,
-      completionRate,
-      finalReward,
+    // 피드백 결과 저장
+    await prisma.quotaFeedback.create({
+      data: {
+        recommendationId,
+        actualCompleted,
+        actualStudyTime,
+        completionRate,
+        finalReward,
       },
     });
   } catch (error: unknown) {

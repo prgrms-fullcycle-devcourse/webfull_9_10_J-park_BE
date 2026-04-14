@@ -397,3 +397,35 @@
   - 랜덤 데이터 생성 시 description(목표 설명)도 함께 생성
 
 ---
+
+## 🏷️ [v0.10.0] - 2026-04-14
+
+### ✨ Added
+
+- USERS API 캐싱으로 조회 성능 개선
+  - 사용자 정보 수정 시 캐시 무효화
+- 카카오 OAuth 로그인 기능 추가
+  - 관련 API `response type` 및 `error code` 추가
+- 배포 환경에 `Redis` 연결
+- 프로필 이미지 수정 기능 추가
+  - `AWE S3` 스토리지에 이미지 파일 업로드
+- `MONITOR` 기반의 `Redis` 로깅 기능 추가
+  - `hit/miss`, 저장/삭제 시 성공 여부
+  - 패턴 삭제 대상 키 및 결과
+  - 캐시 무효화
+  - `Redis` 비활성화 및 미연결 상태에 대한 방어 로그
+
+- 캐시 안정성 개선 (`Redis` 장애 대응)
+  - `Redis` 작업에 `timeout` 적용
+  - 캐시 조회 실패 시 즉시 `DB fallback` 수행
+  - `Redis` 장애 시 API 응답 지연/실패 방지
+
+### 🧪 Test
+
+- Redis 캐시 동작 검증을 위한 테스트 코드 추가
+- GET /goals/today 테스트 코드 수정
+  - `achievedAt`, `startDate`, `endDate`를 `toStartOfDay` 기준으로 통일
+- GET /goals/today/complete 테스트 코드 수정
+  - 기존 n`ew Date('YYYY-MM-DD')` -> `toStartOfDay로` 변경
+
+---
