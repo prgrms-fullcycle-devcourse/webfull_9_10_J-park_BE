@@ -16,7 +16,11 @@ import {
   updateNickname,
   updateProfileImageUrl,
 } from '../services/user.service';
-import { UserProfileResponse } from '../types/user.type';
+import {
+  UserNicknameResponse,
+  UserProfileImageUrlResponse,
+  UserProfileResponse,
+} from '../types/user.type';
 
 export const getMe = async (
   req: Request,
@@ -50,7 +54,7 @@ export const getMe = async (
 
 export const updateProfileNickname = async (
   req: Request,
-  res: Response<ApiResponse<UserProfileResponse>>,
+  res: Response<ApiResponse<UserNicknameResponse>>,
 ) => {
   const { userId } = req.user!;
   if (!req.body) {
@@ -63,12 +67,12 @@ export const updateProfileNickname = async (
   }
 
   try {
-    const updatedUser = await updateNickname(userId, name);
+    const updatedNickname = await updateNickname(userId, name);
 
     return res.status(StatusCodes.OK).json({
       success: true,
       message: '사용자 정보 수정 완료',
-      data: updatedUser,
+      data: updatedNickname,
     });
   } catch (err) {
     console.error(`updateUser error: ${err}`);
@@ -88,7 +92,7 @@ export const updateProfileNickname = async (
 
 export const updateProfileImage = async (
   req: Request,
-  res: Response<ApiResponse<UserProfileResponse>>,
+  res: Response<ApiResponse<UserProfileImageUrlResponse>>,
 ) => {
   try {
     const { userId } = req.user!;
@@ -96,12 +100,15 @@ export const updateProfileImage = async (
 
     const newImageUrl = file.location;
 
-    const updatedUser = await updateProfileImageUrl(userId, newImageUrl);
+    const updatedProfileImageUrl = await updateProfileImageUrl(
+      userId,
+      newImageUrl,
+    );
 
     return res.status(StatusCodes.OK).json({
       success: true,
       message: '사용자 프로필 이미지 수정 완료',
-      data: updatedUser,
+      data: updatedProfileImageUrl,
     });
   } catch (err) {
     console.error(`profile image upload error: ${err}`);

@@ -142,26 +142,15 @@ export const getUserByEmail = async (email: string) => {
  * 3. 캐시 무효화
  */
 export const updateNickname = async (userId: number, newNickname: string) => {
-  const user = await prisma.user.update({
+  const updatedUser = await prisma.user.update({
     where: { id: userId },
     data: { nickname: newNickname },
     select: {
-      id: true,
       nickname: true,
-      profileImageUrl: true,
-      totalTime: true,
-      goals: {
-        select: {
-          id: true,
-          title: true,
-          quota: true,
-        },
-      },
-      createdAt: true,
     },
   });
 
-  const userResponse = await mapToUserResponse(user);
+  const userResponse = { nickname: updatedUser.nickname };
 
   // 캐시 무효화
   await delCache([buildCacheKey('lampfire', 'users', 'profile', userId)]);
@@ -192,7 +181,7 @@ export const updateProfileImageUrl = async (
   }
 
   // DB 업데이트
-  const updatedUser = await prisma.user.update({
+  const updatedProfileImageUrl = await prisma.user.update({
     where: {
       id: userId,
     },
@@ -200,27 +189,16 @@ export const updateProfileImageUrl = async (
       profileImageUrl: newImageUrl,
     },
     select: {
-      id: true,
-      nickname: true,
       profileImageUrl: true,
-      totalTime: true,
-      goals: {
-        select: {
-          id: true,
-          title: true,
-          quota: true,
-        },
-      },
-      createdAt: true,
     },
   });
 
-  const userResponse = await mapToUserResponse(updatedUser);
+  const response = { profileImageUrl: updatedProfileImageUrl.profileImageUrl };
 
   // 캐시 무효화
   await delCache([buildCacheKey('lampfire', 'users', 'profile', userId)]);
 
-  return userResponse;
+  return response;
 };
 
 /**

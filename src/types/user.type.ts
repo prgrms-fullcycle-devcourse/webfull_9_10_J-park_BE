@@ -34,3 +34,11 @@ export interface UserProfileResponse extends Omit<BaseUser, 'id'> {
   createdAt: string;
   goals: GoalResponse[];
 }
+
+export interface UserNicknameResponse {
+  nickname: string;
+}
+
+export interface UserProfileImageUrlResponse {
+  profileImageUrl: string | null;
+}
