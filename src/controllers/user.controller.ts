@@ -11,8 +11,8 @@ import {
   getKakaoAuthInfo,
   getKakaoAuthToken,
   getKakaoEmail,
+  getUser,
   getUserByEmail,
-  getUserById,
   updateNickname,
   updateProfileImageUrl,
 } from '../services/user.service';
@@ -22,10 +22,10 @@ export const getMe = async (
   req: Request,
   res: Response<ApiResponse<UserProfileResponse>>,
 ) => {
-  const userId = req.user!.userId;
+  const { userId, isLoggedIn } = req.user!;
 
   try {
-    const user = await getUserById(userId);
+    const user = await getUser(userId, isLoggedIn);
 
     return res.status(StatusCodes.OK).json({
       success: true,

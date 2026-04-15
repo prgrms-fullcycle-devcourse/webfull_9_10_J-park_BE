@@ -20,7 +20,10 @@ import {
  * - createdAt → YYYY-MM-DD 문자열 변환
  * - goals의 quota → 오늘 기준 quota로 변환
  */
-const mapToUserResponse = async (user: User) => {
+const mapToUserResponse = async (
+  user: User,
+  isLoggedIn: boolean,
+): Promise<UserProfileResponse> => {
   const dateString = formatDateString(user.createdAt);
   const quotaMap = await getQuotasByUser(user.id);
 
@@ -29,6 +32,10 @@ const mapToUserResponse = async (user: User) => {
     nickname: user.nickname,
     profileImageUrl: user.profileImageUrl,
     totalTime: user.totalTime,
+    loginInfo: {
+      isLoggedIn,
+      email: user.email,
+    },
     goals: user.goals.map(({ id, quota, ...rest }) => ({
       ...rest,
       id,
@@ -55,8 +62,9 @@ const USER_PROFILE_CACHE_TTL = 10;
  * 3. 응답 가공 (quota 포함)
  * 4. 캐시 저장
  */
-export const getUserById = async (
+export const getUser = async (
   userId: number,
+  isLoggedIn: boolean,
 ): Promise<UserProfileResponse> => {
   const cacheKey = buildCacheKey('lampfire', 'users', 'profile', userId);
 
@@ -67,11 +75,28 @@ export const getUserById = async (
   }
 
   // 2. DB 조회
+  const user = await getUserById(userId);
+
+  if (!user) {
+    throw new AppError('USER_NOT_FOUND');
+  }
+
+  // 3. 응답 가공
+  const userResponse = await mapToUserResponse(user, isLoggedIn);
+
+  // 4. 캐시 저장
+  await setCache(cacheKey, userResponse, USER_PROFILE_CACHE_TTL);
+
+  return userResponse;
+};
+
+const getUserById = async (userId: number) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
       id: true,
       nickname: true,
+      email: true,
       profileImageUrl: true,
       totalTime: true,
       goals: {
@@ -84,18 +109,11 @@ export const getUserById = async (
       createdAt: true,
     },
   });
-
   if (!user) {
     throw new AppError('USER_NOT_FOUND');
   }
 
-  // 3. 응답 가공
-  const userResponse = await mapToUserResponse(user);
-
-  // 4. 캐시 저장
-  await setCache(cacheKey, userResponse, USER_PROFILE_CACHE_TTL);
-
-  return userResponse;
+  return user;
 };
 
 /**
