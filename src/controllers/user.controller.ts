@@ -11,8 +11,8 @@ import {
   getKakaoAuthInfo,
   getKakaoAuthToken,
   getKakaoEmail,
+  getUser,
   getUserByEmail,
-  getUserById,
   updateNickname,
   updateProfileImageUrl,
 } from '../services/user.service';
@@ -22,10 +22,10 @@ export const getMe = async (
   req: Request,
   res: Response<ApiResponse<UserProfileResponse>>,
 ) => {
-  const userId = req.user!.userId;
+  const { userId, isLoggedIn } = req.user!;
 
   try {
-    const user = await getUserById(userId);
+    const user = await getUser(userId, isLoggedIn);
 
     return res.status(StatusCodes.OK).json({
       success: true,
@@ -48,63 +48,73 @@ export const getMe = async (
   }
 };
 
-export const updateProfileNickname = async (
-  req: Request,
-  res: Response<ApiResponse<UserProfileResponse>>,
-) => {
+export const updateProfile = async (req: Request, res: Response) => {
   const { userId } = req.user!;
-  if (!req.body) {
-    throw new AppError('BAD_REQUEST');
-  }
-
-  const { name } = req.body;
-  if (!name) {
-    throw new AppError('MISSING_NICKNAME');
-  }
 
   try {
-    const updatedUser = await updateNickname(userId, name);
+    const { name: newNickname } = req.body;
+    const imgFile = req.file;
 
-    return res.status(StatusCodes.OK).json({
-      success: true,
-      message: '사용자 정보 수정 완료',
-      data: updatedUser,
-    });
+    if ((newNickname && imgFile) || (!newNickname && !imgFile)) {
+      throw new AppError('BAD_REQUEST');
+    }
+
+    if (newNickname) {
+      try {
+        const updatedNickname = await updateNickname(userId, newNickname);
+
+        return res.status(StatusCodes.OK).json({
+          success: true,
+          message: '사용자 닉네임 수정 완료',
+          data: updatedNickname,
+        });
+      } catch (err) {
+        console.error(`Nickname update error: ${err}`);
+
+        const appError =
+          err instanceof AppError ? err : new AppError('INTERNAL_SERVER_ERROR');
+
+        return res.status(appError.statusCode).json({
+          success: false,
+          error: {
+            code: appError.code,
+            message: appError.message,
+          },
+        });
+      }
+    }
+
+    if (imgFile) {
+      try {
+        const newImageUrl = (imgFile as Express.MulterS3.File).location;
+
+        const updatedProfileImageUrl = await updateProfileImageUrl(
+          userId,
+          newImageUrl,
+        );
+
+        return res.status(StatusCodes.OK).json({
+          success: true,
+          message: '사용자 프로필 이미지 수정 완료',
+          data: updatedProfileImageUrl,
+        });
+      } catch (err) {
+        console.error(`profile image upload error: ${err}`);
+
+        const appError =
+          err instanceof AppError ? err : new AppError('INTERNAL_SERVER_ERROR');
+
+        return res.status(appError.statusCode).json({
+          success: false,
+          error: {
+            code: appError.code,
+            message: appError.message,
+          },
+        });
+      }
+    }
   } catch (err) {
     console.error(`updateUser error: ${err}`);
-
-    const appError =
-      err instanceof AppError ? err : new AppError('INTERNAL_SERVER_ERROR');
-
-    return res.status(appError.statusCode).json({
-      success: false,
-      error: {
-        code: appError.code,
-        message: appError.message,
-      },
-    });
-  }
-};
-
-export const updateProfileImage = async (
-  req: Request,
-  res: Response<ApiResponse<UserProfileResponse>>,
-) => {
-  try {
-    const { userId } = req.user!;
-    const file = req.file as Express.MulterS3.File;
-
-    const newImageUrl = file.location;
-
-    const updatedUser = await updateProfileImageUrl(userId, newImageUrl);
-
-    return res.status(StatusCodes.OK).json({
-      success: true,
-      message: '사용자 프로필 이미지 수정 완료',
-      data: updatedUser,
-    });
-  } catch (err) {
-    console.error(`profile image upload error: ${err}`);
 
     const appError =
       err instanceof AppError ? err : new AppError('INTERNAL_SERVER_ERROR');

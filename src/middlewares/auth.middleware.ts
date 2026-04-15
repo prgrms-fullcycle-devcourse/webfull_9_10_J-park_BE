@@ -50,7 +50,7 @@ export const authUser = async (
       //쿠키에 토큰 저장
       res.cookie('token', token, authCookieOptions);
 
-      req.user = { userId: newUser.id };
+      req.user = { userId: newUser.id, isLoggedIn: false };
     } else {
       /**
        * 토큰이 있는 경우
@@ -62,11 +62,11 @@ export const authUser = async (
       };
 
       // 사용자 검증 단계
-      const userExists = await prisma.user.findUnique({
+      const user = await prisma.user.findUnique({
         where: { id: decoded.id },
-        select: { id: true },
+        select: { id: true, email: true },
       });
-      if (!userExists) {
+      if (!user) {
         throw new Error('User not Found');
       }
 
@@ -82,7 +82,7 @@ export const authUser = async (
         res.cookie('token', newToken, authCookieOptions);
       }
 
-      req.user = { userId: decoded.id };
+      req.user = { userId: decoded.id, isLoggedIn: !!user.email };
     }
 
     return next();
