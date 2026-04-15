@@ -258,7 +258,7 @@ export const getKakaoAuthToken = async (
     return tokenRequest;
   } catch (err) {
     console.error(`Kakao Auth Token Err: ${err}`);
-    throw new AppError('INTERNAL_SERVER_ERROR'); // KAKAO ERROR
+    throw new AppError('KAKAO_SERVER_ERROR');
   }
 };
 
