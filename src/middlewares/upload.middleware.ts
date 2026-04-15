@@ -54,9 +54,9 @@ export const uploadImage = (
       return next(new AppError('UPLOAD_ERROR'));
     }
 
-    if (!req.file) {
-      return next(new AppError('MISSING_FILE'));
-    }
+    // if (!req.file) {
+    //   return next(new AppError('MISSING_FILE'));
+    // }
 
     next();
   });
