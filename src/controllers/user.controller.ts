@@ -65,7 +65,7 @@ export const updateProfile = async (req: Request, res: Response) => {
 
         return res.status(StatusCodes.OK).json({
           success: true,
-          message: '사용자 정보 수정 완료',
+          message: '사용자 닉네임 수정 완료',
           data: updatedNickname,
         });
       } catch (err) {
