@@ -1,5 +1,6 @@
 export interface AuthUser {
   userId: number;
+  isLoggedIn: boolean;
 }
 
 export interface KakaoTokenResponse {
