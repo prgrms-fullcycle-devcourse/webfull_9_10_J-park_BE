@@ -15,6 +15,20 @@ import {
   delCache,
 } from '../utils/cache.util';
 
+const getUserProfileCacheKey = (userId: number, isLoggedIn: boolean) =>
+  buildCacheKey(
+    'lampfire',
+    'users',
+    'profile',
+    userId,
+    isLoggedIn ? 'login' : 'anonymous',
+  );
+
+const getUserProfileCacheKeys = (userId: number) => [
+  getUserProfileCacheKey(userId, true),
+  getUserProfileCacheKey(userId, false),
+];
+
 /**
  * 사용자 응답 데이터 매핑 함수
  * - createdAt → YYYY-MM-DD 문자열 변환
@@ -66,7 +80,7 @@ export const getUser = async (
   userId: number,
   isLoggedIn: boolean,
 ): Promise<UserProfileResponse> => {
-  const cacheKey = buildCacheKey('lampfire', 'users', 'profile', userId);
+  const cacheKey = getUserProfileCacheKey(userId, isLoggedIn);
 
   // 1. 캐시 조회
   const cached = await getCache<UserProfileResponse>(cacheKey);
@@ -153,7 +167,7 @@ export const updateNickname = async (userId: number, newNickname: string) => {
   const userResponse = { nickname: updatedUser.nickname };
 
   // 캐시 무효화
-  await delCache([buildCacheKey('lampfire', 'users', 'profile', userId)]);
+  await delCache(getUserProfileCacheKeys(userId));
 
   return userResponse;
 };
@@ -196,7 +210,7 @@ export const updateProfileImageUrl = async (
   const response = { profileImageUrl: updatedProfileImageUrl.profileImageUrl };
 
   // 캐시 무효화
-  await delCache([buildCacheKey('lampfire', 'users', 'profile', userId)]);
+  await delCache(getUserProfileCacheKeys(userId));
 
   return response;
 };
@@ -208,9 +222,14 @@ export const getKakaoAuthInfo = () => {
   const baseUrl = 'https://kauth.kakao.com/oauth/authorize';
   const state = Math.random().toString(36).substring(2, 15);
 
+  const redirectUri =
+    process.env.NODE_ENV === 'production'
+      ? `${process.env.URL}/users/kakao/finish`
+      : 'http://localhost:3000/users/kakao/finish';
+
   const config = {
     client_id: process.env.KT_CLIENT!,
-    redirect_uri: `${process.env.URL}/users/kakao/finish`,
+    redirect_uri: redirectUri,
     response_type: 'code',
     scope: 'profile_nickname,account_email',
     state,
@@ -229,12 +248,16 @@ export const getKakaoAuthToken = async (
   code: string,
 ): Promise<KakaoTokenResponse> => {
   const baseUrl = 'https://kauth.kakao.com/oauth/token';
+  const redirectUri =
+    process.env.NODE_ENV === 'production'
+      ? `${process.env.URL}/users/kakao/finish`
+      : 'http://localhost:3000/users/kakao/finish';
 
   const config = {
     grant_type: 'authorization_code',
     client_id: process.env.KT_CLIENT!,
     client_secret: process.env.KT_CLIENT_SECRET!,
-    redirect_uri: `${process.env.URL}/users/kakao/finish`,
+    redirect_uri: redirectUri,
     code: code as string,
   };
 
