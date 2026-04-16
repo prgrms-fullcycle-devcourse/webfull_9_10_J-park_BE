@@ -15,6 +15,20 @@ import {
   delCache,
 } from '../utils/cache.util';
 
+const getUserProfileCacheKey = (userId: number, isLoggedIn: boolean) =>
+  buildCacheKey(
+    'lampfire',
+    'users',
+    'profile',
+    userId,
+    isLoggedIn ? 'login' : 'anonymous',
+  );
+
+const getUserProfileCacheKeys = (userId: number) => [
+  getUserProfileCacheKey(userId, true),
+  getUserProfileCacheKey(userId, false),
+];
+
 /**
  * 사용자 응답 데이터 매핑 함수
  * - createdAt → YYYY-MM-DD 문자열 변환
@@ -66,7 +80,7 @@ export const getUser = async (
   userId: number,
   isLoggedIn: boolean,
 ): Promise<UserProfileResponse> => {
-  const cacheKey = buildCacheKey('lampfire', 'users', 'profile', userId);
+  const cacheKey = getUserProfileCacheKey(userId, isLoggedIn);
 
   // 1. 캐시 조회
   const cached = await getCache<UserProfileResponse>(cacheKey);
@@ -153,7 +167,7 @@ export const updateNickname = async (userId: number, newNickname: string) => {
   const userResponse = { nickname: updatedUser.nickname };
 
   // 캐시 무효화
-  await delCache([buildCacheKey('lampfire', 'users', 'profile', userId)]);
+  await delCache(getUserProfileCacheKeys(userId));
 
   return userResponse;
 };
@@ -196,7 +210,7 @@ export const updateProfileImageUrl = async (
   const response = { profileImageUrl: updatedProfileImageUrl.profileImageUrl };
 
   // 캐시 무효화
-  await delCache([buildCacheKey('lampfire', 'users', 'profile', userId)]);
+  await delCache(getUserProfileCacheKeys(userId));
 
   return response;
 };
