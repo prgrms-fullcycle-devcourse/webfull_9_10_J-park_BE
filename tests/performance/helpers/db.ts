@@ -2,10 +2,12 @@ import prisma from '../../../src/config/prisma';
 import { getLocalMidnight } from './date';
 import { makeToken } from './request';
 
-type SeedResult = {
+export type SeedResult = {
   userId: number;
   token: string;
   goalIds: number[];
+  middleGoalId: number; // 생성된 goals 중 중간에 있는 레코드를 선택
+  middleGoalLogId: number; // 선택된 middleGoalId의 goalLog 중 중간에 있는 레코드를 선택
 };
 
 // 테스트 데이터 정리
@@ -191,9 +193,34 @@ export const seedPerformanceData = async (
     });
   }
 
+  // 중간 goalId 찾기
+
+  const getMiddleIndex = (length: number) => Math.floor((length - 1) / 2);
+
+  const middleGoalId = goalIds[getMiddleIndex(goalIds.length)];
+
+  if (!middleGoalId) {
+    throw new Error('middleGoalId를 찾을 수 없습니다.');
+  }
+
+  // middleGoalId의 중간 goalLogId 찾기
+
+  const goalLogsOfMiddleGoal = allGoalLogs
+    .filter((log) => log.goalId === middleGoalId)
+    .sort((a, b) => a.achievedAt.getTime() - b.achievedAt.getTime());
+
+  const middleGoalLog =
+    goalLogsOfMiddleGoal[getMiddleIndex(goalLogsOfMiddleGoal.length)];
+
+  if (!middleGoalLog) {
+    throw new Error('middleGoalLog를 찾을 수 없습니다.');
+  }
+
   return {
     userId: user.id,
     token: makeToken(user.id),
     goalIds,
+    middleGoalId,
+    middleGoalLogId: middleGoalLog.id,
   };
 };
