@@ -429,3 +429,37 @@
   - 기존 n`ew Date('YYYY-MM-DD')` -> `toStartOfDay로` 변경
 
 ---
+
+## 🏷️ [v0.11.0] - 2026-04-17
+
+### ✨ Added
+
+- POST /users/logout
+  - 로그아웃 api 추가
+
+### 🛠 Changed
+
+- GET /users/me
+  - response field 추가 (200)
+    - `loginInfo` : 로그인 여부 및 이메일 추가
+  - 응답 필드 변화에 따른 캐싱 로직 수정
+
+- JWT 필드 추가
+  - 현재 로그인 여부를 알기 위해 `type` 필드를 추가
+
+### 🧪 Test
+
+- GET /users/me
+  - 응답 필드 변화에 따른 테스트 코드 수정
+  - 캐싱 적용에 따른 성능 테스트 코드 추가
+
+- GET /goals/:goalId/detail
+  - 캐싱 적용에 따른 성능 테스트 코드 추가
+
+- GET /goals/today/complete
+  - 캐싱 적용에 따른 성능 테스트 코드 추가
+
+- GET /timers
+  - 캐싱 적용에 따른 성능 테스트 코드 추가
+
+---

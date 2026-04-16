@@ -19,9 +19,9 @@
     "db:seed": "prisma db seed",
     "db:format": "prisma format",
     "prepare": "husky",
-    "test": "jest",
+    "test": "jest tests/integration",
     "test:watch": "jest --watch",
-    "test:int": "jest tests/integration",
+    "test:all": "jest",
     "test:perf": "jest tests/performance --runInBand"
   },
   "keywords": [],

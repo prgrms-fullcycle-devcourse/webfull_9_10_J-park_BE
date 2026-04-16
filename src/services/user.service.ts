@@ -15,12 +15,29 @@ import {
   delCache,
 } from '../utils/cache.util';
 
+const getUserProfileCacheKey = (userId: number, isLoggedIn: boolean) =>
+  buildCacheKey(
+    'lampfire',
+    'users',
+    'profile',
+    userId,
+    isLoggedIn ? 'login' : 'anonymous',
+  );
+
+const getUserProfileCacheKeys = (userId: number) => [
+  getUserProfileCacheKey(userId, true),
+  getUserProfileCacheKey(userId, false),
+];
+
 /**
  * 사용자 응답 데이터 매핑 함수
  * - createdAt → YYYY-MM-DD 문자열 변환
  * - goals의 quota → 오늘 기준 quota로 변환
  */
-const mapToUserResponse = async (user: User) => {
+const mapToUserResponse = async (
+  user: User,
+  isLoggedIn: boolean,
+): Promise<UserProfileResponse> => {
   const dateString = formatDateString(user.createdAt);
   const quotaMap = await getQuotasByUser(user.id);
 
@@ -29,6 +46,10 @@ const mapToUserResponse = async (user: User) => {
     nickname: user.nickname,
     profileImageUrl: user.profileImageUrl,
     totalTime: user.totalTime,
+    loginInfo: {
+      isLoggedIn,
+      email: user.email,
+    },
     goals: user.goals.map(({ id, quota, ...rest }) => ({
       ...rest,
       id,
@@ -55,10 +76,11 @@ const USER_PROFILE_CACHE_TTL = 10;
  * 3. 응답 가공 (quota 포함)
  * 4. 캐시 저장
  */
-export const getUserById = async (
+export const getUser = async (
   userId: number,
+  isLoggedIn: boolean,
 ): Promise<UserProfileResponse> => {
-  const cacheKey = buildCacheKey('lampfire', 'users', 'profile', userId);
+  const cacheKey = getUserProfileCacheKey(userId, isLoggedIn);
 
   // 1. 캐시 조회
   const cached = await getCache<UserProfileResponse>(cacheKey);
@@ -67,11 +89,28 @@ export const getUserById = async (
   }
 
   // 2. DB 조회
+  const user = await getUserById(userId);
+
+  if (!user) {
+    throw new AppError('USER_NOT_FOUND');
+  }
+
+  // 3. 응답 가공
+  const userResponse = await mapToUserResponse(user, isLoggedIn);
+
+  // 4. 캐시 저장
+  await setCache(cacheKey, userResponse, USER_PROFILE_CACHE_TTL);
+
+  return userResponse;
+};
+
+const getUserById = async (userId: number) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
       id: true,
       nickname: true,
+      email: true,
       profileImageUrl: true,
       totalTime: true,
       goals: {
@@ -84,18 +123,11 @@ export const getUserById = async (
       createdAt: true,
     },
   });
-
   if (!user) {
     throw new AppError('USER_NOT_FOUND');
   }
 
-  // 3. 응답 가공
-  const userResponse = await mapToUserResponse(user);
-
-  // 4. 캐시 저장
-  await setCache(cacheKey, userResponse, USER_PROFILE_CACHE_TTL);
-
-  return userResponse;
+  return user;
 };
 
 /**
@@ -124,29 +156,18 @@ export const getUserByEmail = async (email: string) => {
  * 3. 캐시 무효화
  */
 export const updateNickname = async (userId: number, newNickname: string) => {
-  const user = await prisma.user.update({
+  const updatedUser = await prisma.user.update({
     where: { id: userId },
     data: { nickname: newNickname },
     select: {
-      id: true,
       nickname: true,
-      profileImageUrl: true,
-      totalTime: true,
-      goals: {
-        select: {
-          id: true,
-          title: true,
-          quota: true,
-        },
-      },
-      createdAt: true,
     },
   });
 
-  const userResponse = await mapToUserResponse(user);
+  const userResponse = { nickname: updatedUser.nickname };
 
   // 캐시 무효화
-  await delCache([buildCacheKey('lampfire', 'users', 'profile', userId)]);
+  await delCache(getUserProfileCacheKeys(userId));
 
   return userResponse;
 };
@@ -174,7 +195,7 @@ export const updateProfileImageUrl = async (
   }
 
   // DB 업데이트
-  const updatedUser = await prisma.user.update({
+  const updatedProfileImageUrl = await prisma.user.update({
     where: {
       id: userId,
     },
@@ -182,27 +203,16 @@ export const updateProfileImageUrl = async (
       profileImageUrl: newImageUrl,
     },
     select: {
-      id: true,
-      nickname: true,
       profileImageUrl: true,
-      totalTime: true,
-      goals: {
-        select: {
-          id: true,
-          title: true,
-          quota: true,
-        },
-      },
-      createdAt: true,
     },
   });
 
-  const userResponse = await mapToUserResponse(updatedUser);
+  const response = { profileImageUrl: updatedProfileImageUrl.profileImageUrl };
 
   // 캐시 무효화
-  await delCache([buildCacheKey('lampfire', 'users', 'profile', userId)]);
+  await delCache(getUserProfileCacheKeys(userId));
 
-  return userResponse;
+  return response;
 };
 
 /**
@@ -212,9 +222,14 @@ export const getKakaoAuthInfo = () => {
   const baseUrl = 'https://kauth.kakao.com/oauth/authorize';
   const state = Math.random().toString(36).substring(2, 15);
 
+  const redirectUri =
+    process.env.NODE_ENV === 'production'
+      ? `${process.env.URL}/users/kakao/finish`
+      : 'http://localhost:3000/users/kakao/finish';
+
   const config = {
     client_id: process.env.KT_CLIENT!,
-    redirect_uri: `${process.env.URL}/users/kakao/finish`,
+    redirect_uri: redirectUri,
     response_type: 'code',
     scope: 'profile_nickname,account_email',
     state,
@@ -233,12 +248,16 @@ export const getKakaoAuthToken = async (
   code: string,
 ): Promise<KakaoTokenResponse> => {
   const baseUrl = 'https://kauth.kakao.com/oauth/token';
+  const redirectUri =
+    process.env.NODE_ENV === 'production'
+      ? `${process.env.URL}/users/kakao/finish`
+      : 'http://localhost:3000/users/kakao/finish';
 
   const config = {
     grant_type: 'authorization_code',
     client_id: process.env.KT_CLIENT!,
     client_secret: process.env.KT_CLIENT_SECRET!,
-    redirect_uri: `${process.env.URL}/users/kakao/finish`,
+    redirect_uri: redirectUri,
     code: code as string,
   };
 
@@ -258,7 +277,7 @@ export const getKakaoAuthToken = async (
     return tokenRequest;
   } catch (err) {
     console.error(`Kakao Auth Token Err: ${err}`);
-    throw new AppError('INTERNAL_SERVER_ERROR'); // KAKAO ERROR
+    throw new AppError('KAKAO_SERVER_ERROR');
   }
 };
 

@@ -204,50 +204,30 @@ describe('User API', () => {
     });
   });
 
-  describe('PATCH /users', () => {
+  describe('PATCH /users/profile', () => {
     describe('200 - OK', () => {
       it('나의 닉네임을 수정한다.', async () => {
         const res = await request(app)
-          .patch('/users')
+          .patch('/users/profile')
           .set('Cookie', [`token=${authToken}`])
           .send({ name: newNickname });
 
         expect(res.status).toBe(200);
         expect(res.body.success).toBe(true);
-        expect(res.body.message).toBe('사용자 정보 수정 완료');
+        expect(res.body.message).toBe('사용자 닉네임 수정 완료');
 
         const { data } = res.body;
 
         expect(data).toMatchObject({
-          userId: myUserId,
           nickname: expect.stringMatching(/^UPDATED_NAME_/), // 닉네임 변경 검증
-          totalTime: 120000,
         });
-
-        // 프로필 이미지 경로 검증
-        if (data.profileImageUrl !== null) {
-          expect(typeof data.profileImageUrl).toBe('string');
-        }
-
-        // 계정 생성 날짜 검증
-        expect(data.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-
-        // goals 배열 검증
-        expect(Array.isArray(data.goals)).toBe(true);
-        if (data.goals.length > 0) {
-          expect(data.goals[0]).toMatchObject({
-            id: expect.any(Number),
-            title: expect.any(String),
-            todayQuota: expect.any(Number),
-          });
-        }
       });
     });
 
     describe('401 - UNAUTHORIZED', () => {
       it('인증되지 않은 요청일 경우 반환한다', async () => {
         const res = await request(app)
-          .patch('/users')
+          .patch('/users/profile')
           .set('Cookie', [`token=${invalidToken}`])
           .send({ name: newNickname });
 
@@ -271,7 +251,7 @@ describe('User API', () => {
           .mockRejectedValue(new Error('DB Error'));
 
         const res = await request(app)
-          .patch('/users')
+          .patch('/users/profile')
           .set('Cookie', [`token=${authToken}`])
           .send({ name: newNickname });
 
