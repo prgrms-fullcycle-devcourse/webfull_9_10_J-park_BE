@@ -208,9 +208,14 @@ export const getKakaoAuthInfo = () => {
   const baseUrl = 'https://kauth.kakao.com/oauth/authorize';
   const state = Math.random().toString(36).substring(2, 15);
 
+  const redirectUri =
+    process.env.NODE_ENV === 'production'
+      ? `${process.env.URL}/users/kakao/finish`
+      : 'http://localhost:3000/users/kakao/finish';
+
   const config = {
     client_id: process.env.KT_CLIENT!,
-    redirect_uri: `${process.env.URL}/users/kakao/finish`,
+    redirect_uri: redirectUri,
     response_type: 'code',
     scope: 'profile_nickname,account_email',
     state,
@@ -229,12 +234,16 @@ export const getKakaoAuthToken = async (
   code: string,
 ): Promise<KakaoTokenResponse> => {
   const baseUrl = 'https://kauth.kakao.com/oauth/token';
+  const redirectUri =
+    process.env.NODE_ENV === 'production'
+      ? `${process.env.URL}/users/kakao/finish`
+      : 'http://localhost:3000/users/kakao/finish';
 
   const config = {
     grant_type: 'authorization_code',
     client_id: process.env.KT_CLIENT!,
     client_secret: process.env.KT_CLIENT_SECRET!,
-    redirect_uri: `${process.env.URL}/users/kakao/finish`,
+    redirect_uri: redirectUri,
     code: code as string,
   };
 

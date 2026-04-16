@@ -3,6 +3,7 @@ import { Router } from 'express';
 import {
   finishKakaoLogin,
   getMe,
+  logout,
   startKakaoLogin,
   updateProfile,
 } from '../controllers/user.controller';
@@ -18,5 +19,7 @@ router.patch('/profile', authUser, uploadImage, updateProfile);
 // 카카오톡 OAuth 로그인
 router.get('/kakao/start', authUser, startKakaoLogin);
 router.get('/kakao/finish', authUser, finishKakaoLogin);
+
+router.post('/logout', authUser, logout);
 
 export default router;
