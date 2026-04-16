@@ -64,6 +64,11 @@ export const ERROR_CODES = {
     code: 'UNAUTHORIZED',
     message: '유효하지 않은 토큰입니다.',
   },
+  NOT_LOGGED_IN: {
+    statusCode: StatusCodes.UNAUTHORIZED,
+    code: 'NOT_LOGGED_IN',
+    message: '로그인 상태에서만 로그아웃이 가능합니다.',
+  },
 
   // 403
   EMAIL_REQUIRED: {

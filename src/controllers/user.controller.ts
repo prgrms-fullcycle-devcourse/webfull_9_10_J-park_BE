@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import jwt from 'jsonwebtoken';
 
@@ -17,6 +17,7 @@ import {
   updateProfileImageUrl,
 } from '../services/user.service';
 import { UserProfileResponse } from '../types/user.type';
+import { authCookieOptions } from '../middlewares/auth.middleware';
 
 export const getMe = async (
   req: Request,
@@ -178,22 +179,25 @@ export const finishKakaoLogin = async (req: Request, res: Response) => {
         await deleteAnonymousUser(anonymousId as number, user.id);
       }
 
-      const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET!, {
-        expiresIn: '7d',
-      });
+      const token = jwt.sign(
+        { id: user.id, type: 'authorized' },
+        process.env.JWT_SECRET!,
+        {
+          expiresIn: '7d',
+        },
+      );
 
-      res.cookie('token', token, {
-        sameSite: 'none',
-        secure: true,
-        httpOnly: true,
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
+      res.cookie('token', token, authCookieOptions);
 
       // return res.status(200).json({
       //   email,
       //   data: userData.kakao_account,
       // });
-      return res.redirect(`${process.env.ALLOWED_ORIGINS as string}/`);
+      return res.redirect(
+        process.env.NODE_ENV === 'production'
+          ? `${process.env.ALLOWED_ORIGINS as string}/`
+          : 'http://localhost:3000/users/me',
+      );
     } else {
       // 카카오 API에서 토큰 요청 실패
       throw new AppError('KAKAO_SERVER_ERROR'); // KAKAO_API_ERROR
@@ -211,5 +215,34 @@ export const finishKakaoLogin = async (req: Request, res: Response) => {
         message: appError.message,
       },
     });
+  }
+};
+
+export const logout = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const { isLoggedIn } = req.user!;
+
+  if (!isLoggedIn) {
+    return next(new AppError('NOT_LOGGED_IN'));
+  }
+
+  try {
+    res.clearCookie('token', {
+      ...authCookieOptions,
+      maxAge: 0,
+      expires: new Date(0),
+    });
+
+    return res.redirect(
+      process.env.NODE_ENV === 'production'
+        ? `${process.env.ALLOWED_ORIGINS}/`
+        : 'http://localhost:3000/users/me',
+    );
+  } catch (err) {
+    console.error(`Logout Err: ${err}`);
+    return next(new AppError('INTERNAL_SERVER_ERROR'));
   }
 };
