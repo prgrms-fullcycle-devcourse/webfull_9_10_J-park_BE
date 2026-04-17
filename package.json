@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon --watch src --ext ts,d.ts --exec npx ts-node --files src/main.ts",
     "build": "tsc && cp -r src/generated dist/src/",
-    "start": "node dist/src/main.js",
+    "start": "cross-env NODE_ENV=production node dist/src/main.js",
     "lint": "eslint 'src/**/*.ts'",
     "lint:fix": "eslint 'src/**/*.ts' --fix",
     "format": "prettier --write 'src/**/*.ts'",
@@ -68,6 +68,7 @@
     "@typescript-eslint/eslint-plugin": "^8.57.1",
     "@typescript-eslint/parser": "^8.57.1",
     "commitlint": "^20.5.0",
+    "cross-env": "^10.1.0",
     "dotenv": "^17.3.1",
     "eslint": "^10.0.3",
     "eslint-config-prettier": "^10.1.8",
