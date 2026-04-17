@@ -211,6 +211,7 @@ export const getCache = async <T>(key: string): Promise<T | null> => {
     const memoryCached = getMemoryCache(key);
 
     if (memoryCached) {
+      // eslint-disable-next-line no-console
       console.log('[Cache] MEMORY HIT', {
         key,
         elapsedMs: Date.now() - startedAt,
@@ -218,7 +219,7 @@ export const getCache = async <T>(key: string): Promise<T | null> => {
 
       return safeParse<T>(memoryCached);
     }
-
+    // eslint-disable-next-line no-console
     console.log('[Cache] MEMORY MISS', {
       key,
       elapsedMs: Date.now() - startedAt,
@@ -226,11 +227,13 @@ export const getCache = async <T>(key: string): Promise<T | null> => {
 
     // 2. Redis 조회
     if (!redisClient) {
+      // eslint-disable-next-line no-console
       console.warn('[Cache] GET skipped - redis disabled', { key });
       return null;
     }
 
     if (!redisClient.isOpen) {
+      // eslint-disable-next-line no-console
       console.warn('[Cache] GET skipped - redis not connected', { key });
       return null;
     }
@@ -238,6 +241,7 @@ export const getCache = async <T>(key: string): Promise<T | null> => {
     const cached = await withTimeout(redisClient.get(key), 1000);
 
     if (!cached) {
+      // eslint-disable-next-line no-console
       console.log('[Cache] REDIS MISS', {
         key,
         elapsedMs: Date.now() - startedAt,
@@ -247,7 +251,7 @@ export const getCache = async <T>(key: string): Promise<T | null> => {
 
     // Redis hit면 인메모리에도 저장
     setMemoryCache(key, cached, MAX_MEMORY_TTL_SECONDS);
-
+    // eslint-disable-next-line no-console
     console.log('[Cache] REDIS HIT', {
       key,
       elapsedMs: Date.now() - startedAt,
@@ -285,6 +289,7 @@ export const setCache = async (
     const serialized = safeStringify(value);
 
     if (!serialized) {
+      // eslint-disable-next-line no-console
       console.warn('[Cache] SET skipped - stringify failed', {
         key,
         ttlSeconds,
@@ -294,7 +299,7 @@ export const setCache = async (
 
     // 1. 인메모리 저장
     setMemoryCache(key, serialized, ttlSeconds);
-
+    // eslint-disable-next-line no-console
     console.log('[Cache] MEMORY SET OK', {
       key,
       ttlSeconds: getMemoryTtlSeconds(ttlSeconds),
@@ -303,6 +308,7 @@ export const setCache = async (
 
     // 2. Redis 저장
     if (!redisClient) {
+      // eslint-disable-next-line no-console
       console.warn('[Cache] SET skipped - redis disabled', {
         key,
         ttlSeconds,
@@ -311,6 +317,7 @@ export const setCache = async (
     }
 
     if (!redisClient.isOpen) {
+      // eslint-disable-next-line no-console
       console.warn('[Cache] SET skipped - redis not connected', {
         key,
         ttlSeconds,
@@ -322,7 +329,7 @@ export const setCache = async (
       redisClient.set(key, serialized, { EX: ttlSeconds }),
       1000,
     );
-
+    // eslint-disable-next-line no-console
     console.log('[Cache] REDIS SET OK', {
       key,
       ttlSeconds,
@@ -355,7 +362,7 @@ export const delCache = async (keys: string[]): Promise<void> => {
   try {
     // 1. 인메모리 삭제
     delMemoryCache(keys);
-
+    // eslint-disable-next-line no-console
     console.log('[Cache] MEMORY DEL OK', {
       keys,
       elapsedMs: Date.now() - startedAt,
@@ -363,17 +370,19 @@ export const delCache = async (keys: string[]): Promise<void> => {
 
     // 2. Redis 삭제
     if (!redisClient) {
+      // eslint-disable-next-line no-console
       console.warn('[Cache] DEL skipped - redis disabled', { keys });
       return;
     }
 
     if (!redisClient.isOpen) {
+      // eslint-disable-next-line no-console
       console.warn('[Cache] DEL skipped - redis not connected', { keys });
       return;
     }
 
     const deletedCount = await withTimeout(redisClient.del(keys), 1000);
-
+    // eslint-disable-next-line no-console
     console.log('[Cache] REDIS DEL OK', {
       keys,
       deletedCount,
@@ -405,7 +414,7 @@ export const delCacheByPattern = async (pattern: string): Promise<void> => {
   try {
     // 1. 인메모리 패턴 삭제
     const memoryDeletedCount = delMemoryCacheByPattern(pattern);
-
+    // eslint-disable-next-line no-console
     console.log('[Cache] MEMORY DEL PATTERN OK', {
       pattern,
       memoryDeletedCount,
@@ -414,11 +423,13 @@ export const delCacheByPattern = async (pattern: string): Promise<void> => {
 
     // 2. Redis 패턴 삭제
     if (!redisClient) {
+      // eslint-disable-next-line no-console
       console.warn('[Cache] DEL PATTERN skipped - redis disabled', { pattern });
       return;
     }
 
     if (!redisClient.isOpen) {
+      // eslint-disable-next-line no-console
       console.warn('[Cache] DEL PATTERN skipped - redis not connected', {
         pattern,
       });
@@ -435,6 +446,7 @@ export const delCacheByPattern = async (pattern: string): Promise<void> => {
     }
 
     if (keys.length === 0) {
+      // eslint-disable-next-line no-console
       console.log('[Cache] REDIS DEL PATTERN no keys', {
         pattern,
         elapsedMs: Date.now() - startedAt,
@@ -443,7 +455,7 @@ export const delCacheByPattern = async (pattern: string): Promise<void> => {
     }
 
     const deletedCount = await withTimeout(redisClient.del(keys), 1000);
-
+    // eslint-disable-next-line no-console
     console.log('[Cache] REDIS DEL PATTERN OK', {
       pattern,
       keys,
@@ -470,7 +482,7 @@ export const invalidateGoalListCache = async (
   userId: number,
 ): Promise<void> => {
   const key = buildCacheKey('lampfire', 'goals', 'list', userId);
-
+  // eslint-disable-next-line no-console
   console.log('[Cache] invalidate goal list', {
     userId,
     key,
@@ -496,7 +508,7 @@ export const invalidateGoalDetailCache = async (
     goalId,
     '*',
   );
-
+  // eslint-disable-next-line no-console
   console.log('[Cache] invalidate goal detail', {
     userId,
     goalId,
