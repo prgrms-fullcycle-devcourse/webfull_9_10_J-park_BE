@@ -15,6 +15,7 @@ import {
   buildCacheKey,
   delCache,
   invalidateGoalDetailCache,
+  invalidateRankingCache,
 } from '../utils/cache.util';
 
 import { formatDate, toStartOfDay } from '../utils/goal.util';
@@ -236,6 +237,8 @@ export const endTimerService = async (
     buildCacheKey('lampfire', 'timers', 'running', userId),
   ]);
 
+  await invalidateRankingCache();
+
   return endTimer;
 };
 
@@ -248,10 +251,10 @@ export const getRunningTimerService = async (
   // 캐시 조회
   const cached = await getCache<RunningTimerResponse>(cacheKey);
   if (cached) {
-    console.log('[CACHE HIT]', cacheKey);
+    //console.log('[CACHE HIT]', cacheKey);
     return cached;
   }
-  console.log('[CACHE MISS]', cacheKey);
+  //console.log('[CACHE MISS]', cacheKey);
 
   // 실행 중인 타이머 가져오기
   const runningTimers = await prisma.timerLog.findMany({
