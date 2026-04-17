@@ -143,13 +143,16 @@ export const startKakaoLogin = (req: Request, res: Response) => {
   return res.redirect(url);
 };
 
-export const finishKakaoLogin = async (req: Request, res: Response) => {
+export const finishKakaoLogin = async (
+  req: Request,
+  res: Response<ApiResponse>,
+) => {
   const { code, state } = req.query;
   const { kakao_state: kakaoState } = req.cookies;
 
   // State 검증 후 쿠키 삭제
   if (!state || state != kakaoState) {
-    return res.status(StatusCodes.BAD_REQUEST).json({});
+    throw new AppError('INVALID_STATE');
   }
   res.clearCookie('kakao_state');
 
@@ -189,15 +192,11 @@ export const finishKakaoLogin = async (req: Request, res: Response) => {
 
       res.cookie('token', token, authCookieOptions);
 
-      // return res.status(200).json({
-      //   email,
-      //   data: userData.kakao_account,
-      // });
-      return res.redirect(
-        process.env.NODE_ENV === 'production'
-          ? `${process.env.ALLOWED_ORIGINS as string}/`
-          : 'http://localhost:3000/users/me',
-      );
+      return res.status(StatusCodes.OK).json({
+        success: true,
+        message: '카카오 로그인 완료',
+        data: null,
+      });
     } else {
       // 카카오 API에서 토큰 요청 실패
       throw new AppError('KAKAO_SERVER_ERROR'); // KAKAO_API_ERROR
@@ -220,7 +219,7 @@ export const finishKakaoLogin = async (req: Request, res: Response) => {
 
 export const logout = async (
   req: Request,
-  res: Response,
+  res: Response<ApiResponse>,
   next: NextFunction,
 ) => {
   const { isLoggedIn } = req.user!;
@@ -236,11 +235,11 @@ export const logout = async (
       expires: new Date(0),
     });
 
-    return res.redirect(
-      process.env.NODE_ENV === 'production'
-        ? `${process.env.ALLOWED_ORIGINS}/`
-        : 'http://localhost:3000/users/me',
-    );
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      message: '로그아웃 완료',
+      data: null,
+    });
   } catch (err) {
     console.error(`Logout Err: ${err}`);
     return next(new AppError('INTERNAL_SERVER_ERROR'));

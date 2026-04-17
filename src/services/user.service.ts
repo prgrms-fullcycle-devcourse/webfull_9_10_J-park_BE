@@ -12,6 +12,7 @@ import {
   buildCacheKey,
   delCache,
   getCache,
+  invalidateRankingCache,
   setCache,
 } from '../utils/cache.util';
 
@@ -168,6 +169,7 @@ export const updateNickname = async (userId: number, newNickname: string) => {
 
   // 캐시 무효화
   await delCache(getUserProfileCacheKeys(userId));
+  await invalidateRankingCache();
 
   return userResponse;
 };
@@ -213,6 +215,7 @@ export const updateProfileImageKey = async (
 
   // 캐시 무효화
   await delCache(getUserProfileCacheKeys(userId));
+  await invalidateRankingCache();
 
   return response;
 };

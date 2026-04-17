@@ -517,3 +517,25 @@ export const invalidateGoalDetailCache = async (
 
   await delCacheByPattern(pattern);
 };
+
+/**
+ * 랭킹 캐시 무효화
+ * - top3 / 페이지별 랭킹 / 내 랭킹 전부 삭제
+ * - 랭킹은 다른 유저 totalTime 변화에도 순위가 바뀔 수 있으므로 전체 무효화가 안전
+ */
+export const invalidateRankingCache = async (): Promise<void> => {
+  const topKey = buildCacheKey('lampfire', 'ranking', 'top3');
+  const listPattern = buildCacheKey('lampfire', 'ranking', 'list', '*');
+  const myRankPattern = buildCacheKey('lampfire', 'ranking', 'me', '*');
+
+  // eslint-disable-next-line no-console
+  console.log('[Cache] invalidate ranking cache', {
+    topKey,
+    listPattern,
+    myRankPattern,
+  });
+
+  await delCache([topKey]);
+  await delCacheByPattern(listPattern);
+  await delCacheByPattern(myRankPattern);
+};
