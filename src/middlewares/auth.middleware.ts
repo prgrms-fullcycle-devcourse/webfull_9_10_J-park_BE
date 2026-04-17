@@ -6,7 +6,7 @@ import prisma from '../config/prisma';
 import { ApiResponse } from '../types/response';
 import { generateRandomUsername } from '../utils/nickname.util';
 
-const authCookieOptions: CookieOptions = {
+export const authCookieOptions: CookieOptions = {
   sameSite: 'none',
   secure: true,
   httpOnly: true,
@@ -43,9 +43,13 @@ export const authUser = async (
        * JWT 생성
        * payload: 사용자 id
        */
-      token = jwt.sign({ id: newUser.id }, process.env.JWT_SECRET as string, {
-        expiresIn: '7d',
-      });
+      token = jwt.sign(
+        { id: newUser.id, type: 'anonymous' },
+        process.env.JWT_SECRET as string,
+        {
+          expiresIn: '7d',
+        },
+      );
 
       //쿠키에 토큰 저장
       res.cookie('token', token, authCookieOptions);
@@ -58,13 +62,14 @@ export const authUser = async (
        */
       const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
         id: number;
+        type: string;
         exp: number; // 토큰의 만료 시간(초)
       };
 
       // 사용자 검증 단계
       const user = await prisma.user.findUnique({
         where: { id: decoded.id },
-        select: { id: true, email: true },
+        select: { id: true },
       });
       if (!user) {
         throw new Error('User not Found');
@@ -74,7 +79,7 @@ export const authUser = async (
 
       if (decoded.exp - currentTime < 3 * 24 * 60 * 60) {
         const newToken = jwt.sign(
-          { id: decoded.id },
+          { id: decoded.id, type: decoded.type },
           process.env.JWT_SECRET as string,
           { expiresIn: '7d' },
         );
@@ -82,7 +87,10 @@ export const authUser = async (
         res.cookie('token', newToken, authCookieOptions);
       }
 
-      req.user = { userId: decoded.id, isLoggedIn: !!user.email };
+      req.user = {
+        userId: decoded.id,
+        isLoggedIn: decoded.type === 'authorized' ? true : false,
+      };
     }
 
     return next();
