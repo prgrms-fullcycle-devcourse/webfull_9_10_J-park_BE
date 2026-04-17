@@ -1,16 +1,16 @@
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
+
 import { s3 } from '../config/s3Storage';
 import { AppError } from '../errors/app.error';
 
-export const deleteFileFromS3 = async (fileUrl: string): Promise<void> => {
-  try {
-    // 1. URL에서 Key 추출
-    const decodedUrl = decodeURIComponent(fileUrl);
-    const bucketName = process.env.S3_BUCKET_NAME!;
+export const toCDNUrl = (fileKey: string | null): string | null => {
+  if (!fileKey) return null;
+  return `${process.env.CDN_DOMAIN!}/${fileKey}`;
+};
 
-    const fileKey = decodedUrl.split(
-      `${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/`,
-    )[1];
+export const deleteFileFromS3 = async (fileKey: string): Promise<void> => {
+  try {
+    const bucketName = process.env.S3_BUCKET_NAME!;
     if (!fileKey) {
       throw new AppError('S3_SERVER_ERROR');
     }

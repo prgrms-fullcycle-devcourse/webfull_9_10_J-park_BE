@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import { AppError } from '../errors/app.error';
 import { ApiResponse } from '../types/response';
 
+import { authCookieOptions } from '../middlewares/auth.middleware';
 import {
   createKakaoUser,
   deleteAnonymousUser,
@@ -14,10 +15,9 @@ import {
   getUser,
   getUserByEmail,
   updateNickname,
-  updateProfileImageUrl,
+  updateProfileImageKey,
 } from '../services/user.service';
 import { UserProfileResponse } from '../types/user.type';
-import { authCookieOptions } from '../middlewares/auth.middleware';
 
 export const getMe = async (
   req: Request,
@@ -87,11 +87,11 @@ export const updateProfile = async (req: Request, res: Response) => {
 
     if (imgFile) {
       try {
-        const newImageUrl = (imgFile as Express.MulterS3.File).location;
+        const newFileKey = (imgFile as Express.MulterS3.File).key;
 
-        const updatedProfileImageUrl = await updateProfileImageUrl(
+        const updatedProfileImageUrl = await updateProfileImageKey(
           userId,
-          newImageUrl,
+          newFileKey,
         );
 
         return res.status(StatusCodes.OK).json({
