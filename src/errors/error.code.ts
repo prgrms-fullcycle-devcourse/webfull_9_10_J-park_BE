@@ -76,6 +76,11 @@ export const ERROR_CODES = {
     code: 'KAKAO_EMAIL_REQUIRED',
     message: '카카오 이메일 동의가 필요합니다.',
   },
+  INVALID_STATE: {
+    statusCode: StatusCodes.FORBIDDEN,
+    code: 'INVALID_STATE',
+    message: '보안 검증에 실패했습니다.',
+  },
 
   // 404
   NOT_FOUND: {
