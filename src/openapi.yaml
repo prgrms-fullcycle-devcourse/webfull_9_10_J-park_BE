@@ -2674,6 +2674,111 @@ paths:
                   code: 'KAKAO_SERVER_ERROR'
                   message: '카카오 API 오류가 발생했습니다.'
 
+  /users/logout:
+    post:
+      tags:
+        - 사용자
+      summary: 로그아웃
+      description: |
+        **로그아웃을 수행합니다.**
+        - 서버 측에서 인증 쿠키(access_token)를 무효화하거나 제거합니다.
+        - 성공 시 클라이언트의 인증 상태가 해제됩니다.
+      operationId: logoutUser
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: 로그아웃 성공
+          content:
+            application/json:
+              schema:
+                description: '로그아웃 성공 시 반환되는 응답입니다. 별도의 데이터 없이 성공 메시지만 포함됩니다.'
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      message:
+                        example: '로그아웃 완료'
+                      data:
+                        nullable: true
+                        enum: [null]
+                        example: null
+
+        '404':
+          description: 사용자가 존재하지 않음
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: 'USER_NOT_FOUND'
+                      message:
+                        type: string
+                        example: '사용자를 찾을 수 없습니다.'
+              example:
+                success: false
+                error:
+                  code: 'USER_NOT_FOUND'
+                  message: '사용자를 찾을 수 없습니다.'
+
+        '401':
+          description: 유효한 쿠키가 없거나 인증 세션이 이미 만료되어 로그아웃 처리를 할 수 없는 상태입니다.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: 'NOT_LOGGED_IN'
+                      message:
+                        type: string
+                        example: '로그인 상태에서만 로그아웃이 가능합니다.'
+              example:
+                success: false
+                error:
+                  code: 'NOT_LOGGED_IN'
+                  message: '로그인 상태에서만 로그아웃이 가능합니다.'
+
+        '500':
+          description: 서버 내부 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: 'INTERNAL_SERVER_ERROR'
+                      message:
+                        type: string
+                        example: '서버 오류가 발생했습니다.'
+              example:
+                success: false
+                error:
+                  code: 'INTERNAL_SERVER_ERROR'
+                  message: '서버 오류가 발생했습니다.'
+
   /risks:
     get:
       tags:
