@@ -2242,7 +2242,8 @@ paths:
       tags:
         - 사용자
       summary: 내 정보 보기
-      description: 로그인한 사용자의 프로필 정보와 오늘 목표 정보를 조회합니다.
+      description: 로그인한 사용자의 프로필 정보, 로그인 상태, 그리고 오늘의 목표 목록을 반환합니다.
+      operationId: getUserProfile
       security:
         - cookieAuth: []
       responses:
@@ -2252,74 +2253,93 @@ paths:
             application/json:
               schema:
                 type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: 내 정보 보기
-                  data:
-                    type: object
+                description: '조회 성공'
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
                     properties:
-                      userId:
-                        type: integer
-                        description: 사용자 ID 또는 UUID
-                        example: 1
-                      nickname:
-                        type: string
-                        description: 사용자 이름
-                        example: 닉네임 23
-                      profileImageUrl:
-                        type: string
-                        description: 프로필 이미지 경로
-                        example: /profiles/user23.png
-                      totalTime:
-                        type: integer
-                        description: 오늘 총 목표를 위해 투자한 시간
-                        example: 16980000
-                      goals:
-                        type: array
-                        description: 오늘 목표 목록
-                        items:
-                          type: object
-                          properties:
-                            id:
-                              type: integer
-                              description: 목표 ID
-                              example: 1
-                            title:
-                              type: string
-                              description: 목표 이름
-                              example: 목표 1
-                            todayQuota:
-                              type: integer
-                              description: 오늘의 할당량
-                              example: 3
-                      createdAt:
-                        type: string
-                        format: date
-                        description: 계정 생성일
-                        example: '2025-05-23'
-                example:
-                  success: true
-                  message: 내 정보 보기
-                  data:
-                    userId: 1
-                    nickname: 닉네임 23
-                    profileImageUrl: /profiles/user23.png
-                    totalTime: 16980000
-                    goals:
-                      - id: 1
-                        title: 목표 1
-                        todayQuota: 3
-                      - id: 2
-                        title: 목표 2
-                        todayQuota: 2
-                      - id: 3
-                        title: 목표 3
-                        todayQuota: 5
-                    createdAt: '2025-05-23'
+                      message:
+                        example: '내 정보 보기'
+                      data:
+                        type: object
+                        properties:
+                          userId:
+                            type: integer
+                            description: 사용자 고유 ID 또는 UUID
+                            example: 1
+                          nickname:
+                            type: string
+                            description: 사용자 닉네임
+                            example: '닉네임 23'
+                          profileImageUrl:
+                            type: string
+                            format: uri
+                            description: 프로필 이미지 CloudFront URL
+                            example: 'http://dcopei53cz7wg.cloudfront.net/profiles/user23.png'
+                          totalTime:
+                            type: integer
+                            description: 오늘 총 목표를 위해 투자한 시간 (밀리초 단위 등)
+                            example: 16980000
+                          loginInfo:
+                            description: 로그인 여부에 따라 email 값의 존재 여부 결정
+                            oneOf:
+                              - type: object
+                                required: [isLoggedIn, email]
+                                properties:
+                                  isLoggedIn:
+                                    type: boolean
+                                    enum: [true]
+                                    example: true
+                                  email:
+                                    type: string
+                                    format: email
+                                    example: 'example@example.com'
+                              - type: object
+                                required: [isLoggedIn, email]
+                                properties:
+                                  isLoggedIn:
+                                    type: boolean
+                                    enum: [false]
+                                    example: false
+                                  email:
+                                    type: string
+                                    nullable: true
+                                    enum: [null]
+                                    example: null
+
+                          goals:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: integer
+                                  description: 목표 고유 ID
+                                  example: 1
+                                title:
+                                  type: string
+                                  description: 목표 이름
+                                  example: '목표 1'
+                                todayQuota:
+                                  type: integer
+                                  description: 오늘의 할당량
+                                  example: 3
+                            example:
+                              - id: 1
+                                title: '목표 1'
+                                todayQuota: 3
+                              - id: 2
+                                title: '목표 2'
+                                todayQuota: 2
+                              - id: 3
+                                title: '목표 3'
+                                todayQuota: 5
+
+                          createdAt:
+                            type: string
+                            format: date
+                            description: 계정 생성일
+                            example: '2025-05-23'
 
         '401':
           description: 인증 실패
