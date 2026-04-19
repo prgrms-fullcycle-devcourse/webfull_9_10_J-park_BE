@@ -15,7 +15,7 @@ import {
   getUser,
   getUserByEmail,
   updateNickname,
-  updateProfileImageUrl,
+  updateProfileImageKey,
 } from '../services/user.service';
 import { UserProfileResponse } from '../types/user.type';
 
@@ -87,11 +87,11 @@ export const updateProfile = async (req: Request, res: Response) => {
 
     if (imgFile) {
       try {
-        const newImageUrl = (imgFile as Express.MulterS3.File).location;
+        const newFileKey = (imgFile as Express.MulterS3.File).key;
 
-        const updatedProfileImageUrl = await updateProfileImageUrl(
+        const updatedProfileImageUrl = await updateProfileImageKey(
           userId,
-          newImageUrl,
+          newFileKey,
         );
 
         return res.status(StatusCodes.OK).json({
