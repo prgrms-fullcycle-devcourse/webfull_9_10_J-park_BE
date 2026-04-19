@@ -64,7 +64,7 @@ jest.mock('../../src/utils/cache.util', () => {
     ...original,
     getCache: jest.fn(),
     setCache: jest.fn(),
-    buildCacheKey: jest.fn((...parts) => parts.join(':')), 
+    buildCacheKey: jest.fn((...parts) => parts.join(':')),
     delCache: jest.fn(),
     invalidateGoalListCache: jest.fn(),
     invalidateGoalDetailCache: jest.fn(),
