@@ -4,16 +4,18 @@ import request from 'supertest';
 import app from '../../src/app';
 import prisma from '../../src/config/prisma';
 import * as rankingService from '../../src/services/ranking.service';
+import { delCacheByPattern } from '../../src/utils/cache.util';
 
 describe('Ranking API', () => {
   const TEST_PREFIX = `TEST_RANKING_${Date.now()}`;
+  const BASE_TIME = 1000000000;
 
   let authToken: string;
   let myUserId: number;
 
   beforeEach(async () => {
-    // 추후 수정: totalTime 데이터는 향후 더 큰 값이나, db의 최댓값 + a로 값 수정이 필요합니다.
-    const BASE_TIME = 1000000000;
+    // ranking 정렬을 위해 기존 데이터보다 높은 값 사용
+    await delCacheByPattern('lampfire:ranking:*');
 
     const user1 = await prisma.user.create({
       data: {
@@ -23,7 +25,6 @@ describe('Ranking API', () => {
       select: { id: true },
     });
 
-    //const user2
     await prisma.user.create({
       data: {
         nickname: `${TEST_PREFIX}_USER_2`,
@@ -31,7 +32,6 @@ describe('Ranking API', () => {
       },
     });
 
-    // const user3
     await prisma.user.create({
       data: {
         nickname: `${TEST_PREFIX}_USER_3`,
@@ -102,13 +102,10 @@ describe('Ranking API', () => {
   afterAll(async () => {
     await prisma.$disconnect();
   });
-
   // 전체 랭킹 조회
   describe('GET /rankings', () => {
     describe('200 - OK', () => {
       it('실제 DB 데이터를 기준으로 랭킹 목록을 조회한다', async () => {
-        const BASE_TIME = 1000000000;
-
         const res = await request(app)
           .get('/rankings')
           .set('Cookie', [`token=${authToken}`]);
@@ -176,13 +173,13 @@ describe('Ranking API', () => {
         }
       });
     });
-
     // 401 - 잘못된 토큰일 경우, 인증 에러를 반환한다
     describe('401 - UNAUTHORIZED', () => {
       it('인증되지 않은 요청일 경우 반환한다', async () => {
         const invalidToken = jwt.sign({ id: 999999 }, process.env.JWT_SECRET!, {
           expiresIn: '10m',
         });
+
         const res = await request(app)
           .get('/rankings')
           .set('Cookie', [`token=${invalidToken}`]);
@@ -199,7 +196,6 @@ describe('Ranking API', () => {
         );
       });
     });
-
     // 500 - 서버 오류 시 명세된 에러 형식으로 반환한다
     describe('500 - INTERNAL_SERVER_ERROR', () => {
       it('서버 내부 예외가 발생할 경우 반환한다', async () => {
@@ -210,10 +206,8 @@ describe('Ranking API', () => {
         const res = await request(app)
           .get('/rankings')
           .set('Cookie', [`token=${authToken}`]);
-
         // console.log('Status:', res.status);
         // console.log('Body:', JSON.stringify(res.body, null, 2));
-
         expect(res.status).toBe(500);
         expect(res.body).toEqual(
           expect.objectContaining({
