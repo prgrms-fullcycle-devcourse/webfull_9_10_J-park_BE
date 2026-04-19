@@ -3,6 +3,7 @@ import request from 'supertest';
 
 import app from '../../src/app';
 import prisma from '../../src/config/prisma';
+import * as rankingService from '../../src/services/ranking.service';
 
 describe('Ranking API', () => {
   const TEST_PREFIX = `TEST_RANKING_${Date.now()}`;
@@ -12,10 +13,12 @@ describe('Ranking API', () => {
 
   beforeEach(async () => {
     // 추후 수정: totalTime 데이터는 향후 더 큰 값이나, db의 최댓값 + a로 값 수정이 필요합니다.
+    const BASE_TIME = 1000000000;
+
     const user1 = await prisma.user.create({
       data: {
         nickname: `${TEST_PREFIX}_USER_1`,
-        totalTime: 120000,
+        totalTime: BASE_TIME + 100,
       },
       select: { id: true },
     });
@@ -24,7 +27,7 @@ describe('Ranking API', () => {
     await prisma.user.create({
       data: {
         nickname: `${TEST_PREFIX}_USER_2`,
-        totalTime: 300000,
+        totalTime: BASE_TIME + 300,
       },
     });
 
@@ -32,7 +35,7 @@ describe('Ranking API', () => {
     await prisma.user.create({
       data: {
         nickname: `${TEST_PREFIX}_USER_3`,
-        totalTime: 200000,
+        totalTime: BASE_TIME + 200,
       },
     });
 
@@ -104,6 +107,8 @@ describe('Ranking API', () => {
   describe('GET /rankings', () => {
     describe('200 - OK', () => {
       it('실제 DB 데이터를 기준으로 랭킹 목록을 조회한다', async () => {
+        const BASE_TIME = 1000000000;
+
         const res = await request(app)
           .get('/rankings')
           .set('Cookie', [`token=${authToken}`]);
@@ -111,53 +116,64 @@ describe('Ranking API', () => {
         expect(res.status).toBe(200);
         expect(res.body.success).toBe(true);
         expect(res.body.message).toBe('전체 랭킹');
-        // console.log('res.body,...', res.body);
-        expect(res.body.data).toHaveProperty('ranks');
-        expect(Array.isArray(res.body.data.ranks)).toBe(true);
 
-        expect(res.body.data.ranks.length).toBeGreaterThanOrEqual(3);
+        const { data } = res.body;
 
-        expect(res.body.data.ranks).toEqual(
+        expect(data).toHaveProperty('myRanking');
+        expect(data).toHaveProperty('topRankings');
+        expect(data).toHaveProperty('ranks');
+
+        expect(typeof data.myRanking.myRanking).toBe('number');
+        expect(Array.isArray(data.topRankings)).toBe(true);
+        expect(Array.isArray(data.ranks)).toBe(true);
+
+        expect(data.ranks.length).toBeGreaterThanOrEqual(3);
+
+        expect(data.ranks).toEqual(
           expect.arrayContaining([
             expect.objectContaining({
               nickname: `${TEST_PREFIX}_USER_1`,
-              totalTime: 120000,
+              totalTime: BASE_TIME + 100,
             }),
             expect.objectContaining({
               nickname: `${TEST_PREFIX}_USER_2`,
-              totalTime: 300000,
+              totalTime: BASE_TIME + 300,
             }),
             expect.objectContaining({
               nickname: `${TEST_PREFIX}_USER_3`,
-              totalTime: 200000,
+              totalTime: BASE_TIME + 200,
             }),
           ]),
         );
 
-        const rankingUsers = res.body.data.ranks.filter(
-          (user: { nickname: string }) => user.nickname.startsWith(TEST_PREFIX),
+        const rankingUsers = data.ranks.filter((user: { nickname: string }) =>
+          user.nickname.startsWith(TEST_PREFIX),
         );
 
         expect(rankingUsers[0]).toEqual(
           expect.objectContaining({
             nickname: `${TEST_PREFIX}_USER_2`,
-            totalTime: 300000,
+            totalTime: BASE_TIME + 300,
           }),
         );
 
         expect(rankingUsers[1]).toEqual(
           expect.objectContaining({
             nickname: `${TEST_PREFIX}_USER_3`,
-            totalTime: 200000,
+            totalTime: BASE_TIME + 200,
           }),
         );
 
         expect(rankingUsers[2]).toEqual(
           expect.objectContaining({
             nickname: `${TEST_PREFIX}_USER_1`,
-            totalTime: 120000,
+            totalTime: BASE_TIME + 100,
           }),
         );
+
+        if (rankingUsers.length >= 2) {
+          expect(rankingUsers[1].rank).toBeGreaterThan(rankingUsers[0].rank);
+        }
       });
     });
 
@@ -187,13 +203,16 @@ describe('Ranking API', () => {
     // 500 - 서버 오류 시 명세된 에러 형식으로 반환한다
     describe('500 - INTERNAL_SERVER_ERROR', () => {
       it('서버 내부 예외가 발생할 경우 반환한다', async () => {
-        const prismaSpy = jest
-          .spyOn(prisma.user, 'findMany')
+        const serviceSpy = jest
+          .spyOn(rankingService, 'getMyRank')
           .mockRejectedValue(new Error('DB Error'));
 
         const res = await request(app)
           .get('/rankings')
           .set('Cookie', [`token=${authToken}`]);
+
+        // console.log('Status:', res.status);
+        // console.log('Body:', JSON.stringify(res.body, null, 2));
 
         expect(res.status).toBe(500);
         expect(res.body).toEqual(
@@ -206,7 +225,7 @@ describe('Ranking API', () => {
           }),
         );
 
-        prismaSpy.mockRestore();
+        serviceSpy.mockRestore();
       });
     });
   });
