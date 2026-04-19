@@ -57,14 +57,19 @@ jest.mock('../../src/config/prisma', () => ({
  * Cache util mock
  * - 캐시 조회 / 저장 / 삭제 / 무효화 함수 mock 처리
  */
-jest.mock('../../src/utils/cache.util', () => ({
-  getCache: jest.fn(),
-  setCache: jest.fn(),
-  buildCacheKey: jest.fn((...parts: (string | number)[]) => parts.join(':')),
-  delCache: jest.fn(),
-  invalidateGoalListCache: jest.fn(),
-  invalidateGoalDetailCache: jest.fn(),
-}));
+jest.mock('../../src/utils/cache.util', () => {
+  const original = jest.requireActual('../../src/utils/cache.util');
+
+  return {
+    ...original,
+    getCache: jest.fn(),
+    setCache: jest.fn(),
+    buildCacheKey: jest.fn((...parts) => parts.join(':')), 
+    delCache: jest.fn(),
+    invalidateGoalListCache: jest.fn(),
+    invalidateGoalDetailCache: jest.fn(),
+  };
+});
 
 describe('cache tests', () => {
   const mockedPrisma = prisma as unknown as {

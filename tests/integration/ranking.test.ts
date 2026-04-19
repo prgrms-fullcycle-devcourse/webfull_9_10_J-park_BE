@@ -3,6 +3,7 @@ import request from 'supertest';
 
 import app from '../../src/app';
 import prisma from '../../src/config/prisma';
+import { delCacheByPattern } from '../../src/utils/cache.util';
 
 describe('Ranking API', () => {
   const TEST_PREFIX = `TEST_RANKING_${Date.now()}`;
@@ -11,11 +12,12 @@ describe('Ranking API', () => {
   let myUserId: number;
 
   beforeEach(async () => {
+    await delCacheByPattern('lampfire:ranking:*');
     // 추후 수정: totalTime 데이터는 향후 더 큰 값이나, db의 최댓값 + a로 값 수정이 필요합니다.
     const user1 = await prisma.user.create({
       data: {
         nickname: `${TEST_PREFIX}_USER_1`,
-        totalTime: 120000,
+        totalTime: 2000000000,
       },
       select: { id: true },
     });
@@ -24,7 +26,7 @@ describe('Ranking API', () => {
     await prisma.user.create({
       data: {
         nickname: `${TEST_PREFIX}_USER_2`,
-        totalTime: 300000,
+        totalTime: 2000000002,
       },
     });
 
@@ -32,7 +34,7 @@ describe('Ranking API', () => {
     await prisma.user.create({
       data: {
         nickname: `${TEST_PREFIX}_USER_3`,
-        totalTime: 200000,
+        totalTime: 2000000001,
       },
     });
 
@@ -121,15 +123,15 @@ describe('Ranking API', () => {
           expect.arrayContaining([
             expect.objectContaining({
               nickname: `${TEST_PREFIX}_USER_1`,
-              totalTime: 120000,
+              totalTime: 2000000000,
             }),
             expect.objectContaining({
               nickname: `${TEST_PREFIX}_USER_2`,
-              totalTime: 300000,
+              totalTime: 2000000002,
             }),
             expect.objectContaining({
               nickname: `${TEST_PREFIX}_USER_3`,
-              totalTime: 200000,
+              totalTime: 2000000001,
             }),
           ]),
         );
@@ -141,21 +143,21 @@ describe('Ranking API', () => {
         expect(rankingUsers[0]).toEqual(
           expect.objectContaining({
             nickname: `${TEST_PREFIX}_USER_2`,
-            totalTime: 300000,
+            totalTime: 2000000002,
           }),
         );
 
         expect(rankingUsers[1]).toEqual(
           expect.objectContaining({
             nickname: `${TEST_PREFIX}_USER_3`,
-            totalTime: 200000,
+            totalTime: 2000000001,
           }),
         );
 
         expect(rankingUsers[2]).toEqual(
           expect.objectContaining({
             nickname: `${TEST_PREFIX}_USER_1`,
-            totalTime: 120000,
+            totalTime: 2000000000,
           }),
         );
       });
