@@ -1,5 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 
+import { ErrorInfo } from '../types/error.type';
+
 export const ERROR_CODES = {
   // 400
   BAD_REQUEST: {
@@ -76,6 +78,11 @@ export const ERROR_CODES = {
     code: 'KAKAO_EMAIL_REQUIRED',
     message: '카카오 이메일 동의가 필요합니다.',
   },
+  INVALID_STATE: {
+    statusCode: StatusCodes.FORBIDDEN,
+    code: 'INVALID_STATE',
+    message: '보안 검증에 실패했습니다.',
+  },
 
   // 404
   NOT_FOUND: {
@@ -134,6 +141,6 @@ export const ERROR_CODES = {
     code: 'KAKAO_SERVER_ERROR',
     message: '카카오 API 오류가 발생했습니다.',
   },
-};
+} as const satisfies Record<string, ErrorInfo>;
 
 export type ErrorCodeKey = keyof typeof ERROR_CODES;

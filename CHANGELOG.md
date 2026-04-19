@@ -478,3 +478,41 @@
   - `Render DB` 무료 기간의 만료로 마이그레이션을 진행
 
 ---
+
+## 🏷️ [v1.1.0] - 2026-04-19
+
+### ✨ Added
+
+- GET /rankings (전체 랭킹 조회)
+  - 캐싱 적용으로 응답 속도 개선
+- 프로필 이미지 URL에 CDN 연결
+  - 프로필 이미지의 키값을 DB에 저장
+  - 프로필 이미지의 URL을 CDN 주소로 변환하여 반환
+
+### 🛠 Changed
+
+- GET /users/kakao/start (카카오 OAuth 로그인)
+  - 응답 데이터를 타 API 응답 형식에 맞추어 통일
+- POST /users/logout (로그아웃)
+  - 응답 데이터를 타 API 응답 형식에 맞추어 통일
+
+### 🧪 Test
+
+- GET /rankings (전체 랭킹 조회)
+  - 테스트 코드를 최신 버전에 맞게 수정
+
+### 📄 Docs
+
+- GET /users/kakao/start (카카오 OAuth 로그인)
+  - Swagger API 명세 추가
+
+- POST /users/logout (로그아웃)
+  - Swagger API 명세 추가
+
+- GET /users/me (내 정보 보기)
+  - Swagger API 명세 최신화
+
+- PATCH /users/profile (사용자 정보 수정)
+  - Swagger API 명세 최신화
+
+---

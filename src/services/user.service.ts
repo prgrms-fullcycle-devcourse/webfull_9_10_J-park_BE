@@ -5,14 +5,15 @@ import { AppError } from '../errors/app.error';
 import { KakaoTokenResponse, KakaoUserResponse } from '../types/auth.type';
 import { User, UserProfileResponse } from '../types/user.type';
 import { getQuotasByUser } from '../utils/quota.util';
-import { deleteFileFromS3 } from '../utils/s3.util';
+import { deleteFileFromS3, toCDNUrl } from '../utils/s3.util';
 import { formatDateString } from '../utils/time.util';
 
 import {
-  getCache,
-  setCache,
   buildCacheKey,
   delCache,
+  getCache,
+  invalidateRankingCache,
+  setCache,
 } from '../utils/cache.util';
 
 const getUserProfileCacheKey = (userId: number, isLoggedIn: boolean) =>
@@ -44,7 +45,7 @@ const mapToUserResponse = async (
   return {
     userId: user.id,
     nickname: user.nickname,
-    profileImageUrl: user.profileImageUrl,
+    profileImageUrl: toCDNUrl(user.profileImageUrl),
     totalTime: user.totalTime,
     loginInfo: {
       isLoggedIn,
@@ -168,6 +169,7 @@ export const updateNickname = async (userId: number, newNickname: string) => {
 
   // 캐시 무효화
   await delCache(getUserProfileCacheKeys(userId));
+  await invalidateRankingCache();
 
   return userResponse;
 };
@@ -182,9 +184,9 @@ export const updateNickname = async (userId: number, newNickname: string) => {
  * 4. 응답 가공
  * 5. 캐시 무효화
  */
-export const updateProfileImageUrl = async (
+export const updateProfileImageKey = async (
   userId: number,
-  newImageUrl: string,
+  newFileKey: string,
 ) => {
   // 기존 이미지 확인
   const user = await getUserById(userId);
@@ -200,17 +202,20 @@ export const updateProfileImageUrl = async (
       id: userId,
     },
     data: {
-      profileImageUrl: newImageUrl,
+      profileImageUrl: newFileKey,
     },
     select: {
       profileImageUrl: true,
     },
   });
 
-  const response = { profileImageUrl: updatedProfileImageUrl.profileImageUrl };
+  const response = {
+    profileImageUrl: toCDNUrl(updatedProfileImageUrl.profileImageUrl),
+  };
 
   // 캐시 무효화
   await delCache(getUserProfileCacheKeys(userId));
+  await invalidateRankingCache();
 
   return response;
 };
